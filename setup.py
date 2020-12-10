@@ -31,8 +31,6 @@ setup(
     'pillow==8.0.1',
     'gmail==0.6.3',
     'pyo365==0.1.3',
-    'onesignal-python',
-    'onesignal-client==0.0.1',
     'slixmpp==1.5.2',
     'pyshorteners==1.0.1',
     'tweepy==3.9.0',
