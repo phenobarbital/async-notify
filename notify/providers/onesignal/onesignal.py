@@ -6,8 +6,8 @@ Using OneSignal infraestructure to send push notifications to browsers.
 from notify.providers import ProviderIMBase, PUSH
 from notify.settings import (
     ONESIGNAL_PLAYER_ID, ONESIGNAL_OS_APP_ID, ONESIGNAL_OS_API_KEY)
-from onesignalclient.app_client import OneSignalAppClient
-from onesignalclient.notification import Notification
+#from onesignalclient.app_client import OneSignalAppClient
+#from onesignalclient.notification import Notification
 from requests.exceptions import HTTPError
 
 
