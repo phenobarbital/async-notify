@@ -1,2 +1,0 @@
-git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb
-git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig
