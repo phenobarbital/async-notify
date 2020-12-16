@@ -3,15 +3,22 @@ import os
 from notify.settings import EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_HOST, EMAIL_PORT
 import pprint
 
-import smtplib
+import aiosmtplib
+import asyncio
 import ssl
 
-
+from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.utils import formatdate
+from email import encoders
+
 from notify.providers import ProviderEmailBase, EMAIL
 from notify.models import Actor
 from notify.utils import colors
+
 
 class Email(ProviderEmailBase):
     """
@@ -25,41 +32,40 @@ class Email(ProviderEmailBase):
     _server = None
     _template = None
     context = None
+    force_tls: bool = True
+    longrunning: bool = False
+    _attachments: list = []
 
-    def __init__(self, host=None, port=None, username=None, password=None, **kwargs):
+    def __init__(self, hostname=None, port=None, username=None, password=None, **kwargs):
         """
+
         """
-        super(Email, self).__init__()
+        super(Email, self).__init__(**kwargs)
 
         # server information
-        self._host = host
-        if host is None:
+        self._host = hostname
+        if self._host is None:
             try:
-                self._host = kwargs['host']
+                self._host = kwargs['hostname']
             except KeyError:
                 self._host = EMAIL_HOST
-
         self._port = port
         if port is None:
             try:
                 self._port = kwargs['port']
             except KeyError:
                 self._port = EMAIL_PORT
-
         # connection related settings
         self.username = username
         if username is None:
             self.username = EMAIL_USERNAME
-
         self.password = password
         if self.password is None:
             self.password = EMAIL_PASSWORD
 
-
-
         if self.username is None or self.password is None:
             raise RuntimeWarning(
-                'to send messages via {0} you need to configure username & password. \n'
+                'to send messages via {0}need to configure user & password. \n'
                 'Either send them as function argument via key \n'
                 '`username` & `password` or set up env variable \n'
                 'as `EMAIL_USERNAME` & `EMAIL_PASSWORD`.'.format(self.provider)
@@ -77,48 +83,65 @@ class Email(ProviderEmailBase):
     def user(self):
         return self.username
 
-    def __del__(self):
-        self.close()
-
-    def close(self):
+    async def close(self):
         if self._server:
             try:
-                self._server.quit()
-            except smtplib.SMTPServerDisconnected:
+                await self._server.quit()
+            except aiosmtplib.errors.SMTPServerDisconnected:
                 pass
             except Exception as err:
                 raise Exception(err)
             finally:
                 self._server = None
 
-    def connect(self):
+    async def connect(self):
         """
         Make a connection to the SMTP Server
         """
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_SSLv2
+        context.options |= ssl.OP_NO_SSLv3
+        context.options |= ssl.OP_NO_TLSv1
+        context.options |= ssl.OP_NO_TLSv1_1
+        context.options |= ssl.OP_NO_COMPRESSION
         try:
-            print('EMAIL: ', self._host, self._port, self.username, self.password)
-            self._server = smtplib.SMTP(self._host, self._port)
-            #self._server = smtplib.SMTP_SSL(self._host, self._port)
-            if self._debug:
-                self._server.set_debuglevel(1)
+            self._server = aiosmtplib.SMTP(
+                hostname=self._host,
+                port=self._port,
+                username=self.username,
+                password=self.password,
+                start_tls=True,
+                tls_context=context,
+                loop=self._loop
+            )
             try:
-                self._server.ehlo()
-            except smtplib.SMTPHeloError:
-                self._server.ehlo_or_helo_if_needed()
-            context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-            self._server.starttls(context=context)
-            self._server.ehlo()
-            try:
-                self._server.login(self.username, self.password, initial_response_ok=True)
-            except smtplib.SMTPAuthenticationError as err:
-                raise RuntimeError('Email Error: Invalid credentials, error: {}'.format(err))
-            except smtplib.SMTPServerDisconnected as err:
+                await self._server.connect()
+                try:
+                    if self._server.is_ehlo_or_helo_needed:
+                        await self._server.ehlo()
+                except aiosmtplib.errors.SMTPHeloError:
+                    pass
+                await asyncio.sleep(0)
+            except aiosmtplib.errors.SMTPAuthenticationError as err:
+                raise RuntimeError(
+                    'Email Error: Invalid credentials, error: {}'.format(err)
+                )
+            except aiosmtplib.errors.SMTPServerDisconnected as err:
                 raise RuntimeError('Email Error: {}'.format(err))
-        except smtplib.SMTPRecipientsRefused as e:
-            raise RuntimeError('Email Error: got SMTPRecipientsRefused: {}'.format(e.recipients))
-        except (OSError, smtplib.SMTPException) as e:
-            raise RuntimeError('Email Error: got {}, {}'.format(e.__class__, str(e)))
+        except aiosmtplib.SMTPRecipientsRefused as e:
+            raise RuntimeError(
+                'Email Error: got SMTPRecipientsRefused: {}'.format(e.recipients)
+            )
+        except (OSError, aiosmtplib.errors.SMTPException) as e:
+            raise RuntimeError(
+                'Email Error: got {}, {}'.format(e.__class__, str(e))
+            )
 
+    def is_connected(self):
+        if self._server:
+            return self._server.is_connected
+        else:
+            return False
 
     def _prepare_message(self, to_address, message, content):
         """
@@ -150,6 +173,7 @@ class Email(ProviderEmailBase):
         else:
             message['To'] = to.account['address']
         message['Subject'] = subject
+        message['Date'] = formatdate(localtime=True)
         message['sender'] = self.actor
         message.preamble = subject
         if content:
@@ -171,6 +195,21 @@ class Email(ProviderEmailBase):
         #message.set_payload(msg)
         return message
 
+    def add_attachment(self, message, filename, mimetype='octect-stream'):
+        content = None
+        with open(filename, 'rb') as fp:
+            content = fp.read()
+        if mimetype in ('image/png'):
+            part = MIMEImage(content)
+        else:
+            part = MIMEBase('application', 'octect-stream')
+            part.set_payload(content)
+            encoders.encode_base64(part)
+        part.add_header(
+            'Content-Disposition', 'attachment', filename=str(filename)
+        )
+        message.attach(part)
+
     async def _send(self, to: Actor, message: str, subject: str, **kwargs):
         """
         _send.
@@ -179,9 +218,20 @@ class Email(ProviderEmailBase):
         """
         data = self._render(to, message, subject, **kwargs)
         # making email connnection
+        if not self._server.is_connected:
+            await self._server.connect()
+            await self._server.login(
+                username=self.username,
+                password=self.password
+            )
         try:
-            result = self._server.send_message(data)
-            return result
+            try:
+                response = await self._server.send_message(data)
+                if self._debug is True:
+                    self._logger.debug(response)
+            except aiosmtplib.errors.SMTPServerDisconnected as err:
+                raise RuntimeError('Server Disconnected {}'.format(err))
+            return response
         except Exception as e:
             print(e)
             raise RuntimeError('Email Error: got {}, {}'.format(e.__class__, str(e)))

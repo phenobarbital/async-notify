@@ -73,12 +73,11 @@ class ProviderBase(ABC):
             except AttributeError:
                 pass
         if 'loop' in kwargs:
-            loop = kwargs['loop']
-            if loop:
-                self._loop = loop
-            else:
-                self._loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(self._loop)
+            self._loop = kwargs['loop']
+            del kwargs['loop']
+        else:
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
         # configure debug:
         if 'debug' in kwargs:
             self._debug = kwargs['debug']
@@ -166,7 +165,7 @@ class ProviderBase(ABC):
         else:
             rcpt.append(recipient)
         # working on Queues or executor:
-        if self.longrunning == True:
+        if self.longrunning is True:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             loop.set_exception_handler(default_exception_handler)
@@ -291,7 +290,8 @@ class ProviderEmailBase(ProviderBase):
         # making the connection to the service:
         try:
             if asyncio.iscoroutinefunction(self.connect):
-                await self.connect()
+                if not self.is_connected():
+                    await self.connect()
             else:
                 self.connect()
         except Exception as err:

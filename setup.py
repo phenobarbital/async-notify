@@ -31,8 +31,10 @@ setup(
     'pillow==8.0.1',
     'gmail==0.6.3',
     'pyo365==0.1.3',
-    'slixmpp==1.5.2',
+    'slixmpp==1.6.0',
     'pyshorteners==1.0.1',
+    'aioimaplib==0.7.18',
+    'aiosmtplib==1.1.4',
     'tweepy==3.9.0',
     'asyncdb',
     'navconfig'
