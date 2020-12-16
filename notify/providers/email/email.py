@@ -216,7 +216,13 @@ class Email(ProviderEmailBase):
 
         Logic associated with the construction of notifications
         """
-        data = self._render(to, message, subject, **kwargs)
+        msg = self._render(to, message, subject, **kwargs)
+        if 'attachments' in kwargs:
+            for attach in kwargs['attachments']:
+                self.add_attachment(
+                    message=msg,
+                    filename=attach
+                )
         # making email connnection
         if not self._server.is_connected:
             await self._server.connect()
@@ -226,7 +232,7 @@ class Email(ProviderEmailBase):
             )
         try:
             try:
-                response = await self._server.send_message(data)
+                response = await self._server.send_message(msg)
                 if self._debug is True:
                     self._logger.debug(response)
             except aiosmtplib.errors.SMTPServerDisconnected as err:
