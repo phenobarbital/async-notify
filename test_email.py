@@ -27,7 +27,14 @@ user = {
         "phone": "+34692817379"
     }
 }
-recipients = [ Actor(**user) ]
+user2 = {
+    "name": "Jesus Lara",
+    "account": {
+        "provider": "email",
+        "address": "jesuslara@devel.com.ve"
+    }
+}
+recipients = [ Actor(**user), Actor(**user2) ]
 jesus = Actor(**user)
 
 
@@ -69,7 +76,7 @@ loop.run_until_complete(e.connect())
 print('IS CONNECTED: ', e.is_connected())
 # #e = Notify('gmail')
 result = loop.run_until_complete(e.send(
-    recipient=jesus,
+    recipient=recipients,
     subject='Epale, vente a jugar bolas criollas!',
     event_name='Partido de bolas Criollas',
     event_address='Bolodromo Caucagua',
