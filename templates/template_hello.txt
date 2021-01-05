@@ -1,0 +1,4 @@
+Hi!, {{username.name}}.
+Your account {{username.account.address}} is back online!
+
+{{message}}
