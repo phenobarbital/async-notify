@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='notify',
-    version='0.1.2',
+    version=open("VERSION").read().strip(),
     url='https://bitbucket.org/mobileinsight1/query_api/',
     description='Asyncio Notification library with webSockets support',
     long_description='Asynchronous library for send notifications to users, used by Navigator',
