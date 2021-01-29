@@ -205,8 +205,9 @@ class Email(ProviderEmailBase):
             part = MIMEBase('application', 'octect-stream')
             part.set_payload(content)
             encoders.encode_base64(part)
+        file = os.path.basename(filename)
         part.add_header(
-            'Content-Disposition', 'attachment', filename=str(filename)
+            'Content-Disposition', 'attachment', filename=str(file)
         )
         message.attach(part)
 
