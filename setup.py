@@ -35,7 +35,7 @@ setup(
         'asyncio==3.4.3',
         'twilio==6.48.0',
         'telegram==0.0.1',
-        'python-telegram-bot==13.0',
+        'python-telegram-bot==13.3',
         'pillow==8.0.1',
         'gmail==0.6.3',
         'pyo365==0.1.3',
