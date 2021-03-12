@@ -58,6 +58,7 @@ class TemplateParser(object):
             )
         # initialize the environment
         try:
+            # TODO: check the bug ,encoding='ANSI'
             self.env = Environment(loader=templateLoader, **self.config)
             #compiled_path = BytesIO()
             compiled_path = str(self.path.joinpath('.compiled'))
