@@ -250,8 +250,6 @@ class ProviderBase(ABC):
                 #         task.cancel()
         except Exception as err:
             raise Exception(err)
-        finally:
-            loop.close()
 
     def __sent__(
         self,
