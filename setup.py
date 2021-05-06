@@ -35,7 +35,7 @@ setup(
         'asyncio==3.4.3',
         'twilio==6.48.0',
         'telegram==0.0.1',
-        'python-telegram-bot==13.3',
+        'python-telegram-bot==13.51',
         'pillow==8.0.1',
         'gmail==0.6.3',
         'pyo365==0.1.3',
@@ -55,6 +55,7 @@ setup(
             'pytest-assume==2.4.2'
     ],
     dependency_links=[
+        'git+https://github.com/phenobarbital/python-telegram-bot.git',
         'git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
         'git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig'
     ],
