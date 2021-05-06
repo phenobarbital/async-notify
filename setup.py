@@ -43,9 +43,9 @@ setup(
         'aioimaplib==0.7.18',
         'aiosmtplib==1.1.4',
         'tweepy==3.9.0',
-        'asyncdb',
-        'navconfig',
-        'python-telegram-bot',
+        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
+        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig',
+        'python-telegram-bot @ git+https://github.com/phenobarbital/python-telegram-bot.git'
     ],
     tests_require=[
             'pytest>=5.4.0',
@@ -55,7 +55,7 @@ setup(
             'pytest-assume==2.4.2'
     ],
     dependency_links=[
-        'git+https://github.com/phenobarbital/python-telegram-bot.git',
+        'git+https://github.com/phenobarbital/python-telegram-bot.git@master#egg=python-telegram-bot',
         'git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
         'git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig'
     ],
