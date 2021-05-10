@@ -76,7 +76,7 @@ def loadProvider(provider):
 if __name__ == "notify":
     path = Path(__file__).parent.joinpath('providers')
     # directory for notify providers
-    for (_, name, _) in pkgutil.iter_modules([path]):
+    for (_, name, _) in pkgutil.iter_modules([str(path)]):
         cls = loadProvider(name)
         PROVIDERS[name] = cls
     # loading template parser:
