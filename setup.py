@@ -26,12 +26,10 @@ setup(
     setup_requires=[
         "wheel==0.36.2",
         "Cython==0.29.21",
-        "numpy==1.19.4",
         "asyncio==3.4.3"
     ],
     install_requires=[
         'wheel==0.36.2',
-        'numpy==1.19.4',
         'asyncio==3.4.3',
         'twilio==6.48.0',
         'telegram==0.0.1',
