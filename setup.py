@@ -18,7 +18,7 @@ setup(
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     author='Jesus Lara',
     author_email='jlara@trocglobal.com',
@@ -41,8 +41,6 @@ setup(
         'aioimaplib==0.7.18',
         'aiosmtplib==1.1.4',
         'tweepy==3.9.0',
-        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
-        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig',
         'python-telegram-bot @ git+https://github.com/phenobarbital/python-telegram-bot.git'
     ],
     tests_require=[
