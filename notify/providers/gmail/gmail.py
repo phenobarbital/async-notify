@@ -95,7 +95,7 @@ class Gmail(ProviderEmailBase):
         }
         return Message(**email)
 
-    async def _send(self, to: Actor, subject: str, message: str, **kwargs):
+    async def _send(self, to: Actor, message: str, subject: str,  **kwargs):
         """
         _send.
 

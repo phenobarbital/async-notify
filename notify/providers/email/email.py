@@ -218,7 +218,7 @@ class Email(ProviderEmailBase):
         )
         message.attach(part)
 
-    async def _send(self, to: Actor, subject: str, message: str,  **kwargs):
+    async def _send(self, to: Actor, message: str, subject: str,  **kwargs):
         """
         _send.
 

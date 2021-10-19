@@ -102,7 +102,10 @@ class ProviderBase(ABC):
         Prepare works in the preparation of message for sending.
         """
         #1 replacement of strings
-        msg = message.format_map(SafeDict(**self._params))
+        if self._params:
+            msg = message.format_map(SafeDict(**self._params))
+        else:
+            msg = message
         if template:
             # using template parser:
             self._template = self._tplenv.get_template(template)
