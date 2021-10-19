@@ -29,8 +29,8 @@ EMAIL_HOST = config.get('EMAIL_HOST')
 # Amazon AWS
 AWS_EMAIL_ACCOUNT = config.get('aws_email_user')
 AWS_EMAIL_PASSWORD = config.get('aws_email_password')
-AWS_EMAIL_HOST = config.get('AWS_EMAIL_HOST', fallback='email-smtp.us-east-1.amazonaws.com'
-AWS_EMAIL_PORT = config.get('EMAIL_PORT', fallback=587)
+AWS_EMAIL_HOST = config.get('AWS_EMAIL_HOST', fallback='email-smtp.us-east-1.amazonaws.com')
+AWS_EMAIL_PORT = config.get('AWS_EMAIL_PORT', fallback=587)
 
 # gmail
 GMAIL_USERNAME = config.get('GMAIL_USERNAME')
