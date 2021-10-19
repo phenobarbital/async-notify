@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
-from notify.settings import EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_HOST, EMAIL_PORT
+from notify.settings import (
+    EMAIL_USERNAME,
+    EMAIL_PASSWORD,
+    EMAIL_HOST,
+    EMAIL_PORT
+)
 import pprint
 
 import aiosmtplib
@@ -65,7 +70,7 @@ class Email(ProviderEmailBase):
 
         if self.username is None or self.password is None:
             raise RuntimeWarning(
-                'to send messages via {0}need to configure user & password. \n'
+                'to send messages via {0} you need to configure user & password. \n'
                 'Either send them as function argument via key \n'
                 '`username` & `password` or set up env variable \n'
                 'as `EMAIL_USERNAME` & `EMAIL_PASSWORD`.'.format(self.provider)
