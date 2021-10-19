@@ -67,7 +67,7 @@ class Gmail(ProviderEmailBase):
         except Exception as err:
             raise RuntimeError(err)
 
-    def _render(self, to: Actor, content: str, subject: str, **kwargs):
+    def _render(self, to: Actor, subject: str, content: str, **kwargs):
         """
         """
         msg = content
@@ -80,6 +80,11 @@ class Gmail(ProviderEmailBase):
                 **kwargs
             }
             msg = self._template.render(**self._templateargs)
+        else:
+            try:
+                msg = kwargs['body']
+            except KeyError:
+                msg = content
         # email
         email = {
             'subject': subject,
@@ -90,13 +95,13 @@ class Gmail(ProviderEmailBase):
         }
         return Message(**email)
 
-    async def _send(self, to: Actor, message: str, subject: str, **kwargs):
+    async def _send(self, to: Actor, subject: str, message: str, **kwargs):
         """
         _send.
 
         Logic associated with the construction of notifications
         """
-        data = self._render(to, message, subject, **kwargs)
+        data = self._render(to, subject, message, **kwargs)
         # making email connnection
         try:
             return self._server.send(data)

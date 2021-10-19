@@ -159,7 +159,7 @@ class Email(ProviderEmailBase):
             #message.set_payload(html)
         return message
 
-    def _render(self, to: Actor, content: str, subject: str, **kwargs):
+    def _render(self, to: Actor, subject: str, content: str, **kwargs):
         """
         _render.
 
@@ -169,6 +169,7 @@ class Email(ProviderEmailBase):
         message = MIMEMultipart('alternative')
         message['From'] = self.actor
         if isinstance(to, list):
+            # TODO: iterate over actors
             message['To'] = ", ".join(to)
         else:
             message['To'] = to.account['address']
@@ -178,7 +179,6 @@ class Email(ProviderEmailBase):
         message.preamble = subject
         if content:
             message.attach(MIMEText(content, 'plain'))
-        msg = content
         if self._template:
             self._templateargs = {
                 "recipient": to,
@@ -188,6 +188,8 @@ class Email(ProviderEmailBase):
                 **kwargs
             }
             msg = self._template.render(**self._templateargs)
+        else:
+            msg = content
         message.add_header('Content-Type','text/html')
         #message.add_header('Content-Type', 'multipart/mixed')
         #message.add_header('Content-Transfer-Encoding', 'base64')
@@ -211,13 +213,13 @@ class Email(ProviderEmailBase):
         )
         message.attach(part)
 
-    async def _send(self, to: Actor, message: str, subject: str, **kwargs):
+    async def _send(self, to: Actor, subject: str, message: str,  **kwargs):
         """
         _send.
 
         Logic associated with the construction of notifications
         """
-        msg = self._render(to, message, subject, **kwargs)
+        msg = self._render(to, subject, message, **kwargs)
         if 'attachments' in kwargs:
             for attach in kwargs['attachments']:
                 self.add_attachment(

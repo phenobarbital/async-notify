@@ -5,8 +5,11 @@ Sending amazon Emails using SMTP services
 """
 from notify.providers import ProviderEmailBase, EMAIL
 from notify.settings import (
-    EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_PORT, EMAIL_HOST
-    )
+    AWS_EMAIL_ACCOUNT,
+    AWS_EMAIL_PASSWORD,
+    AWS_EMAIL_HOST,
+    AWS_EMAIL_PORT
+)
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -34,11 +37,11 @@ class Aws_email(ProviderEmailBase):
         # connection related settings
         self.username = username
         if self.username is None:
-            self.username = EMAIL_USERNAME
+            self.username = AWS_EMAIL_ACCOUNT
 
         self.password = password
         if self.password is None:
-            self.password = EMAIL_PASSWORD
+            self.password = AWS_EMAIL_PASSWORD
 
         if self.username is None or self.password is None:
             raise RuntimeWarning(
@@ -55,11 +58,11 @@ class Aws_email(ProviderEmailBase):
         try:
             self._host = kwargs['host']
         except KeyError:
-            self._host = EMAIL_HOST
+            self._host = AWS_EMAIL_HOST
         try:
             self._port = kwargs['port']
         except KeyError:
-            self._port = EMAIL_PORT
+            self._port = AWS_EMAIL_PORT
         try:
             self._server = self._make_connection()
         except Exception as e:

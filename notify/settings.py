@@ -21,10 +21,16 @@ ONESIGNAL_OS_APP_ID = config.get('ONESIGNAL_OS_APP_ID', fallback='')
 ONESIGNAL_OS_API_KEY = config.get('ONESIGNAL_OS_API_KEY', fallback='')
 
 # email:
-EMAIL_USERNAME = config.get('aws_email_user')
-EMAIL_PASSWORD = config.get('aws_email_password')
-EMAIL_PORT = config.get('aws_email_port', fallback=587)
-EMAIL_HOST = config.get('aws_email_host', fallback='email-smtp.us-east-1.amazonaws.com')
+EMAIL_USERNAME = config.get('EMAIL_USERNAME')
+EMAIL_PASSWORD = config.get('EMAIL_PASSWORD')
+EMAIL_PORT = config.get('EMAIL_PORT', fallback=587)
+EMAIL_HOST = config.get('EMAIL_HOST')
+
+# Amazon AWS
+AWS_EMAIL_ACCOUNT = config.get('aws_email_user')
+AWS_EMAIL_PASSWORD = config.get('aws_email_password')
+AWS_EMAIL_HOST = config.get('AWS_EMAIL_HOST', fallback='email-smtp.us-east-1.amazonaws.com'
+AWS_EMAIL_PORT = config.get('EMAIL_PORT', fallback=587)
 
 # gmail
 GMAIL_USERNAME = config.get('GMAIL_USERNAME')

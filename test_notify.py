@@ -66,15 +66,15 @@ jesus = Actor(**user)
 # #from notify.providers.gmail import Gmail
 # e = Notify('email', **account)
 #
-# #e = Notify('gmail')
-# result = asyncio.run(e.send(
-#     recipient=jesus,
-#     subject='Epale, vente a jugar bolas criollas!',
-#     event_name='Partido de bolas Criollas',
-#     event_address='Bolodromo Caucagua',
-#     template='email_applied.html'
-# ))
-# print(result)
+e = Notify('gmail')
+result = asyncio.run(e.send(
+    recipient=jesus,
+    subject='Epale, vente a jugar bolas criollas!',
+    event_name='Partido de bolas Criollas',
+    event_address='Bolodromo Caucagua',
+    template='email_applied.html'
+))
+print(result)
 
 
 # print('=== SMS ===')
@@ -121,18 +121,18 @@ jesus = Actor(**user)
 # m = Notify('twilio', level='DEBUG')
 # m.send('Otro mensaje de prueba')
 
-
-t = Notify('telegram')
-asyncio.run(
-    t.send('🛑⚠️✅   Mensaje de Prueba', disable_notification=True)
-)
-
-image = PurePath().joinpath('docs/old-computer.jpg')
-asyncio.run(
- t.send_photo(photo=image, caption='🛑 Pie de imagen')
-)
-
-document = PurePath().joinpath('/home/ubuntu/symbits/dataintegrator.zip')
-asyncio.run(
- t.send_document(document=document, caption='⚠️ Pie de archivo', disable_notification=True)
-)
+#
+# t = Notify('telegram')
+# asyncio.run(
+#     t.send('🛑⚠️✅   Mensaje de Prueba', disable_notification=True)
+# )
+#
+# image = PurePath().joinpath('docs/old-computer.jpg')
+# asyncio.run(
+#  t.send_photo(photo=image, caption='🛑 Pie de imagen')
+# )
+#
+# document = PurePath().joinpath('/home/ubuntu/symbits/dataintegrator.zip')
+# asyncio.run(
+#  t.send_document(document=document, caption='⚠️ Pie de archivo', disable_notification=True)
+# )
