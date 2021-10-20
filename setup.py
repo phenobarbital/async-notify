@@ -24,12 +24,12 @@ setup(
     author_email='jlara@trocglobal.com',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     setup_requires=[
-        "wheel==0.36.2",
+        "wheel==0.37.0",
         "Cython==0.29.21",
         "asyncio==3.4.3"
     ],
     install_requires=[
-        'wheel==0.36.2',
+        'wheel==0.37.0',
         'asyncio==3.4.3',
         'twilio==6.48.0',
         'telegram==0.0.1',
@@ -41,7 +41,8 @@ setup(
         'aioimaplib==0.7.18',
         'aiosmtplib==1.1.4',
         'tweepy==3.9.0',
-        'python-telegram-bot @ git+https://github.com/phenobarbital/python-telegram-bot.git'
+        'python-telegram-bot @ git+https://github.com/phenobarbital/python-telegram-bot.git',
+        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig'
     ],
     tests_require=[
             'pytest>=5.4.0',
