@@ -31,6 +31,7 @@ setup(
     install_requires=[
         'wheel==0.37.0',
         'asyncio==3.4.3',
+        'uvloop==0.16.0',
         'asyncdb>=1.7.20',
         'APScheduler==3.7.0',
         'python-telegram-bot @ git+https://github.com/phenobarbital/python-telegram-bot.git',
