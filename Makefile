@@ -1,9 +1,10 @@
-.venv:
-	python3.8 -m venv .venv
+venv:
+	python3.9 -m venv .venv
 	echo 'run `source .venv/bin/activate` to start develop asyncDB'
 
-setup:
+develop:
 	pip install wheel==0.37.0
+	pip install -e .
 	python -m pip install -Ur docs/requirements.txt
 
 dev:
@@ -25,5 +26,5 @@ test:
 	python -m mypy notify/*.py
 	python -m mypy notify/providers/*.py
 
-distclean: clean
+distclean:
 	rm -rf .venv
