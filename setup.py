@@ -65,6 +65,7 @@ setup(
         'proxylist @ git+https://github.com/phenobarbital/proxylist@main#egg=proxylists',
         'python-telegram-bot @ git+https://github.com/phenobarbital/python-telegram-bot.git',
         'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
+        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig',
     ],
     tests_require=[
             'pytest>=5.4.0',
