@@ -49,11 +49,9 @@ setup(
         'aioimaplib==0.9.0',
         'aiosmtplib==1.1.6',
         'tweepy==3.9.0',
-        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig',
-        'python-telegram-bot @ git+https://github.com/phenobarbital/python-telegram-bot.git',
-        'proxylists @ git+https://github.com/phenobarbital/proxylist@main#egg=proxylists',
         'tzlocal>=2.1',
         'pytz>=2021.3',
+        'decorator>=5.1.0',
         'regex>=2021.9.30',
         'soupsieve>=2.2.1',
         'urllib3>=1.26.6',
@@ -64,7 +62,9 @@ setup(
         'six>=1.16.0',
         'pyasn>=1.6.1',
         'rsa>=4.7.2',
-        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb'
+        'proxylist @ git+https://github.com/phenobarbital/proxylist@main#egg=proxylists',
+        'python-telegram-bot @ git+https://github.com/phenobarbital/python-telegram-bot.git',
+        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
     ],
     tests_require=[
             'pytest>=5.4.0',
