@@ -62,7 +62,7 @@ setup(
         'six>=1.16.0',
         'pyasn>=1.6.1',
         'rsa>=4.7.2',
-        'proxylist @ git+https://github.com/phenobarbital/proxylist@main#egg=proxylists',
+        'proxylists @ git+https://github.com/phenobarbital/proxylist@main#egg=proxylists',
         'python-telegram-bot @ git+https://github.com/phenobarbital/python-telegram-bot.git',
         'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
         'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig',
