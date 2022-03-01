@@ -6,14 +6,28 @@ See:
   https://github.com/phenobarbital/async-notify
 """
 
-from setuptools import setup, find_packages
+from os import path
+from setuptools import find_packages, setup
+
+
+def get_path(filename):
+    return path.join(path.dirname(path.abspath(__file__)), filename)
+
+
+with open(get_path('README.md')) as readme:
+    README = readme.read()
+
+
+with open(get_path('querysource/version.py')) as meta:
+    exec(meta.read())
 
 setup(
-    name='notify',
-    version=open("VERSION").read().strip(),
+    name=__title__,
+    version=__version__,
     url='https://github.com/phenobarbital/async-notify',
-    description='Asyncio Notification library',
+    description=__description__,
     long_description='Asynchronous library for send notifications to users, used by Navigator',
+    python_requires=">=3.8.0",
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -47,7 +61,6 @@ setup(
             'pytest-assume==2.4.2'
     ],
     dependency_links=[
-        'git+https://github.com/phenobarbital/python-telegram-bot.git@master#egg=python-telegram-bot',
         'git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
         'git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig'
     ],
