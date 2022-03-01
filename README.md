@@ -1,6 +1,8 @@
 # README #
 
-Notify is the main library build on top of python asyncio for manage notifications with support of twilio, telegram, o365, email, slack, onesignal.
+Async-Notify is a simple, asyncio-based notification library for Apps.
+
+Notify is built on top of python asyncio for send notifications with support of twilio, telegram, o365, email, slack, onesignal and many others.
 
 ### How do I get set up? ###
 
