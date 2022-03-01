@@ -1,4 +1,4 @@
-# README #
+# Async-Notify #
 
 Async-Notify is a simple, asyncio-based notification library for Apps.
 

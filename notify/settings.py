@@ -8,7 +8,7 @@ import os
 import sys
 import logging
 from pathlib import Path
-from navconfig import config, BASE_DIR, DEBUG
+from navconfig import config, BASE_DIR
 
 NOTIFY_DIR = Path(__file__).resolve().parent.parent
 
@@ -68,9 +68,11 @@ MEMCACHE_HOST = config.get('MEMCACHE_HOST', fallback='nav-api.dev.local')
 MEMCACHE_PORT = config.get('MEMCACHE_PORT', fallback=11211)
 
 # TEMPLATE SYSTEM
-TEMPLATE_DIR = config.get('TEMPLATE_DIR')
-if not TEMPLATE_DIR:
+template_dir = config.get('TEMPLATE_DIR')
+if not template_dir:
     TEMPLATE_DIR = BASE_DIR.joinpath('templates')
+else:
+    TEMPLATE_DIR = Path(template_dir).resolve()
 
 LOG_LEVEL = logging.INFO
 LOG_DIR = '/var/log/troc'

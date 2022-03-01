@@ -2,12 +2,12 @@ CODE_DIRS := notify/ tests/ examples/
 
 venv:
 	python3.9 -m venv .venv
-	echo 'run `source .venv/bin/activate` to start develop asyncDB'
+	echo 'run `source .venv/bin/activate` to start develop Notify'
 
 develop:
 	pip install wheel==0.37.0
 	pip install -e .
-	python -m pip install -Ur docs/requirements.txt
+	python -m pip install -Ur docs/requirements-dev.txt
 
 dev:
 	flit install --symlink

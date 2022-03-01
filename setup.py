@@ -18,7 +18,7 @@ with open(get_path('README.md')) as readme:
     README = readme.read()
 
 
-with open(get_path('querysource/version.py')) as meta:
+with open(get_path('notify/version.py')) as meta:
     exec(meta.read())
 
 setup(
@@ -39,7 +39,7 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     setup_requires=[
         "wheel==0.37.0",
-        "asyncio==3.4.3"
+        "asyncio==3.4.3",
         "Cython==0.29.28",
         "cryptography==3.4.7",
         "cpython==0.0.6"
@@ -49,9 +49,9 @@ setup(
         'APScheduler==3.7.0',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
-        'proxylists @ git+https://github.com/phenobarbital/proxylists@main#egg=proxylists',
         'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@fix-versions#egg=asyncdb',
         'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@new-version#egg=navconfig',
+        'proxylists @ git+https://github.com/phenobarbital/proxylists@main#egg=proxylists',
     ],
     tests_require=[
             'pytest>=5.4.0',
