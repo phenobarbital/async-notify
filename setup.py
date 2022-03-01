@@ -25,8 +25,10 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     setup_requires=[
         "wheel==0.37.0",
-        "Cython==0.29.21",
         "asyncio==3.4.3"
+        "Cython==0.29.28",
+        "cryptography==3.4.7",
+        "cpython==0.0.6"
     ],
     install_requires=[
         'wheel==0.37.0',

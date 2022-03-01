@@ -1,34 +1,22 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
-*$py.class
-*__pycache__/
+__pycache__
+*__pycache__/*
 *.py[cod]
 *$py.class
 .vscode/*
 # C extensions
 *.so
 *.pyc
-*~
-*.swp
-DataIntegration/dataintegration/components/__pycache__/*.pyc
-# Compiled templats
-templates/.compiled
+# External Extensions
+
+
 # Migrations Folder
 migrations/
 migrations/*
-MANIFEST
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-src/*.egg-info
-DataIntegration/dataintegration.egg-info/*
-PKG-INFO
 apps/troc/migrations/
 apps/troc/migrations/__init__.py
-QuerySource/querysource.egg-info/dependency_links.txt
-QuerySource/querysource.egg-info/requires.txt
+
 # Distribution / packaging
 .Python
 env/
@@ -36,8 +24,8 @@ env/
 .venv/*
 .troc/
 develop-eggs/
-*egg-info/
 #dist/
+dist/*
 downloads/
 eggs/
 .eggs/
@@ -125,6 +113,11 @@ ENV/
 # Rope project settings
 .ropeproject
 
+
+#tmp files
+files/
+#temp/
+
 # dumps de bd
 *.backup
 *.dump
@@ -150,8 +143,3 @@ target/
 
 # Mac
 .DS_Store
-
-# Ignore the credentials
-file_env
-client_secrets.json
-credentials.txt
