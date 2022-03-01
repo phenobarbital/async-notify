@@ -2,11 +2,17 @@
 Dummy.
 
 """
-from notify.utils import colors, SafeDict
-from pprint import pprint
-from notify.providers import ProviderBase, NOTIFY
+import logging
+from notify.utils import colors, Msg
+from notify.providers.abstract import ProviderBase, ProviderType
 from notify.models import Actor
-from typing import List, Dict, Optional, Union, Awaitable
+from typing import Any, Callable, List, Dict, Optional, Union, Awaitable
+
+
+def dummy_sent(recipient: Actor, message: Union[str, Any], result: Any, task: Any):
+    logging.debug(f'Message Sent! {recipient}')
+    Msg(message)
+
 
 class Dummy(ProviderBase):
     """
@@ -15,16 +21,17 @@ class Dummy(ProviderBase):
     Dummy Provider to send messages to stdout
     """
     provider = 'dummy'
-    provider_type = NOTIFY
-    longrunning = False
+    provider_type = ProviderType.NOTIFY
+    blocking = False
+    sent: Callable = dummy_sent
 
     def connect(self):
-        print('Connecting ...')
+        print('Connecting to Dummy ...')
 
     def close(self):
-        print('Closing ...')
+        print('Closing to Dummy...')
 
-    async def _send(self, to: Actor, message: str, **kwargs):
+    async def _send(self, to: Actor, message: Union[str, Any], **kwargs):
         """
         _send.
 

@@ -14,6 +14,7 @@ NOTIFY_DIR = Path(__file__).resolve().parent.parent
 
 # config settings
 NAVCONFIG = config
+DEBUG = config.getboolean('DEBUG', fallback=True)
 
 # OneSignail
 ONESIGNAL_PLAYER_ID = config.get('ONESIGNAL_PLAYER_ID', fallback='')
