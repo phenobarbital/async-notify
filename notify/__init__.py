@@ -12,23 +12,28 @@ from .version import (
 )
 from notify.settings import TEMPLATE_DIR
 from notify.templates import TemplateParser
-from .exceptions import ProviderError, notifyException
 from .notify import PROVIDERS, Notify, LoadProvider
+from notify.providers.abstract import ProviderType
+
 
 # install uvloop and set as default loop for asyncio.
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 uvloop.install()
 
-__all__ = [ 'PROVIDERS', 'Notify', 'LoadProvider',  ]
+
+__all__ = [ 'PROVIDERS', 'Notify', 'LoadProvider', 'ProviderType', ]
 TemplateEnv = None
+
 
 if __name__ == "notify":
     print('THIS CODE IS CALLED')
     path = Path(__file__).parent.joinpath('providers')
     # directory for notify providers
-    for (_, name, _) in pkgutil.iter_modules([str(path)]):
-        cls = LoadProvider(name)
-        PROVIDERS[name] = cls
+    for loader, name, ispkg in pkgutil.iter_modules([str(path)]):
+        if ispkg is True:
+            __all__.append(name)
+            cls = LoadProvider(name)
+            PROVIDERS[name] = cls
     # loading template parser:
     TemplateEnv = TemplateParser(
         directory=TEMPLATE_DIR
