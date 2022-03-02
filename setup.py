@@ -58,7 +58,16 @@ setup(
         'aioboto3==9.3.1',
         'emoji==1.6.3',
         'aiogram==2.19',
-        'pillow==9.0.1'
+        'pillow==9.0.1',
+        'google-auth>=2.6.0',
+        'google-auth-httplib2>=0.1.0',
+        'pyo365==0.1.3',
+        'PySocks==1.7.1',
+        'pyshorteners==1.0.1',
+        'twilio==7.7.0',
+        'tweepy==4.6.0',
+        'slixmpp==1.8.0.1',
+        'boto3==1.20.24'
     ],
     tests_require=[
             'pytest>=5.4.0',
