@@ -54,8 +54,6 @@ setup(
         'typing_extensions==4.1.1',
         'tzlocal==2.1',
         'soupsieve==2.3.1',
-        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@fix-versions#egg=asyncdb',
-        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@new-version#egg=navconfig',
         'gmail==0.6.3',
         'aiosmtplib==1.1.6',
         'aiobotocore==2.1.0',
@@ -71,7 +69,9 @@ setup(
         'twilio==7.7.0',
         'tweepy==4.6.0',
         'slixmpp==1.8.0.1',
-        'boto3==1.20.24'
+        'boto3==1.20.24',
+        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@fix-versions#egg=asyncdb',
+        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@new-version#egg=navconfig',
     ],
     tests_require=[
             'pytest>=5.4.0',
