@@ -26,7 +26,6 @@ TemplateEnv = None
 
 
 if __name__ == "notify":
-    print('THIS CODE IS CALLED')
     path = Path(__file__).parent.joinpath('providers')
     # directory for notify providers
     for loader, name, ispkg in pkgutil.iter_modules([str(path)]):

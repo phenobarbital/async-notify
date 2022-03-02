@@ -52,6 +52,13 @@ setup(
         'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@fix-versions#egg=asyncdb',
         'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@new-version#egg=navconfig',
         'proxylists @ git+https://github.com/phenobarbital/proxylists@main#egg=proxylists',
+        'gmail==0.6.3',
+        'aiosmtplib==1.1.6',
+        'aiobotocore==2.1.0',
+        'aioboto3==9.3.1',
+        'emoji==1.6.3',
+        'aiogram==2.19',
+        'pillow==9.0.1'
     ],
     tests_require=[
             'pytest>=5.4.0',

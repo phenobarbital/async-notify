@@ -50,8 +50,9 @@ class Chat(Model):
     """
     Basic configuration for chat-based notifications
     """
+    chat_name: str = Column(required=False)
     chat_id: str = Column(required=True, primary_key=True)
-    name: str
+
 
 class Message(Model):
     """

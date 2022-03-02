@@ -38,8 +38,10 @@ def status_sent(recipient, message, result, task):
     print(f'Notification with status {result!s} to {recipient.account!s}')
 d.sent = status_sent
 
-asyncio.run(d.send(
-    recipient=recipients,
-    message='Congratulations!',
-    template='template_hello.txt'
-))
+asyncio.run(
+    d.send(
+        recipient=recipients,
+        message='Congratulations!',
+        template='template_hello.txt'
+    )
+)
