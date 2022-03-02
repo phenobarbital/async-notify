@@ -49,6 +49,7 @@ setup(
         'APScheduler==3.7.0',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
+        'yarl==1.7.2',
         'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@fix-versions#egg=asyncdb',
         'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@new-version#egg=navconfig',
         'gmail==0.6.3',
