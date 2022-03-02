@@ -1,1 +1,12 @@
-sudo apt install python3-dev make gcc python3-setuptools python3-pip python3-venv libffi-dev
+Installing async-notify
+=======================
+
+Prerequisites:
+
+* Python>=3.8
+
+Server Dependencies::
+
+    sudo apt install python3-dev make gcc python3-setuptools python3-pip python3-venv libffi-dev
+
+    .. vim:set ft=rst:
