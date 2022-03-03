@@ -28,6 +28,7 @@ setup(
     url='https://github.com/phenobarbital/async-notify',
     description=__description__,
     long_description=readme(),
+    long_description_content_type='text/markdown',
     python_requires=">=3.8.0",
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -83,6 +84,7 @@ setup(
             'pytest-xdist==2.1.0',
             'pytest-assume==2.4.2'
     ],
+    test_suite='tests',
     dependency_links=[
         'git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
         'git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig'
