@@ -1,5 +1,7 @@
-import os
+"""utils.
 
+    Useful functions for Notify.
+"""
 class SafeDict(dict):
     """
     SafeDict.
@@ -54,3 +56,35 @@ class colors:
         lightblue = '\033[94m'
         pink = '\033[95m'
         lightcyan = '\033[96m'
+
+
+class Msg(object):
+    def __init__(self, message: str = "", level: str = "INFO"):
+        if level == "INFO" or level == "info":
+            coloring = colors.bold + colors.fg.green
+        elif level == "DEBUG" or level == "debug":
+            coloring = colors.fg.lightblue
+        elif level == "WARN" or level == "warning":
+            coloring = colors.bold + colors.fg.yellow
+        elif self.level == "ERROR":
+            coloring = colors.fg.lightred
+        elif self.level == "CRITICAL":
+            coloring = colors.bold + colors.fg.red
+        else:
+            coloring = colors.reset
+        print(coloring + message, colors.reset)
+
+    def __call__(self, message: str = "", level: str = "INFO", *args, **kwargs):
+        if level == "INFO" or level == "info":
+            coloring = colors.bold + colors.fg.green
+        elif level == "DEBUG" or level == "debug":
+            coloring = colors.fg.lightblue
+        elif level == "WARN" or level == "warning":
+            coloring = colors.bold + colors.fg.yellow
+        elif self.level == "ERROR":
+            coloring = colors.fg.lightred
+        elif self.level == "CRITICAL":
+            coloring = colors.bold + colors.fg.red
+        else:
+            coloring = colors.reset
+        print(coloring + message, colors.reset)

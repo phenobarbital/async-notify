@@ -1,61 +1,73 @@
-import os
-import pprint
+import logging
 from io import BytesIO
 from PIL import Image
 from pathlib import Path, PurePath
-import pathlib
 from typing import List, Union
-from notify.providers import ProviderIMBase, IM
+from notify.providers.abstract import ProviderIM, ProviderType
 
 # telegram
-import telegram
-from telegram.ext import Updater, CommandHandler
-from telegram.error import (TelegramError, Unauthorized, BadRequest,
-                            TimedOut, ChatMigrated, NetworkError)
+from aiogram import Bot, types, executor, types
+from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher.webhook import SendMessage
+from aiogram.utils.exceptions import (
+    TelegramAPIError,
+    BadRequest,
+    MessageError,
+    NotFound,
+    Unauthorized,
+    NetworkError,
+    ChatNotFound
+)
+from aiogram.utils.emoji import emojize
+from aiogram.utils.markdown import bold, code, italic, text
 
+# TODO: web-hooks
+# from aiogram.utils.executor import start_webhook
 from notify.settings import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 from notify.models import Actor, Chat
 from notify.exceptions import notifyException
 
-class Telegram(ProviderIMBase):
-    provider = 'telegram'
-    provider_type = IM
-    level = ''
-    _bot = None
-    _bot_token: str = None
-    _chat_id: str = None
-    parseMode = 'html' # can be MARKDOWN_V2 or HTML
+
+class Telegram(ProviderIM):
+    provider: str = 'telegram'
+    provider_type = ProviderType.IM
+    blocking: bool = False
+    parseMode: str = 'html'  # can be MARKDOWN_V2 or HTML
 
     def __init__(self, *args, **kwargs):
+        self._bot = None
+        self._info = None
+        self._bot_token = None
+        self._chat_id: str = None
+        self._connected: bool = False
         super(Telegram, self).__init__(*args, **kwargs)
         # connection related settings
         try:
             self._bot_token = kwargs['bot_token']
         except KeyError:
             self._bot_token = TELEGRAM_BOT_TOKEN
-
         try:
             self._chat_id = kwargs['chat_id']
         except KeyError:
             self._chat_id = TELEGRAM_CHAT_ID
+
+
+    async def close(self):
+        self._bot = None
+        self._connected = False
+
+    async def connect(self):
+        info = None
         # creation of bot
         try:
-            self._bot = telegram.Bot(self._bot_token)
+            self._bot = Bot(token=self._bot_token)
+            self._info = await self._bot.get_me()
+            self._logger.debug(f"🤖 Hello, I'm {self._info.first_name}.\nHave a nice Day!")
+            self._connected = True
         except Exception as err:
-            raise notifyException(err)
-
-    def close(self):
-        self._bot = None
-
-    def connect(self):
-        info = None
-        try:
-            info = self._bot.get_me()
-        except Exception as err:
-            raise notifyException(err)
-        if info:
-            return True
-        return False
+            raise notifyException(
+                f"Notify: Error creating Telegram Bot {err}"
+            )
 
     def set_chat(self, chat):
         self._chat_id = chat
@@ -77,58 +89,63 @@ class Telegram(ProviderIMBase):
 
         Logic associated with the construction of notifications
         """
-        if self.connect():
+        # start sending a message:
+        try:
             msg = self._render(to, message, **kwargs)
             self._logger.info('Messsage> {}'.format(msg))
-            if self.parseMode == 'html':
-                mode = telegram.ParseMode.HTML
+        except Exception as err:
+            raise RuntimeError(f'Notify Telegram: Error Parsing Message: {err}')
+        # Parsing Mode:
+        if self.parseMode == 'html':
+            mode = types.ParseMode.HTML
+        else:
+            mode = types.ParseMode.MARKDOWN_V2
+        if 'chat_id' in kwargs:
+            chat_id = self.get_chat(**kwargs)
+        else:
+            if isinstance(to, Chat):
+                chat_id = to.chat_id
+            elif isinstance(to, str):
+                chat_id = to
             else:
-                mode = telegram.ParseMode.MARKDOWN_V2
-            if 'chat_id' in kwargs:
-                chat_id = self.get_chat(**kwargs)
-            else:
-                if isinstance(to, Chat):
-                    chat_id = to.chat_id
-                elif isinstance(to, str):
-                    chat_id = to
-                else:
-                    chat_id = self._chat_id
-            try:
-                args = {
-                    'chat_id': chat_id,
-                    'text': msg,
-                    'parse_mode': mode,
-                    **kwargs
-                }
-                print(args)
-                response = self._bot.send_message(
-                    **args
-                )
-                print(response) # TODO: make the processing of response
-                return response
-            except Unauthorized as err:
-                # remove update.message.chat_id from conversation list
-                print(err)
-            except BadRequest as err:
-                # handle malformed requests - read more below!
-                print(err)
-            except TimedOut as err:
-                # handle slow connection problems
-                print(err)
-            except NetworkError as err:
-                # handle other connection problems
-                print(err)
-            except ChatMigrated as err:
-                # the chat_id of a group has changed, use e.new_chat_id instead
-                print(err)
-            except TelegramError as err:
-                # handle all other telegram related errors
-                print(err)
-            except Exception as err:
-                print(err)
+                chat_id = self._chat_id
+        try:
+            args = {
+                'chat_id': chat_id,
+                'text': msg,
+                'parse_mode': mode,
+                **kwargs
+            }
+            print(args)
+            response = await self._bot.send_message(
+                **args
+            )
+            # TODO: make the processing of response
+            return response
+        except Unauthorized as err:
+            # remove update.message.chat_id from conversation list
+            print(err)
+        except BadRequest as err:
+            # handle malformed requests - read more below!
+            print(err)
+        except NetworkError as err:
+            # handle slow connection problems
+            print(err)
+        except NetworkError as err:
+            # handle other connection problems
+            print(err)
+        except ChatNotFound as err:
+            # the chat_id of a group has changed, use e.new_chat_id instead
+            print(err)
+        except TelegramAPIError as err:
+            # handle all other telegram related errors
+            print(err)
+        except Exception as err:
+            print('ERROR: ', err)
 
 
-    def prepare_photo(self, photo):
+    async def prepare_photo(self, photo):
+        # Migrate to aiofile
         if isinstance(photo, PurePath):
             # is a path, I need to open that image
             img = Image.open(r"{}".format(photo))
@@ -147,64 +164,64 @@ class Telegram(ProviderIMBase):
         else:
             return None
 
-    def send_photo(self, photo, **kwargs):
-        image = self.prepare_photo(photo)
-        print(image)
+    async def send_photo(self, photo, **kwargs):
+        image = await self.prepare_photo(photo)
         if image:
             chat_id = self.get_chat()
             try:
-                self._response = self._bot.send_photo(chat_id, photo=image, **kwargs)
-                #print(self._response) TODO: make the processing of response
+                response = await self._bot.send_photo(
+                    chat_id, photo=image, **kwargs
+                )
+                # print(response) # TODO: make the processing of response
+                return response
             except Unauthorized as err:
                 # remove update.message.chat_id from conversation list
                 print(err)
             except BadRequest as err:
                 # handle malformed requests - read more below!
                 print(err)
-            except TimedOut as err:
+            except NetworkError as err:
                 # handle slow connection problems
                 print(err)
             except NetworkError as err:
                 # handle other connection problems
                 print(err)
-            except ChatMigrated as err:
+            except ChatNotFound as err:
                 # the chat_id of a group has changed, use e.new_chat_id instead
                 print(err)
-            except TelegramError as err:
+            except TelegramAPIError as err:
                 # handle all other telegram related errors
                 print(err)
             except Exception as err:
-                print(err)
+                print('ERROR: ', err)
 
-    def send_document(self, document, **kwargs):
-        #doc = self.prepare_photo(document)
-        #print(doc)
-        #if doc:
+    async def send_document(self, document, **kwargs):
         chat_id = self.get_chat()
         try:
-            self._response = self._bot.send_document(
+            response = await self._bot.send_document(
                 chat_id,
                 document=open(document, 'rb'),
                 **kwargs
             )
-            # print(self._response) TODO: make the processing of response
+            # print(response) # TODO: make the processing of response
+            return response
         except Unauthorized as err:
             # remove update.message.chat_id from conversation list
             print(err)
         except BadRequest as err:
             # handle malformed requests - read more below!
             print(err)
-        except TimedOut as err:
+        except NetworkError as err:
             # handle slow connection problems
             print(err)
         except NetworkError as err:
             # handle other connection problems
             print(err)
-        except ChatMigrated as err:
+        except ChatNotFound as err:
             # the chat_id of a group has changed, use e.new_chat_id instead
             print(err)
-        except TelegramError as err:
+        except TelegramAPIError as err:
             # handle all other telegram related errors
             print(err)
         except Exception as err:
-            print(err)
+            print('ERROR: ', err)

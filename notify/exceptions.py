@@ -3,7 +3,7 @@ class notifyException(Exception):
     code: int = None
     payload: str = None
 
-    def __init__(self, message: str, *args, code: int = None, payload: str = None, **kwargs):
+    def __init__(self, message: str = None, *args, code: int = None, payload: str = None, **kwargs):
         super(notifyException, self).__init__(*args, **kwargs)
         self.args = (
             message,
