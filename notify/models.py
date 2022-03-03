@@ -1,13 +1,10 @@
 import os
 import uuid
-import asyncio
 from datetime import datetime
-from dataclasses import dataclass, asdict, InitVar
+from dataclasses import InitVar
 from typing import Any, Dict, List, Set, Tuple, Optional, get_type_hints, Callable, ClassVar, Union
-from asyncdb.utils.models import Model, Column
-from asyncdb.utils import Msg
-import email
-from email.parser import BytesParser, Parser
+from asyncdb.models import Model, Column
+from email.parser import Parser
 from email.policy import default as policy_default
 from pathlib import Path
 
@@ -22,6 +19,8 @@ CONTENT_TYPES = [
 def auto_uuid(*args, **kwargs):
     return uuid.uuid4()
 
+def now():
+    return datetime.now()
 
 class Account(Model):
     """
@@ -40,7 +39,7 @@ class Actor(Model):
     """
     Basic Actor (meta-definition), can be an Sender or a Recipient
     """
-    userid: uuid.UUID = Column(required=True, primary_key=True, default=auto_uuid())
+    userid: uuid.UUID = Column(required=True, primary_key=True, default=auto_uuid)
     name: str
     account: Union[Account, List[Account]]
 
@@ -51,8 +50,9 @@ class Chat(Model):
     """
     Basic configuration for chat-based notifications
     """
+    chat_name: str = Column(required=False)
     chat_id: str = Column(required=True, primary_key=True)
-    name: str
+
 
 class Message(Model):
     """
@@ -65,6 +65,7 @@ class Message(Model):
     name: str = Column(required=True)
     body: Union[str, dict] = Column(default=None)
     content: str = Column(required=False, default='')
+    sent: datetime = Column(required=False, default=now)
     template: Path
 
     def __model_init__(cls, name, attrs) -> None:
@@ -108,7 +109,7 @@ class MailAttachment(Attachment):
 class MailMessage(BlockMessage):
     """
     MailMessage.
-    Dataclass for representing Email Objects.
+    Dataclass for representing an Email Object.
     """
 
     # TODO: add validation for path-like objects using pathlib

@@ -8,12 +8,13 @@ import os
 import sys
 import logging
 from pathlib import Path
-from navconfig import config, BASE_DIR, DEBUG
+from navconfig import config, BASE_DIR
 
 NOTIFY_DIR = Path(__file__).resolve().parent.parent
 
 # config settings
 NAVCONFIG = config
+DEBUG = config.getboolean('DEBUG', fallback=True)
 
 # OneSignail
 ONESIGNAL_PLAYER_ID = config.get('ONESIGNAL_PLAYER_ID', fallback='')
@@ -21,24 +22,29 @@ ONESIGNAL_OS_APP_ID = config.get('ONESIGNAL_OS_APP_ID', fallback='')
 ONESIGNAL_OS_API_KEY = config.get('ONESIGNAL_OS_API_KEY', fallback='')
 
 # email:
-EMAIL_USERNAME = config.get('EMAIL_USERNAME')
-EMAIL_PASSWORD = config.get('EMAIL_PASSWORD')
-EMAIL_PORT = config.get('EMAIL_PORT', fallback=587)
-EMAIL_HOST = config.get('EMAIL_HOST')
+EMAIL_SMTP_USERNAME = config.get('stmp_host_user')
+EMAIL_SMTP_PASSWORD = config.get('stmp_host_password')
+EMAIL_SMTP_PORT = config.get('smtp_port', fallback=587)
+EMAIL_SMTP_HOST = config.get('stmp_host')
+
+# Sendgrid
+SENDGRID_USER = config.get('SENDGRID_USER')
+SENDGRID_KEY = config.get('SENDGRID_KEY')
 
 # Amazon AWS
-AWS_EMAIL_ACCOUNT = config.get('aws_email_user')
+AWS_EMAIL_USER = config.get('aws_email_user')
 AWS_EMAIL_PASSWORD = config.get('aws_email_password')
-AWS_EMAIL_HOST = config.get('AWS_EMAIL_HOST', fallback='email-smtp.us-east-1.amazonaws.com')
-AWS_EMAIL_PORT = config.get('AWS_EMAIL_PORT', fallback=587)
+AWS_EMAIL_HOST = config.get('aws_email_host', fallback='email-smtp.us-east-1.amazonaws.com')
+AWS_EMAIL_PORT = config.get('aws_email_port', fallback=587)
+AWS_EMAIL_ACCOUNT = config.get('aws_email_account')
 
 # gmail
 GMAIL_USERNAME = config.get('GMAIL_USERNAME')
 GMAIL_PASSWORD = config.get('GMAIL_PASSWORD')
 
 # Telegram credentials
-TELEGRAM_BOT_TOKEN = config.get('TELEGRAM_BOT_TOKEN', fallback='695684954:AAGoV5MQUIvtnsoQtyVCzFoWrvw5C3MNiRk')
-TELEGRAM_CHAT_ID = config.get('TELEGRAM_CHAT_ID', fallback='-1001230942665')
+TELEGRAM_BOT_TOKEN = config.get('TELEGRAM_BOT_TOKEN')
+TELEGRAM_CHAT_ID = config.get('TELEGRAM_CHAT_ID')
 
 # Twilio credentials
 TWILIO_ACCOUNT_SID = config.get('TWILIO_ACCOUNT_SID')
@@ -68,11 +74,17 @@ MEMCACHE_HOST = config.get('MEMCACHE_HOST', fallback='nav-api.dev.local')
 MEMCACHE_PORT = config.get('MEMCACHE_PORT', fallback=11211)
 
 # TEMPLATE SYSTEM
-TEMPLATE_DIR = config.get('TEMPLATE_DIR')
-if not TEMPLATE_DIR:
+template_dir = config.get('TEMPLATE_DIR')
+if not template_dir:
     TEMPLATE_DIR = BASE_DIR.joinpath('templates')
+else:
+    TEMPLATE_DIR = Path(template_dir).resolve()
 
-LOG_LEVEL = logging.INFO
+if DEBUG is True:
+    LOG_LEVEL = logging.DEBUG
+else:
+    LOG_LEVEL = logging.INFO
+
 LOG_DIR = '/var/log/troc'
 
 logging_notify = dict(

@@ -1,32 +1,29 @@
 """
 Google Mail (gmail).
 
-Using gmail library to send Email Messages
+Using gmail library to send Email Messages.
 """
-
-from notify.providers import ProviderEmailBase, EMAIL
+from notify.providers.abstract import ProviderEmail
 from notify.settings import GMAIL_USERNAME, GMAIL_PASSWORD
-from notify.exceptions import notifyException
 from notify.models import Actor
 
 # 3rd party gmail support
 import smtplib
 from gmail import GMail as GMailWorker, Message
 
-class Gmail(ProviderEmailBase):
+class Gmail(ProviderEmail):
     """
     Gmail.
 
-    Gmail-based Email Provider.
-    :param username: Email client username
-    :param password: Email client password
+        Gmail-based Email Provider.
+    Args:
+        :param username: Email client username
+        :param password: Email client password
     """
     provider = 'gmail'
-    provider_type = EMAIL
+    blocking: bool = True
 
-    def __init__(self, username=None, password=None, *args, **kwargs):
-        """
-        """
+    def __init__(self, username: str = None, password: str = None, *args, **kwargs):
         super(Gmail, self).__init__(*args, **kwargs)
 
         # connection related settings
@@ -40,10 +37,10 @@ class Gmail(ProviderEmailBase):
 
         if self.username is None or self.password is None:
             raise RuntimeWarning(
-                'to send emails via {0} you need to configure username & password. \n'
+                'to send emails via **{0}** you need to configure username & password. \n'
                 'Either send them as function argument via key \n'
                 '`username` & `password` or set up env variable \n'
-                'as `GMAIL_USERNAME` & `GMAIL_PASSWORD`.'.format(self.name)
+                'as `GMAIL_USERNAME` & `GMAIL_PASSWORD`.'.format(self.provider)
             )
         self.actor = self.username
 
@@ -61,7 +58,9 @@ class Gmail(ProviderEmailBase):
         Making a connection to Gmail Servers
         """
         try:
-            self._server = GMailWorker(self.username, self.password)
+            self._server = GMailWorker(
+                self.username, self.password
+            )
         except smtplib.SMTPAuthenticationError as err:
             raise Exception('Authentication Error: {}'.format(err))
         except Exception as err:
