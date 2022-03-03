@@ -14,8 +14,9 @@ def get_path(filename):
     return path.join(path.dirname(path.abspath(__file__)), filename)
 
 
-with open(get_path('README.md')) as readme:
-    README = readme.read()
+def readme():
+    with open(get_path('README.md')) as readme:
+        return readme.read()
 
 
 with open(get_path('notify/version.py')) as meta:
@@ -26,14 +27,22 @@ setup(
     version=__version__,
     url='https://github.com/phenobarbital/async-notify',
     description=__description__,
-    long_description='Asynchronous library for send notifications to users, used by Navigator',
+    long_description=readme(),
     python_requires=">=3.8.0",
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'Topic :: Software Development :: Build Tools',
-        'Programming Language :: Python :: 3.8',
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Operating System :: POSIX :: Linux",
+        "Environment :: Web Environment",
+        "License :: OSI Approved :: BSD License",
+        "Topic :: Software Development :: Build Tools",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Communications",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Framework :: AsyncIO",
     ],
+    keywords=['aiogram', 'asyncio', 'aioimaplib', 'aiobotocore'],
     author='Jesus Lara',
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
@@ -48,8 +57,8 @@ setup(
         'wheel==0.37.0',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
-        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@fix-versions#egg=asyncdb',
-        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@new-version#egg=navconfig',
+        'asyncdb==2.0.9',
+        'navconfig==0.7.4',
         'APScheduler==3.7.0',
         'aiosmtplib==1.1.6',
         'emoji==1.6.3',
@@ -79,7 +88,7 @@ setup(
         'git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig'
     ],
     project_urls={  # Optional
-        'Source': 'https://github.com/MobileInsight/navigator-notify',
+        'Source': 'https://github.com/phenobarbital/async-notify',
         'Funding': 'https://paypal.me/phenobarbital',
         'Say Thanks!': 'https://saythanks.io/to/phenobarbital',
     },
