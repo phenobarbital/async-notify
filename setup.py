@@ -46,9 +46,10 @@ setup(
     ],
     install_requires=[
         'wheel==0.37.0',
-        'APScheduler==3.7.0',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
+        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@fix-versions#egg=asyncdb',
+        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@new-version#egg=navconfig',
         'yarl==1.7.2',
         'wrapt==1.11.2',
         'typing_extensions==4.1.1',
@@ -70,8 +71,7 @@ setup(
         'tweepy==4.6.0',
         'slixmpp==1.8.0.1',
         'boto3==1.20.24',
-        'asyncdb @ git+https://github.com/phenobarbital/asyncdb.git@fix-versions#egg=asyncdb',
-        'navconfig @ git+https://github.com/phenobarbital/NavConfig.git@new-version#egg=navconfig',
+        'APScheduler==3.7.0',
     ],
     tests_require=[
             'pytest>=5.4.0',
