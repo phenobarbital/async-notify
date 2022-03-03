@@ -15,11 +15,12 @@ from notify.templates import TemplateParser
 from .notify import PROVIDERS, Notify, LoadProvider
 from notify.providers.abstract import ProviderType
 
+## more information
+__copyright__ = 'Copyright (c) 2020-2022 Jesus Lara'
+__license__ = 'BSD'
 
 # install uvloop and set as default loop for asyncio.
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-uvloop.install()
-
 
 __all__ = [ 'PROVIDERS', 'Notify', 'LoadProvider', 'ProviderType', ]
 TemplateEnv = None
