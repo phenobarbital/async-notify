@@ -76,6 +76,7 @@ setup(
         'slixmpp==1.8.0.1',
         "aiobotocore==2.1.1",
         "botocore==1.23.24",
+        "boto3==1.20.24",
     ],
     tests_require=[
             'pytest>=5.4.0',
