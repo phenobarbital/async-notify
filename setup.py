@@ -58,7 +58,7 @@ setup(
         'wheel==0.37.0',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
-        'asyncdb==2.0.10',
+        'asyncdb==2.0.11',
         'navconfig==0.7.4',
         'APScheduler==3.7.0',
         'aiosmtplib==1.1.6',
@@ -86,10 +86,6 @@ setup(
             'pytest-assume==2.4.2'
     ],
     test_suite='tests',
-    dependency_links=[
-        'git+https://github.com/phenobarbital/asyncdb.git@master#egg=asyncdb',
-        'git+https://github.com/phenobarbital/NavConfig.git@main#egg=navconfig'
-    ],
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/async-notify',
         'Funding': 'https://paypal.me/phenobarbital',
