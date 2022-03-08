@@ -33,12 +33,14 @@ EMAIL = 'email'
 PUSH = 'push'
 IM = 'im'
 
+
 class ProviderType(Enum):
     NOTIFY = 'notify'
     SMS = 'sms'
     EMAIL = 'email'
     PUSH = 'push'
     IM = 'im'
+
 
 class ProviderBase(ABC):
     """ProviderBase.
@@ -149,12 +151,13 @@ class ProviderBase(ABC):
 
     def create_task(self, to, message, **kwargs):
         task = asyncio.create_task(self._send(to, message, **kwargs))
-        task.add_done_callback(_handle_done_tasks)
+        handler = partial(_handle_done_tasks, self._logger)
+        task.add_done_callback()
         fn = partial(self.__sent__, to, message)
         task.add_done_callback(fn)
         return task
 
-    async def send(self, recipient: List[Actor] = [], message:str ='', **kwargs):
+    async def send(self, recipient: List[Actor] = [], message: str = '', **kwargs):
         """
         send.
 
@@ -194,7 +197,7 @@ class ProviderBase(ABC):
                 # create the task:
                 task = self.create_task(to, message, **kwargs)
                 tasks.append(task)
-                i+=1
+                i += 1
             # send tasks to queue processor (producer)
             await self.notify_producer(queue, tasks)
             # wait until the consumer has processed all items
@@ -230,11 +233,11 @@ class ProviderBase(ABC):
             #print(f'{name} has slept for {1:.2f} seconds')
 
     def execute_notify(
-        self,
-        loop: asyncio.AbstractEventLoop,
-        tasks: List[Awaitable],
-        **kwargs
-        ):
+            self,
+            loop: asyncio.AbstractEventLoop,
+            tasks: List[Awaitable],
+            **kwargs
+            ):
         """
         execute_notify.
 
@@ -255,12 +258,12 @@ class ProviderBase(ABC):
             raise Exception(err)
 
     def __sent__(
-        self,
-        recipient: Actor,
-        message: str,
-        task: Awaitable,
-        **kwargs
-        ):
+            self,
+            recipient: Actor,
+            message: str,
+            task: Awaitable,
+            **kwargs
+            ):
         """
         processing the callback for every notification that we sent.
         """
@@ -282,11 +285,11 @@ class ProviderEmailBase(ProviderBase):
     _server = None
 
     async def send(
-        self,
-        recipient: List[Actor] = [],
-        message: str ='',
-        **kwargs
-        ):
+            self,
+            recipient: List[Actor] = [],
+            message: str = '',
+            **kwargs
+            ):
         result = None
         # making the connection to the service:
         try:
@@ -303,6 +306,7 @@ class ProviderEmailBase(ProviderBase):
         except Exception as err:
             raise RuntimeError(err)
         return result
+
 
 class ProviderMessageBase(ProviderBase):
     """ProviderMessageBase.
