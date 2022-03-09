@@ -10,8 +10,9 @@ from typing import Any, Callable, List, Dict, Optional, Union, Awaitable
 
 
 def dummy_sent(recipient: Actor, message: Union[str, Any], result: Any, task: Any, *args, **kwargs):
-    logging.debug(f'Message Sent! {recipient}')
+    logging.debug(f'Message Sent! {recipient!s}')
     Msg(message)
+
 
 class Dummy(ProviderBase):
     """

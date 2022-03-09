@@ -44,11 +44,11 @@ dictConfig(logging_notify)
 
 
 class ProviderType(Enum):
-    NOTIFY = 'notify' # generic notification
-    SMS = 'sms' # SMS messages
-    EMAIL = 'email' # email (smtp) notifications
-    PUSH = 'push' # push notifications
-    IM = 'im' # instant messaging
+    NOTIFY = 'notify'  # generic notification
+    SMS = 'sms'  # SMS messages
+    EMAIL = 'email'  # email (smtp) notifications
+    PUSH = 'push'  # push notifications
+    IM = 'im'  # instant messaging
 
 
 class ProviderBase(ABC, metaclass=ABCMeta):
@@ -92,7 +92,7 @@ class ProviderBase(ABC, metaclass=ABCMeta):
             del kwargs['debug']
         else:
             self._debug = DEBUG
-            
+
     """
     Async Context magic Methods
     """
@@ -102,7 +102,7 @@ class ProviderBase(ABC, metaclass=ABCMeta):
         else:
             self.connect()
         return self
-    
+
     def __enter__(self) -> "ProviderBase":
         self.connect()
         return self
@@ -116,7 +116,7 @@ class ProviderBase(ABC, metaclass=ABCMeta):
                 self.close()
         except Exception as err:
             logging.error(err)
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         try:
             self.close()
@@ -192,7 +192,8 @@ class ProviderBase(ABC, metaclass=ABCMeta):
 
     def create_task(self, to, message, **kwargs):
         task = asyncio.create_task(self._send(to, message, **kwargs))
-        task.add_done_callback(_handle_done_tasks)
+        handler = partial(_handle_done_tasks, self._logger)
+        task.add_done_callback(handler)
         fn = partial(self.__sent__, to, message)
         task.add_done_callback(fn)
         return task
@@ -240,7 +241,7 @@ class ProviderBase(ABC, metaclass=ABCMeta):
                 # create the task:
                 task = self.create_task(to, message, **kwargs)
                 tasks.append(task)
-                i+=1
+                i += 1
             # send tasks to queue processor (producer)
             await self.notify_producer(queue, tasks)
             # wait until the consumer has processed all items
@@ -275,11 +276,11 @@ class ProviderBase(ABC, metaclass=ABCMeta):
             #print(f'{name} has slept for {1:.2f} seconds')
 
     def execute_notify(
-        self,
-        loop: asyncio.AbstractEventLoop,
-        tasks: List[Awaitable],
-        **kwargs
-        ):
+            self,
+            loop: asyncio.AbstractEventLoop,
+            tasks: List[Awaitable],
+            **kwargs
+            ):
         """
         execute_notify.
 
@@ -300,12 +301,12 @@ class ProviderBase(ABC, metaclass=ABCMeta):
             raise Exception(err)
 
     def __sent__(
-            self,
-            recipient: Actor,
-            message: str,
-            task: Awaitable,
-            **kwargs
-        ):
+                self,
+                recipient: Actor,
+                message: str,
+                task: Awaitable,
+                **kwargs
+            ):
         """
         processing the callback for every notification that we sent.
         """
@@ -328,11 +329,11 @@ class ProviderEmail(ProviderBase):
 
     provider_type = ProviderType.EMAIL
     _server: Callable = None
-    
+
     def __init__(self, *args, **kwargs):
         self._name = self.__class__.__name__
         super(ProviderEmail, self).__init__(*args, **kwargs)
-    
+
     @property
     def user(self):
         return self.username
@@ -408,7 +409,7 @@ class ProviderEmail(ProviderBase):
             text = content
             html = None
         if html:
-            message.add_header('Content-Type','text/html')
+            message.add_header('Content-Type', 'text/html')
             #message.add_header('Content-Type: multipart/mixed')
             #message.add_header('Content-Transfer-Encoding: base64')
             message.attach(MIMEText(html, 'html'))
@@ -446,7 +447,7 @@ class ProviderEmail(ProviderBase):
             msg = self._template.render(**self._templateargs)
         else:
             msg = content
-        message.add_header('Content-Type','text/html')
+        message.add_header('Content-Type', 'text/html')
         #message.add_header('Content-Type', 'multipart/mixed')
         #message.add_header('Content-Transfer-Encoding', 'base64')
         message.attach(MIMEText(msg, 'html'))
@@ -502,11 +503,11 @@ class ProviderEmail(ProviderBase):
             raise RuntimeError(f'{self._name} Error: got {e.__class__}, {e}')
 
     async def send(
-            self,
-            recipient: List[Actor] = [],
-            message: Union[str, Any] = None,
-            **kwargs
-        ):
+                self,
+                recipient: List[Actor] = [],
+                message: Union[str, Any] = None,
+                **kwargs
+            ):
         result = None
         # making the connection to the service:
         try:
@@ -522,6 +523,7 @@ class ProviderEmail(ProviderBase):
         except Exception as err:
             raise RuntimeError(err)
         return result
+
 
 class ProviderMessaging(ProviderBase):
     """ProviderMessaging.
@@ -540,7 +542,8 @@ class ProviderIM(ProviderBase):
     """
     provider_type = ProviderType.IM
     _response = None
-    
+
+
 class ProviderPush(ProviderBase):
     """ProviderPush.
 
