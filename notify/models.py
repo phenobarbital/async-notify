@@ -44,7 +44,7 @@ class Actor(Model):
     account: Union[Account, List[Account]]
     
     def __str__(self) -> str:
-        return f'<{self.name}: self.userid>'
+        return f'<{self.name}: {self.userid}>'
 
 Recipient = Actor
 Sender = Actor
