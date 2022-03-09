@@ -42,6 +42,9 @@ class Actor(Model):
     userid: uuid.UUID = Column(required=True, primary_key=True, default=auto_uuid)
     name: str
     account: Union[Account, List[Account]]
+    
+    def __str__(self) -> str:
+        return f'<{self.name}: self.userid>'
 
 Recipient = Actor
 Sender = Actor

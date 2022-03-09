@@ -72,7 +72,7 @@ class Msg(object):
             coloring = colors.bold + colors.fg.red
         else:
             coloring = colors.reset
-        print(coloring + message, colors.reset)
+        print(coloring + str(message), colors.reset)
 
     def __call__(self, message: str = "", level: str = "INFO", *args, **kwargs):
         if level == "INFO" or level == "info":
@@ -87,4 +87,4 @@ class Msg(object):
             coloring = colors.bold + colors.fg.red
         else:
             coloring = colors.reset
-        print(coloring + message, colors.reset)
+        print(coloring + str(message), colors.reset)
