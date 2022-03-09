@@ -58,7 +58,7 @@ setup(
         'wheel==0.37.0',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
-        'asyncdb==2.0.12',
+        'asyncdb==2.0.14',
         'navconfig==0.7.6',
         'APScheduler==3.7.0',
         'aiosmtplib==1.1.6',

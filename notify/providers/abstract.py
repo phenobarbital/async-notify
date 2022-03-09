@@ -215,7 +215,7 @@ class ProviderBase(ABC, metaclass=ABCMeta):
         if self.blocking is True:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            loop.set_exception_handler(default_exception_handler)
+            # loop.set_exception_handler(default_exception_handler)
             tasks = []
             for to in rcpt:
                 task = self.create_task(to, message, **kwargs)
