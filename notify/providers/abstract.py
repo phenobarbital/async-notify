@@ -192,8 +192,8 @@ class ProviderBase(ABC, metaclass=ABCMeta):
 
     def create_task(self, to, message, **kwargs):
         task = asyncio.create_task(self._send(to, message, **kwargs))
-        handler = partial(_handle_done_tasks, self._logger)
-        task.add_done_callback(handler)
+        # handler = partial(_handle_done_tasks, self._logger)
+        # task.add_done_callback(handler)
         fn = partial(self.__sent__, to, message)
         task.add_done_callback(fn)
         return task
