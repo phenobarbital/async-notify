@@ -300,20 +300,23 @@ class ProviderBase(ABC, metaclass=ABCMeta):
             raise Exception(err)
 
     def __sent__(
-        self,
-        recipient: Actor,
-        message: str,
-        task: Awaitable,
-        **kwargs
+            self,
+            recipient: Actor,
+            message: str,
+            task: Awaitable,
+            **kwargs
         ):
         """
         processing the callback for every notification that we sent.
         """
-        result = task.result()
         if callable(self.sent):
-            # logging:
-            self._logger.debug('Notification sent to> {}'.format(recipient))
-            self.sent(recipient, message, result, task)
+            try:
+                result = task.result()
+                # logging:
+                self._logger.debug('Notification sent to> {}'.format(recipient))
+                self.sent(recipient, message, result, task)
+            except Exception as err:
+                self._logger.exception(f'Notify: *Sent* Function fail with error {err}')
 
 
 class ProviderEmail(ProviderBase):

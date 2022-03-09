@@ -9,10 +9,9 @@ from notify.models import Actor
 from typing import Any, Callable, List, Dict, Optional, Union, Awaitable
 
 
-def dummy_sent(recipient: Actor, message: Union[str, Any], result: Any, task: Any):
+def dummy_sent(recipient: Actor, message: Union[str, Any], result: Any, task: Any, *args, **kwargs):
     logging.debug(f'Message Sent! {recipient}')
     Msg(message)
-
 
 class Dummy(ProviderBase):
     """
