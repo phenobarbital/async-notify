@@ -46,7 +46,7 @@ setup(
     keywords=['aiogram', 'asyncio', 'aioimaplib', 'aiobotocore'],
     author='Jesus Lara',
     author_email='jesuslara@phenobarbital.info',
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
     setup_requires=[
         "wheel==0.37.0",
         "asyncio==3.4.3",
@@ -60,7 +60,7 @@ setup(
         'uvloop==0.16.0',
         'asyncdb',
         'navconfig',
-        'APScheduler==3.7.0',
+        'APScheduler==3.9.1',
         'aiosmtplib==1.1.6',
         'emoji==1.6.3',
         'aiogram==2.19',
