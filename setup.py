@@ -60,7 +60,7 @@ setup(
         'uvloop==0.16.0',
         'asyncdb',
         'navconfig',
-        'APScheduler==3.7.0',
+        'APscheduler==3.9.1',
         'aiosmtplib==1.1.6',
         'emoji==1.6.3',
         'aiogram==2.19',
