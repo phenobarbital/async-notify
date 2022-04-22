@@ -51,7 +51,6 @@ setup(
         "wheel==0.37.0",
         "asyncio==3.4.3",
         "Cython==0.29.28",
-        "cryptography==3.4.7",
         "cpython==0.0.6"
     ],
     install_requires=[
