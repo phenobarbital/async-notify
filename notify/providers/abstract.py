@@ -332,6 +332,8 @@ class ProviderEmail(ProviderBase):
 
     def __init__(self, *args, **kwargs):
         self._name = self.__class__.__name__
+        self._host: str = None
+        self._port: int = None
         super(ProviderEmail, self).__init__(*args, **kwargs)
 
     @property

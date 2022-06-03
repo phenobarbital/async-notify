@@ -3,12 +3,19 @@ from notify.providers.aws_email import Aws_email
 from notify.models import Actor
 from notify.utils import Msg
 from notify import Notify
+from navconfig import config
+
 
 from notify.providers.email import Email
 import asyncio
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
+
+stmp_host_user=config.get('stmp_host_user')
+stmp_host_password=config.get('stmp_host_password')
+stmp_host=config.get('stmp_host')
+stmp_port=config.get('stmp_port')
 
 user = {
     "name": "Jesus Lara",
@@ -31,10 +38,10 @@ jesus = Actor(**user)
 # Msg('=== Test EMAIL with Another Account === ')
 
 account = {
-    "hostname": 'smtp.sendgrid.net',
-    "port": 587,
-    "password": '',
-    "username": 'apikey'
+    "hostname": stmp_host,
+    "port": stmp_port,
+    "password": stmp_host_password,
+    "username": stmp_host_user
 }
 
 e = Notify('email', **account)
