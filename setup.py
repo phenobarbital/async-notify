@@ -73,9 +73,10 @@ setup(
         'twilio==7.7.0',
         'tweepy==4.6.0',
         'slixmpp==1.8.0.1',
-        "aiobotocore==2.1.1",
-        "botocore==1.23.24",
-        "boto3==1.20.24",
+        "botocore==1.24.21",
+        "boto3==1.21.21",
+        "aioboto3==9.6.0",
+        "aiobotocore==2.3.0"
     ],
     tests_require=[
             'pytest>=5.4.0',
