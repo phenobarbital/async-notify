@@ -60,7 +60,7 @@ setup(
         'navconfig',
         'APScheduler==3.9.1',
         'aiosmtplib==1.1.6',
-        'emoji==1.6.3',
+        'emoji==2.0.0',
         'aiogram==2.19',
         'pillow==9.0.1',
         'gmail==0.6.3',
