@@ -73,7 +73,7 @@ setup(
         'tweepy==4.6.0',
         'slixmpp==1.8.0.1',
         "botocore==1.24.21",
-        "boto3==1.21.21",
+        "boto3==1.24.44",
         "aioboto3==9.6.0",
         "aiobotocore==2.3.0",
     ],
