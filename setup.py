@@ -70,7 +70,7 @@ setup(
         'PySocks==1.7.1',
         'pyshorteners==1.0.1',
         'twilio==7.7.0',
-        'tweepy==4.6.0',
+        'tweepy==4.10.0',
         'slixmpp==1.8.0.1',
         "botocore==1.24.21",
         "boto3==1.21.21",
