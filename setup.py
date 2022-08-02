@@ -71,7 +71,7 @@ setup(
         'pyshorteners==1.0.1',
         'twilio==7.7.0',
         'tweepy==4.6.0',
-        'slixmpp==1.8.0.1',
+        'slixmpp==1.8.2',
         "botocore==1.24.21",
         "boto3==1.21.21",
         "aioboto3==9.6.0",
