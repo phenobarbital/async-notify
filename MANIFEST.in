@@ -1,0 +1,10 @@
+
+include LICENSE
+include CHANGES.rst
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
+include README.md
+include Makefile
+graft notify
+global-exclude *.pyc
+prune docs/_build
