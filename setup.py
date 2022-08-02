@@ -54,6 +54,7 @@ setup(
         "cpython==0.0.6"
     ],
     install_requires=[
+        "wheel==0.37.1",
         'asyncio==3.4.3',
         'uvloop==0.16.0',
         'asyncdb',
@@ -62,7 +63,7 @@ setup(
         'aiosmtplib==1.1.6',
         'emoji==2.0.0',
         'aiogram==2.21',
-        'pillow==9.0.1',
+        'pillow==9.2.0',
         'gmail==0.6.3',
         'google-auth>=2.6.0',
         'google-auth-httplib2>=0.1.0',
@@ -72,17 +73,16 @@ setup(
         'twilio==7.12.0',
         'tweepy==4.10.0',
         'slixmpp==1.8.2',
-        "botocore==1.27.44",
-        "boto3==1.24.44",
-        "aioboto3==9.6.0",
+        "botocore==1.24.21",
+        "boto3==1.21.21",
         "aiobotocore==2.3.4",
     ],
     tests_require=[
             'pytest>=5.4.0',
             'coverage',
-            'pytest-asyncio==0.14.0',
-            'pytest-xdist==2.1.0',
-            'pytest-assume==2.4.2'
+            'pytest-asyncio',
+            'pytest-xdist',
+            'pytest-assume'
     ],
     test_suite='tests',
     project_urls={  # Optional
