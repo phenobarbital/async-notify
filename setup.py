@@ -48,13 +48,12 @@ setup(
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
     setup_requires=[
-        "wheel==0.37.0",
+        "wheel==0.37.1",
         "asyncio==3.4.3",
         "Cython==0.29.28",
         "cpython==0.0.6"
     ],
     install_requires=[
-        'wheel==0.37.0',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
         'asyncdb',
@@ -76,7 +75,7 @@ setup(
         "botocore==1.24.21",
         "boto3==1.21.21",
         "aioboto3==9.6.0",
-        "aiobotocore==2.3.0"
+        "aiobotocore==2.3.0",
     ],
     tests_require=[
             'pytest>=5.4.0',

@@ -3,6 +3,14 @@ ChangeLog
 
 .. _v0.5.0:
 
+0.5.24 (2022-08-02)
+------------------
+
+*New Version:*
+
+    - Fix dependencies from asyncdb and NavConfig
+    - Security fixes
+
 0.5.0 (2022-03-02)
 ------------------
 
