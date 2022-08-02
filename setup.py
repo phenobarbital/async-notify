@@ -50,7 +50,7 @@ setup(
     setup_requires=[
         "wheel==0.37.1",
         "asyncio==3.4.3",
-        "Cython==0.29.28",
+        "Cython==0.29.32",
         "cpython==0.0.6"
     ],
     install_requires=[
@@ -60,8 +60,8 @@ setup(
         'navconfig',
         'APScheduler==3.9.1',
         'aiosmtplib==1.1.6',
-        'emoji==1.6.3',
-        'aiogram==2.19',
+        'emoji==2.0.0',
+        'aiogram==2.21',
         'pillow==9.0.1',
         'gmail==0.6.3',
         'google-auth>=2.6.0',
@@ -70,12 +70,12 @@ setup(
         'PySocks==1.7.1',
         'pyshorteners==1.0.1',
         'twilio==7.12.0',
-        'tweepy==4.6.0',
-        'slixmpp==1.8.0.1',
-        "botocore==1.24.21",
-        "boto3==1.21.21",
+        'tweepy==4.10.0',
+        'slixmpp==1.8.2',
+        "botocore==1.27.44",
+        "boto3==1.24.44",
         "aioboto3==9.6.0",
-        "aiobotocore==2.3.0",
+        "aiobotocore==2.3.4",
     ],
     tests_require=[
             'pytest>=5.4.0',
