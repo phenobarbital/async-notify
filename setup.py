@@ -61,7 +61,7 @@ setup(
         'APScheduler==3.9.1',
         'aiosmtplib==1.1.6',
         'emoji==1.6.3',
-        'aiogram==2.19',
+        'aiogram==2.21',
         'pillow==9.0.1',
         'gmail==0.6.3',
         'google-auth>=2.6.0',
