@@ -54,7 +54,7 @@ setup(
         "cpython==0.0.6"
     ],
     install_requires=[
-        "wheel==0.37.1",
+        'wheel==0.37.1',
         'asyncio==3.4.3',
         'uvloop==0.16.0',
         'asyncdb',
