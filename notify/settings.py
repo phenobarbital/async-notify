@@ -34,7 +34,9 @@ SENDGRID_KEY = config.get('SENDGRID_KEY')
 # Amazon AWS
 AWS_EMAIL_USER = config.get('aws_email_user')
 AWS_EMAIL_PASSWORD = config.get('aws_email_password')
-AWS_EMAIL_HOST = config.get('aws_email_host', fallback='email-smtp.us-east-1.amazonaws.com')
+AWS_EMAIL_HOST = config.get(
+    'aws_email_host', fallback='email-smtp.us-east-1.amazonaws.com'
+)
 AWS_EMAIL_PORT = config.get('aws_email_port', fallback=587)
 AWS_EMAIL_ACCOUNT = config.get('aws_email_account')
 
@@ -54,6 +56,9 @@ TWILIO_PHONE = config.get('TWILIO_PHONE')
 # Office 365
 O365_CLIENT_ID = config.get('O365_CLIENT_ID')
 O365_CLIENT_SECRET = config.get('O365_CLIENT_SECRET')
+O365_TENANT_ID = config.get('O365_TENANT_ID')
+O365_USER = config.get('O365_USER')
+O365_PASSWORD = config.get('O365_PASSWORD')
 
 # Facebook Messenger
 FB_USER = config.get('FB_USER')
@@ -93,11 +98,9 @@ logging_notify = dict(
         "console": {
             'format': '%(message)s'
         },
-        "file": {
-            "format": "%(asctime)s: [%(levelname)s]: %(pathname)s: %(lineno)d: \n%(message)s\n"
-        },
         'default': {
-            'format': '[%(levelname)s] %(asctime)s %(name)s: %(message)s'}
+            'format': '[%(levelname)s] %(asctime)s %(name)s|%(lineno)d :: %(message)s'
+        }
         },
     handlers={
         "console": {
@@ -110,18 +113,10 @@ logging_notify = dict(
                 'class': 'logging.StreamHandler',
                 'formatter': 'default',
                 'level': LOG_LEVEL
-        },
-        'RotatingFileHandler': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': '{0}/{1}.log'.format(LOG_DIR, 'notifications'),
-                'maxBytes': (1048576*5),
-                'backupCount': 2,
-                'encoding': 'utf-8',
-                'formatter': 'file',
-                'level': LOG_LEVEL}
+        }
         },
     root={
-        'handlers': ['StreamHandler', 'RotatingFileHandler'],
+        'handlers': ['StreamHandler'],
         'level': LOG_LEVEL,
         },
 )

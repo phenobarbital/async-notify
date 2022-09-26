@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from notify.settings import MEMCACHE_HOST, MEMCACHE_PORT
 from asyncdb.providers.mcache import mcache
@@ -6,14 +5,13 @@ from typing import (
     Dict,
     Optional
 )
-
+from navconfig.logging import logging
 from jinja2 import (
     Environment,
     FileSystemLoader,
     MemcachedBytecodeCache
 )
 
-# TODO: implementing a bytecode-cache on redis or memcached
 jinja_config = {
     'autoescape': True,
     'enable_async': False,
@@ -38,13 +36,13 @@ class TemplateParser(object):
             self.cache.connection()
         except Exception as err:
             logging.error(
-                'Notify: Error Connecting to Memcached'
+                f'Notify: Error Connecting to Memcached: {err}'
             )
             self.cache = None
         self.path = directory.resolve()
         if not self.path.exists():
             raise RuntimeError(
-                'Notify: template directory {} does not exist'.format(directory)
+                f'Notify: template directory {directory} does not exist'
             )
         if 'config' in kwargs:
             self.config = {**jinja_config, **kwargs['config']}
@@ -70,8 +68,8 @@ class TemplateParser(object):
             self.env.compile_templates(target=compiled_path, zip='deflated')
         except Exception as err:
             raise RuntimeError(
-                'Notify: Error loading Template Environment: {}'.format(err)
-            )
+                f'Notify: Error loading Template Environment: {err}'
+            ) from err
 
     def get_template(self, filename: str):
         self.template = self.env.get_template(str(filename))
@@ -81,17 +79,16 @@ class TemplateParser(object):
     def environment(self):
         return self.env
 
-    def render(self, filename: str, params: Optional[Dict] = {}) -> str:
+    def render(self, filename: str, params: Optional[Dict] = None) -> str:
+        if not params:
+            params = {}
         result = None
         try:
             self.template = self.env.get_template(str(filename))
             result = self.template.render(**params)
         except Exception as err:
             raise RuntimeError(
-            'Notify: Error rendering template: {}, error: {}'.format(
-                filename,
-                err
-                )
-            )
+                f'Notify: Error rendering template: {filename}, error: {err}'
+            ) from err
         finally:
             return result
