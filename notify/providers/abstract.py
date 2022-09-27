@@ -14,7 +14,7 @@ from typing import (
 )
 from collections.abc import Awaitable, Callable
 from navconfig.logging import logging
-from notify.utils import SafeDict
+from notify.utils import SafeDict, cPrint
 from notify.exceptions import ProviderError
 from notify.models import Actor
 from notify.settings import NAVCONFIG, DEBUG
@@ -144,7 +144,7 @@ class ProviderBase(ABC):
 
     async def _prepare_(
             self,
-            recipient: Actor,
+            recipient: Actor = None,
             message: Union[str, Any] = None,
             template: str = None,
             **kwargs
@@ -180,6 +180,7 @@ class ProviderBase(ABC):
 
         Returns the parseable version of Message template.
         """
+        cPrint(f'RECEIVED {to}, message {message}')
         msg = message
         if self._template:
             self._templateargs = {
@@ -212,14 +213,17 @@ class ProviderBase(ABC):
         public method to send messages and notifications
         """
         # template (or message) for preparation
-        msg = await self._prepare_(recipient, message, **kwargs)
-
+        msg = await self._prepare_(
+            recipient=recipient,
+            message=message,
+            **kwargs
+        )
         rcpt = []
         results = None
         if isinstance(recipient, list):
             rcpt = recipient
         else:
-            rcpt.extend(recipient)
+            rcpt.append(recipient)
         # TODO: non-blocking code
         if self.blocking is True:
             loop = asyncio.new_event_loop()

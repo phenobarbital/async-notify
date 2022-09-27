@@ -1,32 +1,36 @@
 import logging
 from io import BytesIO
+from pathlib import PurePath
+from typing import (
+    Union,
+    Any
+)
 from PIL import Image
-from pathlib import Path, PurePath
-from typing import List, Union
-from notify.providers.abstract import ProviderIM, ProviderType
-
 # telegram
-from aiogram import Bot, types, executor, types
-from aiogram.dispatcher import Dispatcher
-from aiogram.dispatcher.webhook import SendMessage
+from aiogram import Bot, types
+# from aiogram.dispatcher import Dispatcher
+# from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.exceptions import (
     TelegramAPIError,
+    # BotBlocked,
     BadRequest,
     MessageError,
-    NotFound,
     Unauthorized,
     NetworkError,
     ChatNotFound
 )
-from aiogram.utils.emoji import emojize
-from aiogram.utils.markdown import bold, code, italic, text
-
+import aiofiles
+# from aiogram.utils.emoji import emojize
+# from aiogram.utils.markdown import bold, code, italic, text
 # TODO: web-hooks
 # from aiogram.utils.executor import start_webhook
-from notify.settings import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 from notify.models import Actor, Chat
 from notify.exceptions import notifyException
+from notify.providers.abstract import ProviderIM, ProviderType
+from .settings import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
+aiogram_logger = logging.getLogger('aiogram')
+aiogram_logger.setLevel(logging.WARNING)
 
 class Telegram(ProviderIM):
     provider: str = 'telegram'
@@ -35,6 +39,11 @@ class Telegram(ProviderIM):
     parseMode: str = 'html'  # can be MARKDOWN_V2 or HTML
 
     def __init__(self, *args, **kwargs):
+        try:
+            self.parseMode = kwargs['parse_mode']
+            del kwargs['parse_mode']
+        except KeyError:
+            self.parseMode = 'html'
         self._bot = None
         self._info = None
         self._bot_token = None
@@ -56,18 +65,19 @@ class Telegram(ProviderIM):
         self._bot = None
         self._connected = False
 
-    async def connect(self):
-        info = None
+    async def connect(self, *args, **kwargs):
         # creation of bot
         try:
             self._bot = Bot(token=self._bot_token)
             self._info = await self._bot.get_me()
-            self._logger.debug(f"🤖 Hello, I'm {self._info.first_name}.\nHave a nice Day!")
+            self._logger.debug(
+                f"🤖 Hello, I'm {self._info.first_name}.\nHave a nice Day!"
+            )
             self._connected = True
         except Exception as err:
             raise notifyException(
                 f"Notify: Error creating Telegram Bot {err}"
-            )
+            ) from err
 
     def set_chat(self, chat):
         self._chat_id = chat
@@ -83,18 +93,26 @@ class Telegram(ProviderIM):
             self._chat_id = TELEGRAM_CHAT_ID
         return self._chat_id
 
-    async def _send(self, to: Union[str, Actor, Chat], message: str, **kwargs):
+    async def _send_(
+            self,
+            to: Union[str, Actor, Chat],
+            message: Any = None,
+            subject: str = None,
+            **kwargs
+        ): # pylint: disable=W0221
         """
-        _send.
+        _send_.
 
         Logic associated with the construction of notifications
         """
         # start sending a message:
         try:
-            msg = self._render(to, message, **kwargs)
-            self._logger.info('Messsage> {}'.format(msg))
+            msg = await self._render_(to, message, subject=subject, **kwargs)
+            self._logger.info(f'Messsage> {msg}')
         except Exception as err:
-            raise RuntimeError(f'Notify Telegram: Error Parsing Message: {err}')
+            raise RuntimeError(
+                f'Notify Telegram: Error Parsing Message: {err}'
+            ) from err
         # Parsing Mode:
         if self.parseMode == 'html':
             mode = types.ParseMode.HTML
@@ -125,17 +143,14 @@ class Telegram(ProviderIM):
         except Unauthorized as err:
             # remove update.message.chat_id from conversation list
             print(err)
+        except ChatNotFound as err:
+            # the chat_id of a group has changed, use e.new_chat_id instead
+            print(err)
         except BadRequest as err:
             # handle malformed requests - read more below!
             print(err)
         except NetworkError as err:
             # handle slow connection problems
-            print(err)
-        except NetworkError as err:
-            # handle other connection problems
-            print(err)
-        except ChatNotFound as err:
-            # the chat_id of a group has changed, use e.new_chat_id instead
             print(err)
         except TelegramAPIError as err:
             # handle all other telegram related errors
@@ -177,17 +192,14 @@ class Telegram(ProviderIM):
             except Unauthorized as err:
                 # remove update.message.chat_id from conversation list
                 print(err)
+            except ChatNotFound as err:
+                # the chat_id of a group has changed, use e.new_chat_id instead
+                print(err)
             except BadRequest as err:
                 # handle malformed requests - read more below!
                 print(err)
             except NetworkError as err:
                 # handle slow connection problems
-                print(err)
-            except NetworkError as err:
-                # handle other connection problems
-                print(err)
-            except ChatNotFound as err:
-                # the chat_id of a group has changed, use e.new_chat_id instead
                 print(err)
             except TelegramAPIError as err:
                 # handle all other telegram related errors
@@ -195,12 +207,27 @@ class Telegram(ProviderIM):
             except Exception as err:
                 print('ERROR: ', err)
 
+    async def get_document(self, doc: Union[str, PurePath, Any]) -> Any:
+        if isinstance(doc, PurePath): # Path to a File:
+            if doc.exists():
+                async with aiofiles.open(doc, 'rb') as f:
+                    content = await f.read()
+                return content
+            else:
+                raise FileNotFoundError(
+                    f"Telegram Bot: file {doc} doesn't exists."
+                )
+        else:
+            # TODO: check if URL or get file_id
+            return doc
+
     async def send_document(self, document, **kwargs):
         chat_id = self.get_chat()
+        doc = await self.get_document(document)
         try:
             response = await self._bot.send_document(
                 chat_id,
-                document=open(document, 'rb'),
+                document=doc,
                 **kwargs
             )
             # print(response) # TODO: make the processing of response
@@ -208,17 +235,138 @@ class Telegram(ProviderIM):
         except Unauthorized as err:
             # remove update.message.chat_id from conversation list
             print(err)
+        except MessageError as err:
+            print(err)
+        except ChatNotFound as err:
+            # the chat_id of a group has changed, use e.new_chat_id instead
+            print(err)
         except BadRequest as err:
             # handle malformed requests - read more below!
             print(err)
         except NetworkError as err:
             # handle slow connection problems
             print(err)
-        except NetworkError as err:
-            # handle other connection problems
+        except TelegramAPIError as err:
+            # handle all other telegram related errors
+            print(err)
+        except Exception as err:
+            print('ERROR: ', err)
+
+    async def get_sticker(self, sticker_id):
+        if isinstance(sticker_id, dict): # getting from an sticker_set
+            name = sticker_id['set']
+            emoji = sticker_id['emoji']
+            try:
+                sticker_set = await self._bot.get_sticker_set(name)
+                st = [x for x in sticker_set['stickers'] if x['emoji'] == emoji]
+                sticker = st[0].file_id
+                return sticker
+            except Exception as err:
+                self._logger.warning(f'Sticker finder error: {err}')
+                return None
+        else:
+            return 'CAACAgEAAxkBAAIuOWMze9CZzg6cQaEulHqjrcRCvBh2AAK_AgACJjFuAVdTX0Nu_LoxKgQ'
+
+    async def send_sticker(self, sticker: Union[str, Any], **kwargs):
+        chat_id = self.get_chat()
+        sticker = await self.get_sticker(sticker)
+        try:
+            response = await self._bot.send_sticker(
+                chat_id,
+                sticker=sticker,
+                **kwargs
+            )
+            # print(response) # TODO: make the processing of response
+            return response
+        except Unauthorized as err:
+            # remove update.message.chat_id from conversation list
+            print(err)
+        except MessageError as err:
             print(err)
         except ChatNotFound as err:
             # the chat_id of a group has changed, use e.new_chat_id instead
+            print(err)
+        except BadRequest as err:
+            # handle malformed requests - read more below!
+            print(err)
+        except NetworkError as err:
+            # handle slow connection problems
+            print(err)
+        except TelegramAPIError as err:
+            # handle all other telegram related errors
+            print(err)
+        except Exception as err:
+            print('ERROR: ', err)
+
+    async def get_media(self, media: Union[str, PurePath, Any]) -> Any:
+        if isinstance(media, PurePath): # Path to a File:
+            if media.exists():
+                async with aiofiles.open(media, 'rb') as f:
+                    content = await f.read()
+                return content
+            else:
+                raise FileNotFoundError(
+                    f"Telegram Bot: file {media} doesn't exists."
+                )
+        else:
+            # TODO: check if URL or get file_id
+            return media
+
+    async def send_video(self, video: Union[str, Any], **kwargs):
+        chat_id = self.get_chat()
+        media = await self.get_media(video)
+        try:
+            response = await self._bot.send_video(
+                chat_id,
+                video=media,
+                **kwargs
+            )
+            # print(response) # TODO: make the processing of response
+            return response
+        except Unauthorized as err:
+            # remove update.message.chat_id from conversation list
+            print(err)
+        except MessageError as err:
+            print(err)
+        except ChatNotFound as err:
+            # the chat_id of a group has changed, use e.new_chat_id instead
+            print(err)
+        except BadRequest as err:
+            # handle malformed requests - read more below!
+            print(err)
+        except NetworkError as err:
+            # handle slow connection problems
+            print(err)
+        except TelegramAPIError as err:
+            # handle all other telegram related errors
+            print(err)
+        except Exception as err:
+            print('ERROR: ', err)
+
+    async def send_audio(self, audio: Union[str, PurePath, Any], **kwargs):
+        chat_id = self.get_chat()
+        sound = await self.get_media(audio)
+        try:
+            response = await self._bot.send_audio(
+                chat_id,
+                audio=sound,
+                **kwargs
+            )
+            # print(response) # TODO: make the processing of response
+            return response
+        except Unauthorized as err:
+            # remove update.message.chat_id from conversation list
+            print(err)
+        except MessageError as err:
+            print(err)
+        except ChatNotFound as err:
+            # the chat_id of a group has changed, use e.new_chat_id instead
+            print(err)
+        except BadRequest as err:
+            # handle malformed requests - read more below!
+            print(err)
+        except NetworkError as err:
+            # handle slow connection problems
             print(err)
         except TelegramAPIError as err:
             # handle all other telegram related errors

@@ -35,10 +35,6 @@ AWS_EMAIL_ACCOUNT = config.get('aws_email_account')
 GMAIL_USERNAME = config.get('GMAIL_USERNAME')
 GMAIL_PASSWORD = config.get('GMAIL_PASSWORD')
 
-# Telegram credentials
-TELEGRAM_BOT_TOKEN = config.get('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID = config.get('TELEGRAM_CHAT_ID')
-
 # Twilio credentials
 TWILIO_ACCOUNT_SID = config.get('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = config.get('TWILIO_AUTH_TOKEN')

@@ -130,7 +130,8 @@ files/
 
 # Django stuff:
 *.log
-
+docs/
+etc/
 # Sphinx documentation
 docs/_build/
 
