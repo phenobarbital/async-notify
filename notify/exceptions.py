@@ -3,7 +3,7 @@ class notifyException(Exception):
     code: int = None
     payload: str = None
 
-    def __init__(self, message: str = None, *args, code: int = None, payload: str = None, **kwargs):
+    def __init__(self, message: str, *args, code: int = None, payload: str = None, **kwargs):
         super(notifyException, self).__init__(*args, **kwargs)
         self.args = (
             message,
@@ -34,21 +34,8 @@ class ProviderError(notifyException):
     """Database Provider Error."""
 
 
-class NotImplementedError(notifyException):
-    """Exception for Not implementation."""
-
-
 class UninitializedError(ProviderError):
     """Exception when provider cant be initialized."""
 
-
-class ConnectionError(ProviderError):
-    """Generic Connection Error."""
-
-
 class ConnectionTimeout(ProviderError):
     """Connection Timeout Error."""
-
-
-class TooManyConnections(ProviderError):
-    """Too Many Connections."""

@@ -1,16 +1,12 @@
 from pathlib import Path
-from notify.settings import MEMCACHE_HOST, MEMCACHE_PORT
-from asyncdb.providers.mcache import mcache
 from typing import (
-    Dict,
     Optional
 )
-from navconfig.logging import logging
 from jinja2 import (
     Environment,
-    FileSystemLoader,
-    MemcachedBytecodeCache
+    FileSystemLoader
 )
+
 
 jinja_config = {
     'autoescape': True,
@@ -31,14 +27,6 @@ class TemplateParser(object):
     """
     def __init__(self, directory: Path, **kwargs):
         self.template = None
-        self.cache = mcache(params={"host": MEMCACHE_HOST, "port": MEMCACHE_PORT})
-        try:
-            self.cache.connection()
-        except Exception as err:
-            logging.error(
-                f'Notify: Error Connecting to Memcached: {err}'
-            )
-            self.cache = None
         self.path = directory.resolve()
         if not self.path.exists():
             raise RuntimeError(
@@ -52,13 +40,6 @@ class TemplateParser(object):
         templateLoader = FileSystemLoader(
             searchpath=[str(self.path)]
         )
-        if self.cache.is_connected():
-            self.config['bytecode_cache'] = MemcachedBytecodeCache(
-                self.cache,
-                prefix='notify_template_',
-                timeout=2,
-                ignore_memcache_errors=True
-            )
         # initialize the environment
         try:
             # TODO: check the bug ,encoding='ANSI'
@@ -79,16 +60,15 @@ class TemplateParser(object):
     def environment(self):
         return self.env
 
-    def render(self, filename: str, params: Optional[Dict] = None) -> str:
+    def render(self, filename: str, params: Optional[dict] = None) -> str:
         if not params:
             params = {}
         result = None
         try:
             self.template = self.env.get_template(str(filename))
             result = self.template.render(**params)
+            return result
         except Exception as err:
             raise RuntimeError(
                 f'Notify: Error rendering template: {filename}, error: {err}'
             ) from err
-        finally:
-            return result

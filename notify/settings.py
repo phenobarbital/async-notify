@@ -4,9 +4,6 @@
 - navigator_notify.settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
-import os
-import sys
-import logging
 from pathlib import Path
 from navconfig import config, BASE_DIR
 
@@ -74,49 +71,9 @@ TWITTER_CONSUMER_SECRET = config.get('TWITTER_CONSUMER_SECRET')
 JABBER_JID = config.get('JABBER_JID')
 JABBER_PASSWORD = config.get('JABBER_PASSWORD')
 
-# Cache system
-MEMCACHE_HOST = config.get('MEMCACHE_HOST', fallback='nav-api.dev.local')
-MEMCACHE_PORT = config.get('MEMCACHE_PORT', fallback=11211)
-
 # TEMPLATE SYSTEM
 template_dir = config.get('TEMPLATE_DIR')
 if not template_dir:
     TEMPLATE_DIR = BASE_DIR.joinpath('templates')
 else:
     TEMPLATE_DIR = Path(template_dir).resolve()
-
-if DEBUG is True:
-    LOG_LEVEL = logging.DEBUG
-else:
-    LOG_LEVEL = logging.INFO
-
-LOG_DIR = '/var/log/troc'
-
-logging_notify = dict(
-    version=1,
-    formatters={
-        "console": {
-            'format': '%(message)s'
-        },
-        'default': {
-            'format': '[%(levelname)s] %(asctime)s %(name)s|%(lineno)d :: %(message)s'
-        }
-        },
-    handlers={
-        "console": {
-                "formatter": "console",
-                "class": "logging.StreamHandler",
-                "stream": "ext://sys.stdout",
-                'level': LOG_LEVEL
-        },
-        'StreamHandler': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'default',
-                'level': LOG_LEVEL
-        }
-        },
-    root={
-        'handlers': ['StreamHandler'],
-        'level': LOG_LEVEL,
-        },
-)
