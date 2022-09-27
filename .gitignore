@@ -9,7 +9,8 @@ __pycache__
 *.so
 *.pyc
 # External Extensions
-
+dist/*
+build/*
 
 # Migrations Folder
 migrations/
@@ -146,3 +147,4 @@ target/
 .DS_Store
 templates/.compiled
 examples/test_twilio.py
+o365_token.txt

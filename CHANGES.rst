@@ -1,6 +1,17 @@
 ChangeLog
 =========
 
+.. _v0.6.0:
+
+0.6.0 (2022-09-27)
+------------------
+
+*New Version:*
+
+    - Upgraded version of Navconfig and AsyncDB.
+    - Added support for Datamodels.
+    - Security fixes
+
 .. _v0.5.0:
 
 0.5.24 (2022-08-02)

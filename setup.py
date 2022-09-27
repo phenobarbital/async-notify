@@ -49,14 +49,15 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
     setup_requires=[
         "wheel==0.37.1",
-        "asyncio==3.4.3",
         "Cython==0.29.32",
-        "cpython==0.0.6"
+        "numpy==1.23.3",
+        "asyncio==3.4.3",
+        "cchardet==2.1.7"
     ],
     install_requires=[
         'wheel==0.37.1',
         'asyncio==3.4.3',
-        'uvloop==0.16.0',
+        'uvloop==0.17.0',
         'asyncdb',
         'navconfig',
         'APScheduler==3.9.1',
