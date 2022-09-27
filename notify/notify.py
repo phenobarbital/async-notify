@@ -1,6 +1,9 @@
 import logging
 import importlib
-from .exceptions import ProviderError, notifyException
+from .exceptions import (
+    ProviderError,
+    notifyException
+)
 
 PROVIDERS = {}
 
@@ -12,48 +15,48 @@ class Notify(object):
         provider (str): Name of the provider.
 
     Raises:
-        ProviderError: _description_
         ProviderError: when a driver cannot be loaded.
-
+        NotSupported: when a method is not supported.
     Returns:
-        _type_: _description_
+        ProviderBase: a Notify Provider.
     """
-    _provider = None
-    _name = ''
-    _config = None
-
-    def __new__(cls, provider: str = None, *args, **kwargs):
-        cls._provider = None
+    def __new__(cls, *args, provider: str = None, **kwargs):
         if provider is not None:
-            cls._provider = provider
+            _provider = None
             try:
                 obj = PROVIDERS[provider]
-                cls._provider = obj(*args, **kwargs)
-                logging.debug('Load Provider: {}'.format(provider))
-            except Exception as err:
-                logging.exception("Cannot Load provider {}".format(provider))
-                raise ProviderError(
-                    message = "Cannot Load provider {}".format(provider)
+                _provider = obj(*args, **kwargs)
+                logging.debug(
+                    f':: Load Provider: {provider}'
                 )
-            finally:
-                return cls._provider
+                return _provider
+            except Exception as ex:
+                logging.exception(
+                    f"Cannot Load provider {provider}: {ex}"
+                )
+                raise ProviderError(
+                    message=f"Cannot Load provider {provider}: {ex}"
+                ) from ex
         else:
             return super(Notify, cls).__new__(cls, *args, **kwargs)
 
-    def provider(cls, provider=None, *args, **kwargs):
-        cls._provider = None
-        cls._name = provider
+    @classmethod
+    def provider(cls, provider, *args, **kwargs):
         try:
             obj = PROVIDERS[provider]
-            cls._provider = obj(*args, **kwargs)
-            logging.debug('Load Provider: {}'.format(cls._name))
-        except Exception as err:
-            #TODO: try to load the new provider.
-            logging.exception("Cannot Load provider {}".format(cls._name))
-            raise ProviderError(message = "Cannot Load provider {}".format(cls._name))
-        finally:
-            return cls._provider
-        
+            _provider = obj(*args, **kwargs)
+            logging.debug(
+                f':: Load Provider: {provider}'
+            )
+            return _provider
+        except Exception as ex:
+            logging.exception(
+                f"Cannot Load provider {provider}: {ex}"
+            )
+            raise ProviderError(
+                message=f"Cannot Load provider {provider}: {ex}"
+            ) from ex
+
 
 def LoadProvider(provider):
     """
@@ -63,7 +66,7 @@ def LoadProvider(provider):
     """
     try:
         # try to using importlib
-        classpath = 'notify.providers.{provider}'.format(provider=provider)
+        classpath = f'notify.providers.{provider}'
         module = importlib.import_module(classpath, package='providers')
         obj = getattr(module, provider.capitalize())
         return obj
@@ -71,6 +74,7 @@ def LoadProvider(provider):
         try:
             obj = __import__(classpath, fromlist=[provider])
             return obj
-        except ImportError:
-            raise notifyException(f'Error: No Provider {provider} was Found')
-            return False
+        except ImportError as e:
+            raise notifyException(
+                f'Error: No Provider {provider} was Found'
+            ) from e
