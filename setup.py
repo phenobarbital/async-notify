@@ -50,7 +50,6 @@ setup(
     setup_requires=[
         "wheel==0.37.1",
         "Cython==0.29.32",
-        "numpy==1.23.3",
         "asyncio==3.4.3",
         "cchardet==2.1.7"
     ],
@@ -58,6 +57,7 @@ setup(
         'wheel==0.37.1',
         'asyncio==3.4.3',
         'uvloop==0.17.0',
+        'python-datamodel',
         'asyncdb',
         'navconfig',
         'APScheduler==3.9.1',
