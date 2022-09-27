@@ -23,6 +23,9 @@ class Notify(object):
     def __new__(cls, provider: str, *args, **kwargs):
         _provider = None
         try:
+            if not provider in PROVIDERS:
+                obj = LoadProvider(provider)
+                PROVIDERS[provider] = obj
             obj = PROVIDERS[provider]
             _provider = obj(*args, **kwargs)
             logging.debug(
@@ -40,6 +43,9 @@ class Notify(object):
     @classmethod
     def provider(cls, provider, *args, **kwargs):
         try:
+            if not provider in PROVIDERS:
+                obj = LoadProvider(provider)
+                PROVIDERS[provider] = obj
             obj = PROVIDERS[provider]
             _provider = obj(*args, **kwargs)
             logging.debug(

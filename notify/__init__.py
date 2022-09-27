@@ -28,12 +28,6 @@ TemplateEnv = None
 
 
 if __name__ == "notify":
-    path = Path(__file__).parent.joinpath('providers')
-    # directory for notify providers
-    for loader, name, ispkg in pkgutil.iter_modules([str(path)]):
-        if ispkg is True:
-            cls = LoadProvider(name)
-            PROVIDERS[name] = cls
     # loading template parser:
     TemplateEnv = TemplateParser(
         directory=TEMPLATE_DIR

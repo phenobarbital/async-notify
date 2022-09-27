@@ -18,12 +18,6 @@ ONESIGNAL_PLAYER_ID = config.get('ONESIGNAL_PLAYER_ID', fallback='')
 ONESIGNAL_OS_APP_ID = config.get('ONESIGNAL_OS_APP_ID', fallback='')
 ONESIGNAL_OS_API_KEY = config.get('ONESIGNAL_OS_API_KEY', fallback='')
 
-# email:
-EMAIL_SMTP_USERNAME = config.get('stmp_host_user')
-EMAIL_SMTP_PASSWORD = config.get('stmp_host_password')
-EMAIL_SMTP_PORT = config.get('smtp_port', fallback=587)
-EMAIL_SMTP_HOST = config.get('stmp_host')
-
 # Sendgrid
 SENDGRID_USER = config.get('SENDGRID_USER')
 SENDGRID_KEY = config.get('SENDGRID_KEY')
