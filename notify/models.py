@@ -10,7 +10,7 @@ from typing import (
 )
 from email.parser import Parser
 from email.policy import default as policy_default
-from datamodel import BaseModel, Column
+from datamodel import BaseModel, Column, Field
 
 
 

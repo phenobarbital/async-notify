@@ -32,7 +32,6 @@ if __name__ == "notify":
     # directory for notify providers
     for loader, name, ispkg in pkgutil.iter_modules([str(path)]):
         if ispkg is True:
-            __all__.append(name)
             cls = LoadProvider(name)
             PROVIDERS[name] = cls
     # loading template parser:

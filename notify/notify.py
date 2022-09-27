@@ -20,25 +20,22 @@ class Notify(object):
     Returns:
         ProviderBase: a Notify Provider.
     """
-    def __new__(cls, *args, provider: str = None, **kwargs):
-        if provider is not None:
-            _provider = None
-            try:
-                obj = PROVIDERS[provider]
-                _provider = obj(*args, **kwargs)
-                logging.debug(
-                    f':: Load Provider: {provider}'
-                )
-                return _provider
-            except Exception as ex:
-                logging.exception(
-                    f"Cannot Load provider {provider}: {ex}"
-                )
-                raise ProviderError(
-                    message=f"Cannot Load provider {provider}: {ex}"
-                ) from ex
-        else:
-            return super(Notify, cls).__new__(cls, *args, **kwargs)
+    def __new__(cls, provider: str, *args, **kwargs):
+        _provider = None
+        try:
+            obj = PROVIDERS[provider]
+            _provider = obj(*args, **kwargs)
+            logging.debug(
+                f':: Load Provider: {provider}'
+            )
+            return _provider
+        except Exception as ex:
+            logging.exception(
+                f"Cannot Load provider {provider}: {ex}"
+            )
+            raise ProviderError(
+                message=f"Cannot Load provider {provider}: {ex}"
+            ) from ex
 
     @classmethod
     def provider(cls, provider, *args, **kwargs):

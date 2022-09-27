@@ -1,41 +1,65 @@
+import asyncio
 from notify import Notify
 from notify.utils import Msg
 from notify.models import Actor
 from notify.providers.dummy import Dummy
-import asyncio
 
 # first: create recipients:
 user = {
     "name": "Jesus Lara",
-    "account": {
-        "address": "jesuslara@gmail.com",
-        "phone": "+34692817379"
-    }
+    "account": [
+        {
+        "provider": "twilio",
+        "phone": "+343317871"
+        },
+        {
+        "provider": "email",
+        "address": "jesuslara@jesuslara.com"
+        },
+        {
+        "provider": "jabber",
+        "address": "jesuslara@jesuslara.com"
+        }
+    ]
 }
 user2 = {
     "name": "Jesus Lara",
     "account": {
-        "provider": "email",
-        "address": "jesuslara@devel.com.ve"
+        "provider": "twitter",
+        "address": "jesuslara@jesuslara.com"
     }
 }
 user3 = {
     "name": "Javier León",
     "account": {
-        "address": "jel1284@gmail.com"
+        "address": "jelitox@gmail.com"
     }
 }
-recipients = [ Actor(**user), Actor(**user2), Actor(**user3) ]
+user4 = {
+    "name": "Guillermo Amador",
+    "account": {
+        "provider": "email",
+        "address": "guillermo@gmail.com"
+    }
+}
+user5 = {
+    "name": "Steven Smith",
+    "account": {
+        "provider": "o365",
+        "address": "guillermo@outlook.com"
+    }
+}
+recipients = [ Actor(**user), Actor(**user2), Actor(**user3), Actor(**user4), Actor(**user5) ]
 jesus = Actor(**user)
-
 
 Msg('=== DUMMY Sample. ===')
 
 dummy = Dummy() # we can also create directly.
 d = Notify('dummy')
+print('Module: ', d)
 
-def status_sent(recipient, message, result, task):
-    print(f'Notification with status {result!s} to {recipient.account!s}')
+def status_sent(recipient, message, result, **kwargs):
+    Msg(f':: Notification with status {bool(result)} for {recipient.account!s}', level='DEBUG')
 d.sent = status_sent
 
 asyncio.run(
