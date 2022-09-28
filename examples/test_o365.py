@@ -2,7 +2,6 @@ import asyncio
 from notify.providers.office365 import Office365
 from notify.models import Actor
 from notify import Notify
-from notify.settings import O365_USER, O365_PASSWORD
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
@@ -22,10 +21,7 @@ user2 = {
     }
 }
 recipients = [Actor(**user), Actor(**user2)]
-jesus = Actor(**user)
-
 e = Notify('office365')
-e.connect()
 result = loop.run_until_complete(
     e.send(
         recipient=recipients,

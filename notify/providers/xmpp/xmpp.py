@@ -3,16 +3,21 @@ xmpp.
 
 XMPP use slixmpp to send jabber messages (XMPP protocol)
 """
-
-from notify.settings import NAVCONFIG, JABBER_JID, JABBER_PASSWORD
-from notify.providers import ProviderIMBase, IM
-from notify.exceptions import ProviderError
 import logging
 import ssl
-
+from typing import (
+    Union,
+    Any
+)
 # XMPP library
 from slixmpp import ClientXMPP
 from slixmpp.exceptions import IqError, IqTimeout
+from slixmpp.xmlstream.xmlstream import NotConnectedError
+from notify.models import Actor
+from notify.providers import ProviderIMBase, IM
+from notify.exceptions import ProviderError
+
+from .settings import JABBER_JID, JABBER_PASSWORD
 
 
 class Client(ClientXMPP):
@@ -24,7 +29,7 @@ class Client(ClientXMPP):
     provider = 'xmpp'
     provider_type = IM
 
-    def __init__(self, jid, password, plugins: list = []):
+    def __init__(self, jid, password, plugins: list = None):
         ClientXMPP.__init__(self, jid, password)
         # The session_start event will be triggered when
         # the bot establishes its connection with the server
@@ -38,9 +43,9 @@ class Client(ClientXMPP):
         self.add_event_handler("message", self.message)
         self.add_event_handler("disconnected", self.on_disconnect)
         self.add_event_handler("connection_failed", self.on_connection_failure)
-
-        for p in plugins:
-            self.register_plugin(p)
+        if isinstance(plugins, list):
+            for p in plugins:
+                self.register_plugin(p)
         self['xep_0030'].add_feature('echo_demo')
         self.ssl_version = ssl.PROTOCOL_SSLv3
 
@@ -104,10 +109,11 @@ class Xmpp(ProviderIMBase):
         'xep_0004',  # Data Forms
     ]
 
-    def __init__(self, username=None, password=None, *args, **kwargs):
+    def __init__(self, username: str = None, password:str = None, **kwargs):
         """
+        XMPP Provider.
         """
-        super(Xmpp, self).__init__(*args, **kwargs)
+        super(Xmpp, self).__init__(**kwargs)
 
         # connection related settings
         self.username = username
@@ -120,10 +126,10 @@ class Xmpp(ProviderIMBase):
 
         if self.username is None or self.password is None:
             raise RuntimeWarning(
-                'to send emails via {0} you need to configure username & password. \n'
+                f'to send emails via {self.name} you need to configure username & password. \n'
                 'Either send them as function argument via key \n'
                 '`username` & `password` or set up env variable \n'
-                'as `GMAIL_USERNAME` & `GMAIL_PASSWORD`.'.format(self.name)
+                'as `GMAIL_USERNAME` & `GMAIL_PASSWORD`.'
             )
         self.actor = self.username
         if 'plugins' in kwargs and isinstance(kwargs['plugins'], list):
@@ -134,12 +140,12 @@ class Xmpp(ProviderIMBase):
             jid = self.client.boundjid.bare
         try:
             rtt = await self.client['xep_0199'].ping(jid, timeout=10)
-            logging.info("Success! RTT: %s", rtt)
+            self._logger.info(f"Success! RTT: {rtt!s}")
         except IqError as e:
             error = e.iq['error']['condition']
-            logging.info(f'Error pinging {jid}: {error}')
+            self._logger.info(f'Error pinging {jid}: {error}')
         except IqTimeout:
-            logging.info(f'No response from {jid}')
+            self._logger.info(f'No response from {jid}')
         finally:
             self.client.disconnect()
 
@@ -154,24 +160,28 @@ class Xmpp(ProviderIMBase):
             self.client.connect()
             self.client.process(forever=False)
         except Exception as e:
-            raise RuntimeError(e)
+            raise ProviderError(e) from e
         return self.client
 
-    def send(self, content, recipient, context=None):
+    async def _send_(self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs) -> Any:
+        try:
+            context = kwargs['context']
+        except KeyError:
+            context = None
         try:
             self.client.send_message(
-                mto=self.recipient,
-                mbody=content,
+                mto=to,
+                mbody=f"{subject}: {message}",
                 mtype='chat'
             )
-        except slixmpp.xmlstream.xmlstream.NotConnectedError:
+        except NotConnectedError:
             self.log("Message NOT SENT, not connected.")
         except IqError as e:
-            raise RuntimeError(e)
+            raise ProviderError(e) from e
         except IqTimeout as e:
-            raise ConnectionTimeout(e)
+            raise ProviderError(e) from e
         except Exception as e:
-            raise
+            raise ProviderError(e) from e
 
     async def close(self):
         await self.client.close()

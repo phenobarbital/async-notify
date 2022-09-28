@@ -5,20 +5,10 @@ o365.
 Office 365 Email-based provider
 """
 from typing import (
-    Callable
+    Union,
+    Any
 )
-from notify.providers.abstract import ProviderEmail
-from notify.settings import (
-    O365_CLIENT_ID,
-    O365_CLIENT_SECRET,
-    O365_TENANT_ID,
-    O365_USER,
-    O365_PASSWORD
-)
-from notify.models import Actor
-from navconfig.logging import logging
-
-logging.getLogger('requests_oauthlib').setLevel(logging.CRITICAL)
+from collections.abc import Callable
 # 3rd party Office 365 support
 from O365 import (
     Account,
@@ -26,6 +16,22 @@ from O365 import (
     MSOffice365Protocol,
     Message
 )
+from navconfig.logging import logging
+from notify.providers.mail import ProviderEmail
+from notify.models import Actor
+from .settings import (
+    O365_CLIENT_ID,
+    O365_CLIENT_SECRET,
+    O365_TENANT_ID,
+    O365_USER,
+    O365_PASSWORD
+)
+
+
+
+
+logging.getLogger('requests_oauthlib').setLevel(logging.CRITICAL)
+
 
 class Office365(ProviderEmail):
     """ O365-based Email Provider
@@ -62,7 +68,12 @@ class Office365(ProviderEmail):
 
         # username and password:
         self.username = username
+        if not self.username:
+            self.username = O365_USER
+
         self.password = password
+        if not self.password:
+            self.password = O365_PASSWORD
 
         if self.client_id is None or self.client_secret is None:
             raise RuntimeWarning(
@@ -100,7 +111,7 @@ class Office365(ProviderEmail):
     async def close(self):
         pass
 
-    def _render(self, to: Actor, subject: str, content: str, **kwargs):
+    def _render_(self, to: Actor, subject: str = None, content: str = None, **kwargs):
         """
         """
         msg = content
@@ -128,19 +139,19 @@ class Office365(ProviderEmail):
             )
         else:
             message = self.account.new_message()
-        message.to.add(to.account['address'])
+        message.to.add(to.account.address)
         message.subject = subject
         message.body = msg
         return message
 
-    async def _send(self, to: Actor, message: str, subject: str,  **kwargs):
+    async def _send_(self, to: Actor, message: str, subject: str,  **kwargs):
         """
-        _send.
+        _send_.
         Logic associated with the construction of notifications
         """
         # making email connnection
         try:
-            message = self._render(to, subject, message, **kwargs)
+            message = self._render_(to, subject, message, **kwargs)
             status = message.send()
             logging.debug(status)
             return status

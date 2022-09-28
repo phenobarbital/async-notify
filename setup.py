@@ -68,6 +68,7 @@ setup(
         'gmail==0.6.3',
         'google-auth>=2.6.0',
         'google-auth-httplib2>=0.1.0',
+        'onesignal-sdk==2.0.0',
         'pyo365==0.1.3',
         'PySocks==1.7.1',
         'pyshorteners==1.0.1',
