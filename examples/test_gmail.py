@@ -1,9 +1,8 @@
+import asyncio
 from notify.models import Actor
 from notify.utils import Msg
-from notify import Notify
-
 from notify.providers.gmail import Gmail
-import asyncio
+
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
@@ -23,13 +22,10 @@ user2 = {
     }
 }
 recipients = [ Actor(**user), Actor(**user2) ]
-jesus = Actor(**user)
 
 Msg('=== GMAIL ===')
-
 d = Gmail()
-
-def status_sent(recipient, message, result, task):
+def status_sent(recipient, message, result, **kwargs):
     print(f'Notification with status {result!s} to {recipient.account!s}')
 
 d.sent = status_sent
@@ -59,5 +55,5 @@ async def send_email():
             event_address='Bolodromo Caucagua',
             template='email_applied.html'
         )
-        
+
 asyncio.run(send_email())

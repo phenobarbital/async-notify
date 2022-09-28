@@ -180,7 +180,7 @@ class ProviderBase(ABC):
 
         Returns the parseable version of Message template.
         """
-        cPrint(f'RECEIVED {to}, message {message}')
+        # cPrint(f'RECEIVED {to}, message {message}')
         msg = message
         if self._template:
             self._templateargs = {

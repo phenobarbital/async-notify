@@ -31,9 +31,6 @@ AWS_EMAIL_HOST = config.get(
 AWS_EMAIL_PORT = config.get('aws_email_port', fallback=587)
 AWS_EMAIL_ACCOUNT = config.get('aws_email_account')
 
-# gmail
-GMAIL_USERNAME = config.get('GMAIL_USERNAME')
-GMAIL_PASSWORD = config.get('GMAIL_PASSWORD')
 
 # Twilio credentials
 TWILIO_ACCOUNT_SID = config.get('TWILIO_ACCOUNT_SID')
