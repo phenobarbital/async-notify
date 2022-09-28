@@ -36,6 +36,7 @@ class Account(BaseModel):
     enabled: bool = Column(required=True, default=True)
     address: Union[str, list] = Column(required=False, default='')
     phone: Union[str, list] = Column(required=False, default='')
+    userid: str = Column(required=False, default='')
 
     def set_address(self, address: str):
         self.address = address
@@ -62,6 +63,12 @@ class Chat(BaseModel):
     chat_name: str = Column(required=False)
     chat_id: str = Column(required=True, primary_key=True)
 
+class Channel(BaseModel):
+    """
+    Basic configuration for Channel (group) notifications.
+    """
+    channel_name: str = Column(required=False)
+    channel_id: str = Column(required=True, primary_key=True)
 
 class Message(BaseModel):
     """

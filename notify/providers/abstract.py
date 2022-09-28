@@ -15,7 +15,7 @@ from typing import (
 from collections.abc import Awaitable, Callable
 from navconfig.logging import logging
 from notify.utils import SafeDict, cPrint
-from notify.exceptions import ProviderError
+from notify.exceptions import ProviderError, MessageError
 from notify.models import Actor
 from notify.settings import NAVCONFIG, DEBUG
 
@@ -283,9 +283,14 @@ class ProviderBase(ABC):
             # Get a "work item" out of the queue.
             task = await queue.get()
             # process the task
-            await task
-            # Notify the queue that the item has been processed
-            queue.task_done()
+            try:
+                await task
+            except (ProviderError, MessageError) as ex:
+                logging.error(ex)
+                raise
+            finally:
+                # Notify the queue that the item has been processed
+                queue.task_done()
 
     def execute_notify(
             self,
