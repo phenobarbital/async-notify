@@ -6,7 +6,7 @@ Notify is built on top of python asyncio for send notifications asynchronous wit
 
 ### Why Async-Notify? ###
 
-The finality of Async-Notify is to provide us a subset of communication providers (connectors) for sending different kind of notifications in a non-blocking mode..
+The finality of Async-Notify is to provide us a subset of communication providers for sending different notifications in a non-blocking mode..
 The main goal of Async-Notify is using only asyncio-based technologies.
 
 ### Requirements ###
@@ -58,4 +58,4 @@ Please have a look at the Contribution Guide
 
 ### License ###
 
-Async-Notify is copyright of Jesus Lara (https://phenobarbital.info) and is dual-licensed under BSD and Apache 2.0 licenses. I am providing code in this repository under an open source licenses, remember, this is my personal repository; the license that you receive is from me and not from my employeer.
+Async-Notify is copyright of Jesus Lara (https://phenobarbital.info) and is licensed under BSD license. I am providing code in this repository under an open source licenses, remember, this is my personal repository; the license that you receive is from me and not from my employeer.

@@ -1,12 +1,18 @@
 import os
 import uuid
+from pathlib import Path
 from datetime import datetime
 from dataclasses import InitVar
-from typing import Any, Dict, List, Set, Tuple, Optional, get_type_hints, Callable, ClassVar, Union
-from asyncdb.models import Model, Column
+from typing import (
+    Any,
+    List,
+    Union
+)
 from email.parser import Parser
 from email.policy import default as policy_default
-from pathlib import Path
+from datamodel import BaseModel, Column, Field
+
+
 
 CONTENT_TYPES = [
     "text/plain",
@@ -22,42 +28,42 @@ def auto_uuid(*args, **kwargs):
 def now():
     return datetime.now()
 
-class Account(Model):
+class Account(BaseModel):
     """
     Attributes for using a Provider by an User (Actor)
     """
     provider: str = Column(required=True, default='dummy')
     enabled: bool = Column(required=True, default=True)
-    address: Union[str, List[str]] = Column(required=False, default='')
-    phone: Union[str, List[str]] = Column(required=False, default='')
+    address: Union[str, list] = Column(required=False, default='')
+    phone: Union[str, list] = Column(required=False, default='')
 
     def set_address(self, address: str):
         self.address = address
 
 
-class Actor(Model):
+class Actor(BaseModel):
     """
     Basic Actor (meta-definition), can be an Sender or a Recipient
     """
     userid: uuid.UUID = Column(required=True, primary_key=True, default=auto_uuid)
     name: str
     account: Union[Account, List[Account]]
-    
+
     def __str__(self) -> str:
         return f'<{self.name}: {self.userid}>'
 
 Recipient = Actor
 Sender = Actor
 
-class Chat(Model):
+class Chat(BaseModel):
     """
-    Basic configuration for chat-based notifications
+    Basic configuration for chat (message-based) notifications
     """
     chat_name: str = Column(required=False)
     chat_id: str = Column(required=True, primary_key=True)
 
 
-class Message(Model):
+class Message(BaseModel):
     """
     Message.
     Base-class for Message blocks for Notify
@@ -65,19 +71,16 @@ class Message(Model):
      * template needs a factory function to find a jinja processor
      *
     """
-    name: str = Column(required=True)
+    name: str = Column(required=True, default=auto_uuid)
     body: Union[str, dict] = Column(default=None)
     content: str = Column(required=False, default='')
     sent: datetime = Column(required=False, default=now)
     template: Path
 
-    def __model_init__(cls, name, attrs) -> None:
-        cls.name = auto_uuid()
+class Attachment(BaseModel):
+    """Attachement.
 
-
-class Attachment(Model):
-    """
-    Basic Attachement
+    an Attachment is any document attached to a message.
     """
     name: str = Column(required=True)
     content: Any = None
@@ -112,7 +115,7 @@ class MailAttachment(Attachment):
 class MailMessage(BlockMessage):
     """
     MailMessage.
-    Dataclass for representing an Email Object.
+        Dataclass for representing an Email Object.
     """
 
     # TODO: add validation for path-like objects using pathlib
@@ -121,7 +124,7 @@ class MailMessage(BlockMessage):
     attachments: List[MailAttachment]
     raw: InitVar = ''
 
-    def __post_init__(self, raw: str) -> None:
+    def __post_init__(self, raw: str) -> None: # pylint: disable=W0221
         msg = Parser(policy=policy_default).parsestr(raw)
         if msg:
             self.subject = msg['subject']

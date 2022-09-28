@@ -2,14 +2,15 @@
 Dummy.
 
 """
-import logging
+from typing import Any, Union
+from collections.abc import Callable
+from navconfig.logging import logging
 from notify.utils import colors, Msg
-from notify.providers.abstract import ProviderBase, ProviderType
 from notify.models import Actor
-from typing import Any, Callable, List, Dict, Optional, Union, Awaitable
+from notify.providers.abstract import ProviderBase, ProviderType
 
 
-def dummy_sent(recipient: Actor, message: Union[str, Any], result: Any, task: Any, *args, **kwargs):
+def dummy_sent(recipient: Actor, message: Union[str, Any], result: Any, task: Any): # pylint: disable=W0613
     logging.debug(f'Message Sent! {recipient!s}')
     Msg(message)
 
@@ -22,22 +23,22 @@ class Dummy(ProviderBase):
     """
     provider = 'dummy'
     provider_type = ProviderType.NOTIFY
-    blocking = False
+    blocking: bool = True
     sent: Callable = dummy_sent
 
-    def connect(self):
+    async def connect(self, *args, **kwargs):
         print('Connecting to Dummy ...')
 
-    def close(self):
+    async def close(self):
         print('Closing to Dummy...')
 
-    async def _send(self, to: Actor, message: Union[str, Any], **kwargs):
+    async def _send_(self, to: Actor, message: Union[str, Any], **kwargs):
         """
         _send.
 
         Logic associated with the construction of notifications
         """
-        msg = self._render(to, message, **kwargs)
+        msg = await self._render_(to, message, **kwargs)
         try:
             level = kwargs['level']
         except KeyError:
@@ -55,4 +56,4 @@ class Dummy(ProviderBase):
         else:
             coloring = colors.reset
         print(coloring + msg, colors.reset)
-        return True
+        return msg

@@ -2,45 +2,22 @@
 
 Base Factory classes for all kind of Providers.
 """
-import os
-import ssl
-import logging
 import asyncio
 import time
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from enum import Enum
 from functools import partial
-from notify.settings import NAVCONFIG, logging_notify, LOG_LEVEL, DEBUG
 from concurrent.futures import ThreadPoolExecutor
 from typing import (
     Any,
-    Callable,
-    Union,
-    List,
-    Awaitable
+    Union
 )
-from asyncdb.exceptions import (
-    _handle_done_tasks,
-    default_exception_handler,
-)
-from notify.utils import SafeDict
+from collections.abc import Awaitable, Callable
+from navconfig.logging import logging
+from notify.utils import SafeDict, cPrint
+from notify.exceptions import ProviderError
 from notify.models import Actor
-# logging system
-import logging
-from logging.config import dictConfig
-
-## for abstract email provider:
-import aiosmtplib
-from email.message import EmailMessage
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
-from email.utils import formatdate
-from email import encoders
-
-
-dictConfig(logging_notify)
+from notify.settings import NAVCONFIG, DEBUG
 
 
 class ProviderType(Enum):
@@ -51,7 +28,7 @@ class ProviderType(Enum):
     IM = 'im'  # instant messaging
 
 
-class ProviderBase(ABC, metaclass=ABCMeta):
+class ProviderBase(ABC):
     """ProviderBase.
 
     Base class for All providers
@@ -61,25 +38,12 @@ class ProviderBase(ABC, metaclass=ABCMeta):
     blocking: bool = True
     sent: Callable = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
+        self.__name__ = str(self.__class__.__name__)
         self._params = kwargs
         self._logger = logging.getLogger('Notify')
-        self._logger.setLevel(LOG_LEVEL)
         # environment config
         self._config = NAVCONFIG
-        # add the Jinja Template Parser
-        try:
-            from notify import TemplateEnv
-            self._tpl = TemplateEnv
-            self._template = None
-        except Exception as err:
-            raise RuntimeError("Notify: Can't load the Jinja2 Template Parser.")
-        # set the values of attributes:
-        for arg, val in self._params.items():
-            try:
-                object.__setattr__(self, arg, val)
-            except AttributeError:
-                pass
         if 'loop' in kwargs:
             self._loop = kwargs['loop']
             del kwargs['loop']
@@ -92,10 +56,24 @@ class ProviderBase(ABC, metaclass=ABCMeta):
             del kwargs['debug']
         else:
             self._debug = DEBUG
+        # add the Jinja Template Parser
+        try:
+            from notify import TemplateEnv # pylint: disable=C0415
+            self._tpl = TemplateEnv
+            self._template = None
+        except Exception as err:
+            raise RuntimeError(
+                f"Notify: Can't load the Jinja2 Template Parser: {err}"
+            ) from err
+        # set the values of attributes:
+        for arg, val in self._params.items():
+            try:
+                object.__setattr__(self, arg, val)
+            except AttributeError:
+                pass
 
-    """
-    Async Context magic Methods
-    """
+
+### Async Context magic Methods
     async def __aenter__(self) -> "ProviderBase":
         if asyncio.iscoroutinefunction(self.connect):
             await self.connect()
@@ -114,32 +92,67 @@ class ProviderBase(ABC, metaclass=ABCMeta):
                 await self.close()
             else:
                 self.close()
-        except Exception as err:
+        except Exception as err: # pylint: disable=W0703
             logging.error(err)
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         try:
             self.close()
-        except Exception as err:
+        except Exception as err: # pylint: disable=W0703
             logging.error(err)
 
     @abstractmethod
-    def send(self, *args, **kwargs):
+    async def connect(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def connect(self, *args, **kwargs):
+    async def close(self):
         pass
 
     @abstractmethod
-    def close(self):
-        pass
+    async def _send_(self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs) -> Any:
+        """_send_.
+          Method called for every recipient in Recipient list.
+        Args:
+            to (Actor): recipient of message.
+            message (Union[str, Any]): message data.
 
-    def _prepare(self, recipient: Actor, message: Union[str, Any], template: str = None, **kwargs):
+        Raises:
+            RuntimeError: Error when _send_ can be executed.
+
+        Returns:
+            Any: Result of sending process.
+        """
+
+    @classmethod
+    def name(cls):
+        return cls.__name__
+
+    @classmethod
+    def type(cls):
+        return cls.provider_type
+
+    def get_loop(self):
+        return self._loop
+
+    def set_loop(self, loop: asyncio.AbstractEventLoop = None):
+        if not loop:
+            self._loop = asyncio.new_event_loop()
+        else:
+            self._loop = loop
+        asyncio.set_event_loop(self._loop)
+
+    async def _prepare_(
+            self,
+            recipient: Actor = None,
+            message: Union[str, Any] = None,
+            template: str = None,
+            **kwargs
+        ): # pylint: disable=W0613
         """
         _prepare.
 
-        works in the preparation of message for sending.
+        Prepare a Message for Sending.
         """
         #1 replacement of strings
         if self._params:
@@ -155,30 +168,19 @@ class ProviderBase(ABC, metaclass=ABCMeta):
             self._template = None
         return msg
 
-    @classmethod
-    def name(self):
-        return self.__name__
-
-    @classmethod
-    def type(self):
-        return self.provider_type
-
-    def get_loop(self):
-        return self._loop
-
-    def set_loop(self, loop=None):
-        if not loop:
-            self._loop = asyncio.new_event_loop()
-        else:
-            self._loop = loop
-        asyncio.set_event_loop(self._loop)
-
-    def _render(self, to: Actor, message: Union[str, Any], **kwargs):
+    async def _render_(
+            self,
+            to: Actor = None,
+            message: str = None,
+            subject: str = None,
+            **kwargs
+        ): # pylint: disable=W0613
         """
-        _render.
+        _render_.
 
-        Returns the parseable version of template.
+        Returns the parseable version of Message template.
         """
+        # cPrint(f'RECEIVED {to}, message {message}')
         msg = message
         if self._template:
             self._templateargs = {
@@ -190,43 +192,53 @@ class ProviderBase(ABC, metaclass=ABCMeta):
             msg = self._template.render(**self._templateargs)
         return msg
 
-    def create_task(self, to, message, **kwargs):
-        task = asyncio.create_task(self._send(to, message, **kwargs))
-        # handler = partial(_handle_done_tasks, self._logger)
-        # task.add_done_callback(handler)
-        fn = partial(self.__sent__, to, message)
-        task.add_done_callback(fn)
+    def create_task(self, to, message, loop: asyncio.AbstractEventLoop, subject: str = None, **kwargs):
+        asyncio.set_event_loop(loop)
+        task = loop.create_task(self._send_(to, message, subject=subject, **kwargs))
+        if self.__sent__ is not None:
+            fn = partial(self.__sent__, to, message, **kwargs)
+            task.add_done_callback(fn)
         return task
 
-    async def send(self, recipient: List[Actor] = [], message: Union[str, Any] = '', **kwargs):
+    async def send(
+            self,
+            recipient: list[Actor] = None,
+            message: Union[str, Any] = None,
+            subject: str = None,
+            **kwargs
+        ):
         """
         send.
 
         public method to send messages and notifications
         """
         # template (or message) for preparation
-        msg = self._prepare(recipient, message, **kwargs)
+        msg = await self._prepare_(
+            recipient=recipient,
+            message=message,
+            **kwargs
+        )
         rcpt = []
+        results = None
         if isinstance(recipient, list):
             rcpt = recipient
         else:
             rcpt.append(recipient)
-        # working on Queues or executor:
+        # TODO: non-blocking code
         if self.blocking is True:
             loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            # loop.set_exception_handler(default_exception_handler)
             tasks = []
             for to in rcpt:
-                task = self.create_task(to, message, **kwargs)
+                task = self.create_task(to, msg, loop, subject, **kwargs)
                 tasks.append(task)
             # creating the executor
-            fn = partial(self.execute_notify, loop, tasks, **kwargs)
-            with ThreadPoolExecutor(max_workers=10) as pool:
-                result = loop.run_in_executor(pool, fn)
+            fn = partial(
+                self.execute_notify, loop, tasks
+            )
+            with ThreadPoolExecutor(max_workers=len(tasks)) as pool:
+                results = loop.run_in_executor(pool, fn)
         else:
-            # migrate to a non-blocking code, also, add a Queue system (started in paralell)
-            # working on a asyncio.queue functionality
+            asyncio.set_event_loop(self._loop)
             queue = asyncio.Queue(maxsize=len(rcpt)+1)
             started_at = time.monotonic()
             tasks = []
@@ -239,28 +251,29 @@ class ProviderBase(ABC, metaclass=ABCMeta):
                 )
                 consumers.append(consumer)
                 # create the task:
-                task = self.create_task(to, message, **kwargs)
+                task = self.create_task(to, message, self._loop, subject, **kwargs)
                 tasks.append(task)
                 i += 1
             # send tasks to queue processor (producer)
-            await self.notify_producer(queue, tasks)
+            await asyncio.gather(*[self.notify_producer(queue, tasks)])
             # wait until the consumer has processed all items
             await queue.join()
-            total_slept_for = time.monotonic() - started_at
+            total_slept = time.monotonic() - started_at
             # Cancel our worker tasks.
             for task in consumers:
                 task.cancel()
-        return True
+            print(f'System ended: {total_slept}')
+
+        return results
 
     # PUB/SUB Logic based on Asyncio Queues
     async def notify_producer(self, queue, tasks: list):
         """
         Process Notify.
-
         Fill the asyncio Queue with tasks
         """
         for task in tasks:
-            queue.put_nowait(task)
+            await queue.put(task)
 
     async def process_notify(self, queue):
         """
@@ -273,32 +286,35 @@ class ProviderBase(ABC, metaclass=ABCMeta):
             await task
             # Notify the queue that the item has been processed
             queue.task_done()
-            #print(f'{name} has slept for {1:.2f} seconds')
 
     def execute_notify(
             self,
             loop: asyncio.AbstractEventLoop,
-            tasks: List[Awaitable],
-            **kwargs
+            tasks: list[Awaitable]
             ):
         """
         execute_notify.
-
         Executing notification in a event loop.
         """
+        asyncio.set_event_loop(loop)
         try:
-            group = asyncio.gather(*tasks, loop=loop, return_exceptions=False)
+            group = asyncio.gather(*tasks, return_exceptions=True)
             try:
                 results = loop.run_until_complete(group)
-            except (RuntimeError, Exception) as err:
-                raise Exception(err)
-                #TODO: Processing accordly the exceptions (and continue)
-                # for task in tasks:
-                #     if not task.done():
-                #         await asyncio.gather(*tasks, return_exceptions=True)
-                #         task.cancel()
+                return results
+            except RuntimeError as err:
+                raise RuntimeError(
+                    f"Notify: Error executing Notify: {err}"
+                ) from err
+            except Exception as err:
+                logging.exception(err, stack_info=True)
+                raise ProviderError(
+                    f"Notify: Error executing Notify: {err}"
+                ) from err
         except Exception as err:
-            raise Exception(err)
+            raise ProviderError(
+                f"Notify: Exception on Notify: {err}"
+            ) from err
 
     def __sent__(
                 self,
@@ -314,217 +330,47 @@ class ProviderBase(ABC, metaclass=ABCMeta):
             try:
                 result = task.result()
                 # logging:
-                self._logger.debug('Notification sent to> {}'.format(recipient))
-                self.sent(recipient, message, result, task)
-            except Exception as err:
-                self._logger.exception(f'Notify: *Sent* Function fail with error {err}')
-
-
-class ProviderEmail(ProviderBase):
-    """
-    ProviderEmail.
-
-    Base class for All Email-based providers
-    """
-
-    provider_type = ProviderType.EMAIL
-    _server: Callable = None
-
-    def __init__(self, *args, **kwargs):
-        self._name = self.__class__.__name__
-        self._host: str = None
-        self._port: int = None
-        super(ProviderEmail, self).__init__(*args, **kwargs)
-
-    @property
-    def user(self):
-        return self.username
-
-    async def close(self):
-        if self._server:
-            try:
-                await self._server.quit()
-            except aiosmtplib.errors.SMTPServerDisconnected:
-                pass
-            except Exception as err:
-                raise Exception(err)
-            finally:
-                self._server = None
-
-    async def connect(self):
-        """
-        Make a connection to the SMTP Server
-        """
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-        context.options |= ssl.OP_NO_SSLv2
-        context.options |= ssl.OP_NO_SSLv3
-        context.options |= ssl.OP_NO_TLSv1
-        context.options |= ssl.OP_NO_TLSv1_1
-        context.options |= ssl.OP_NO_COMPRESSION
-        try:
-            self._server = aiosmtplib.SMTP(
-                hostname=self._host,
-                port=self._port,
-                username=self.username,
-                password=self.password,
-                start_tls=True,
-                tls_context=context,
-                loop=self._loop
-            )
-            try:
-                await self._server.connect()
-                logging.debug(f'{self._name}: Connected to: {self._server}')
-                try:
-                    if self._server.is_ehlo_or_helo_needed:
-                        await self._server.ehlo()
-                except aiosmtplib.errors.SMTPHeloError:
-                    pass
-                await asyncio.sleep(0)
-            except aiosmtplib.errors.SMTPAuthenticationError as err:
-                raise RuntimeError(
-                    f'{self._name} Error: Invalid credentials: {err}'
+                self._logger.debug(
+                    f'Notification sent to:> {recipient}'
                 )
-            except aiosmtplib.errors.SMTPServerDisconnected as err:
-                raise RuntimeError(f'{self._name} Error: {err}')
-        except aiosmtplib.SMTPRecipientsRefused as e:
-            raise RuntimeError(
-                f'{self._name} Error: got SMTPRecipientsRefused: {e.recipients}'
-            )
-        except (OSError, aiosmtplib.errors.SMTPException) as e:
-            raise RuntimeError(
-                f'{self._name} Error: got {e.__class__}, {e}'
-            )
-
-    def is_connected(self):
-        if self._server:
-            return self._server.is_connected
-        else:
-            return False
-
-    def _prepare_message(self, to_address, message, content):
-        """
-        """
-        if isinstance(content, dict):
-            html = content['html']
-            text = content['text']
-        else:
-            text = content
-            html = None
-        if html:
-            message.add_header('Content-Type', 'text/html')
-            #message.add_header('Content-Type: multipart/mixed')
-            #message.add_header('Content-Transfer-Encoding: base64')
-            message.attach(MIMEText(html, 'html'))
-            #message.set_payload(html)
-        return message
-
-    def _render(self, to: Actor, subject: str, content: str, **kwargs):
-        """
-        _render.
-
-        Returns the parseable version of Email.
-        """
-        #TODO: add attachments
-        message = MIMEMultipart('alternative')
-        message['From'] = self.actor
-        if isinstance(to, list):
-            # TODO: iterate over actors
-            message['To'] = ", ".join(to)
-        else:
-            message['To'] = to.account['address']
-        message['Subject'] = subject
-        message['Date'] = formatdate(localtime=True)
-        message['sender'] = self.actor
-        message.preamble = subject
-        if content:
-            message.attach(MIMEText(content, 'plain'))
-        if self._template:
-            self._templateargs = {
-                "recipient": to,
-                "username": to,
-                "message": content,
-                "content": content,
-                **kwargs
-            }
-            msg = self._template.render(**self._templateargs)
-        else:
-            msg = content
-        message.add_header('Content-Type', 'text/html')
-        #message.add_header('Content-Type', 'multipart/mixed')
-        #message.add_header('Content-Transfer-Encoding', 'base64')
-        message.attach(MIMEText(msg, 'html'))
-        #message.set_payload(msg)
-        return message
-
-    def add_attachment(self, message, filename, mimetype='octect-stream'):
-        content = None
-        with open(filename, 'rb') as fp:
-            content = fp.read()
-        if mimetype in ('image/png'):
-            part = MIMEImage(content)
-        else:
-            part = MIMEBase('application', 'octect-stream')
-            part.set_payload(content)
-            encoders.encode_base64(part)
-        file = os.path.basename(filename)
-        part.add_header(
-            'Content-Disposition', 'attachment', filename=str(file)
-        )
-        message.attach(part)
-
-    async def _send(self, to: Actor, message: str, subject: str,  **kwargs):
-        """
-        _send.
-
-        Logic associated with the construction of notifications
-        """
-        msg = self._render(to, subject, message, **kwargs)
-        if 'attachments' in kwargs:
-            for attach in kwargs['attachments']:
-                self.add_attachment(
-                    message=msg,
-                    filename=attach
+                loop = asyncio.new_event_loop()
+                fn = partial(self.callback_sent, recipient, message, result, loop, **kwargs)
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    loop.run_in_executor(executor, fn)
+            except (AttributeError, RuntimeError) as ex:
+                self._logger.exception(
+                    f'Notify: *Sent* Function fail with error {ex}'
                 )
-        # making email connnection
-        if not self._server.is_connected:
-            await self._server.connect()
-            await self._server.login(
-                username=self.username,
-                password=self.password
-            )
-        try:
-            try:
-                response = await self._server.send_message(msg)
-                if self._debug is True:
-                    self._logger.debug(response)
-            except aiosmtplib.errors.SMTPServerDisconnected as err:
-                raise RuntimeError(f'{self._name} Server Disconnected {err}')
-            return response
-        except Exception as e:
-            print(e)
-            raise RuntimeError(f'{self._name} Error: got {e.__class__}, {e}')
 
-    async def send(
-                self,
-                recipient: List[Actor] = [],
-                message: Union[str, Any] = None,
-                **kwargs
-            ):
-        result = None
-        # making the connection to the service:
+    def callback_sent(
+            self,
+            recipient: Actor,
+            message: Any,
+            result: Any,
+            loop: asyncio.AbstractEventLoop,
+            **kwargs
+        ) -> None:
+        """callback_sent.
+
+        Function for running Callback in a Thread.
+        """
+        asyncio.set_event_loop(loop)
+        fn = partial(self.sent, recipient, message, result, **kwargs)
         try:
-            if asyncio.iscoroutinefunction(self.connect):
-                await self.connect()
+            if asyncio.iscoroutinefunction(self.sent):
+                loop.run_until_complete(fn)
             else:
-                self.connect()
-        except Exception as err:
-            raise RuntimeError(err)
-        # after connection, proceed exactly like other connectors.
-        try:
-            result = await super(ProviderEmail, self).send(recipient, message, **kwargs)
-        except Exception as err:
-            raise RuntimeError(err)
-        return result
+                fn()
+        except (asyncio.CancelledError, asyncio.TimeoutError) as ex:
+            logging.warning(ex)
+        except RuntimeError as ex:
+            print(ex)
+            raise RuntimeError(
+                f"Error calling Callback function: {ex}"
+            ) from ex
+        except Exception as ex: # pylint: disable=W0703
+            print(ex)
+            logging.exception(ex, stack_info=False)
 
 
 class ProviderMessaging(ProviderBase):

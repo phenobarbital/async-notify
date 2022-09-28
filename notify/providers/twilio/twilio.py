@@ -1,28 +1,31 @@
-from notify.settings import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, TWILIO_PHONE
+
+from typing import (
+    Union,
+    Any
+)
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
-from notify.providers import ProviderMessageBase, SMS
+from notify.providers.abstract import ProviderMessageBase, ProviderType
 from notify.models import Actor
+from notify.exceptions import ProviderError
+from .settings import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, TWILIO_PHONE
 
 class Twilio(ProviderMessageBase):
     provider = 'sms'
-    provider_type = SMS
+    provider_type = ProviderType.SMS
     level = ''
-    _msg = ''
-    client = None
-    token = None
-    sid = None
 
-    def __init__(self, sid=None, token=None, *args, **kwargs):
+    def __init__(self, sid: str = None, token: str = None, **kwargs):
         """
         :param token: twilio auth token given by Twilio
         :param sid: twilio auth id given by Twilio
 
         """
-        super(Twilio, self).__init__(*args, **kwargs)
+        self._msg = None
+        self.client = None
+        super(Twilio, self).__init__(**kwargs)
         self.token = TWILIO_AUTH_TOKEN if token is None else token
         self.sid = TWILIO_ACCOUNT_SID if sid is None else sid
-        self.connect()
 
     def close(self):
         self.client = None
@@ -34,12 +37,12 @@ class Twilio(ProviderMessageBase):
         """
         if self.token is None or self.sid is None:
             raise RuntimeError(
-                'to send SMS via {0} you need to configure TWILIO_ACCOUNT_SID & TWILIO_AUTH_TOKEN in \n'
-                'environment variables or send account_sid & auth_token in instance.'.format(self.id)
+                f'to send SMS via {self.__name__} you need to configure TWILIO_ACCOUNT_SID & TWILIO_AUTH_TOKEN in \n'
+                'environment variables or send account_sid & auth_token in instance.'
             )
         self.client = Client(self.sid, self.token)
 
-    async def _send(self, to: Actor, message: str, **kwargs):
+    async def _send_(self, to: Actor, message: Union[str, Any], **kwargs) -> Any:
         """
         _send.
 
@@ -55,8 +58,8 @@ class Twilio(ProviderMessageBase):
             #print(msg.sid)
             # TODO: processing the output, adding callbacks
             return msg
-        except TwilioRestException as e:
-            print(e)
-            raise RuntimeError(
-                'Error Sending SMS on Twilio, current error: {}'.format(e)
-            )
+        except TwilioRestException as ex:
+            print(ex)
+            raise ProviderError(
+                f'Error Sending SMS on Twilio, current error: {ex}'
+            ) from ex

@@ -1,11 +1,11 @@
-
-from pathlib import Path, PurePath
-from notify.models import Actor, Chat, Account, Message, BlockMessage, MailMessage
+import asyncio
+from pathlib import PurePath
+from navconfig import BASE_DIR
+from notify.models import Actor, Chat
 from notify.utils import Msg
-
 from notify import Notify
 from notify.providers.telegram import Telegram
-import asyncio
+
 
 
 user = {
@@ -43,7 +43,7 @@ async def send_telegram():
             message='🛑⚠️✅   Mensaje de PRUEBAS enviado a Navigator Telegram',
             disable_notification=False
         )
-        
+
 asyncio.run(send_telegram())
 
 async def test_telegram():
@@ -54,5 +54,23 @@ async def test_telegram():
         await t.send_photo(photo=image, caption='🛑 Pie de imagen')
         document = PurePath().joinpath('docs/requirements-dev.txt')
         await t.send_document(document=document, caption='⚠️ Documento de Ejemplo', disable_notification=True)
+        ### an Sticker:
+        sticker = {"set": "RadioRochela", "emoji": '💋'}
+        await t.send_sticker(sticker=sticker, disable_notification=True)
+        ### Video:
+        video = BASE_DIR.joinpath('docs/(72) Rick Astley - Never Gonna Give You Up (video oficial) -1.webm')
+        await t.send_video(
+                video=video,
+                caption='✅ Never Gonna Give You Up!',
+                supports_streaming=True,
+                disable_notification=True
+        )
+        ## Audio:
+        dialup = BASE_DIR.joinpath('docs/Dialup.mp3')
+        await t.send_audio(
+                audio=dialup,
+                caption='✅ Dial-Up',
+                disable_notification=True
+        )
 
 asyncio.run(test_telegram())

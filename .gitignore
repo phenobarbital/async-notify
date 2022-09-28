@@ -9,7 +9,8 @@ __pycache__
 *.so
 *.pyc
 # External Extensions
-
+dist/*
+build/*
 
 # Migrations Folder
 migrations/
@@ -129,7 +130,8 @@ files/
 
 # Django stuff:
 *.log
-
+docs/
+etc/
 # Sphinx documentation
 docs/_build/
 
@@ -146,3 +148,4 @@ target/
 .DS_Store
 templates/.compiled
 examples/test_twilio.py
+o365_token.txt

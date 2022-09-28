@@ -49,24 +49,26 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
     setup_requires=[
         "wheel==0.37.1",
-        "asyncio==3.4.3",
         "Cython==0.29.32",
-        "cpython==0.0.6"
+        "asyncio==3.4.3",
+        "cchardet==2.1.7"
     ],
     install_requires=[
         'wheel==0.37.1',
         'asyncio==3.4.3',
-        'uvloop==0.16.0',
+        'uvloop==0.17.0',
+        'python-datamodel',
         'asyncdb',
         'navconfig',
         'APScheduler==3.9.1',
         'aiosmtplib==1.1.6',
         'emoji==2.0.0',
-        'aiogram==2.21',
+        'aiogram==2.22.1',
         'pillow==9.2.0',
         'gmail==0.6.3',
         'google-auth>=2.6.0',
         'google-auth-httplib2>=0.1.0',
+        'onesignal-sdk==2.0.0',
         'pyo365==0.1.3',
         'PySocks==1.7.1',
         'pyshorteners==1.0.1',
@@ -76,6 +78,7 @@ setup(
         "botocore==1.24.21",
         "boto3==1.21.21",
         "aiobotocore==2.3.4",
+        "o365==2.0.20"
     ],
     tests_require=[
             'pytest>=5.4.0',
