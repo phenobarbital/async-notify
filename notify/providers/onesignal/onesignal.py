@@ -10,7 +10,7 @@ from typing import (
 from requests.exceptions import HTTPError
 from onesignal_sdk.client import AsyncClient
 from onesignal_sdk.error import OneSignalHTTPError
-from notify.providers import ProviderIMBase, ProviderType
+from notify.providers.abstract import ProviderIMBase, ProviderType
 from notify.models import Actor
 from notify.exceptions import ProviderError
 from .settings import (

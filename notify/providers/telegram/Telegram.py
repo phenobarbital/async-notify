@@ -5,6 +5,7 @@ from typing import (
     Union,
     Any
 )
+import emoji
 from PIL import Image
 # telegram
 from aiogram import Bot, types
@@ -255,10 +256,16 @@ class Telegram(ProviderIM):
     async def get_sticker(self, sticker_id):
         if isinstance(sticker_id, dict): # getting from an sticker_set
             name = sticker_id['set']
-            emoji = sticker_id['emoji']
+            em = sticker_id['emoji']
+            print(emoji.emojize(em))
+            if isinstance(em, str) and em.startswith(':'):
+                em = emoji.emojize(em)
             try:
                 sticker_set = await self._bot.get_sticker_set(name)
-                st = [x for x in sticker_set['stickers'] if x['emoji'] == emoji]
+                self._logger.debug(
+                    f"Set Found: {sticker_set!r}"
+                )
+                st = [x for x in sticker_set['stickers'] if x['emoji'] == em]
                 sticker = st[0].file_id
                 return sticker
             except Exception as err:

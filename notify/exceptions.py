@@ -33,6 +33,8 @@ class NotSupported(notifyException):
 class ProviderError(notifyException):
     """Database Provider Error."""
 
+class MessageError(notifyException):
+    """Raises when an error on Message."""
 
 class UninitializedError(ProviderError):
     """Exception when provider cant be initialized."""
