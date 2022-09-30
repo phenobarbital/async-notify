@@ -9,11 +9,8 @@ from jinja2 import (
 
 
 jinja_config = {
-    'autoescape': True,
     'enable_async': False,
     'extensions': [
-        'jinja2.ext.autoescape',
-        'jinja2.ext.with_',
         'jinja2.ext.i18n'
     ]
 }
