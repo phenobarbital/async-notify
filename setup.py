@@ -102,7 +102,7 @@ setup(
         'twilio==7.14.2',
         'tweepy==4.10.1',
         'slixmpp==1.8.2',
-        "botocore==1.24.21",
+        "botocore==1.27.92",
         "boto3==1.21.21",
         "aiobotocore==2.3.4",
         "o365==2.0.20",
