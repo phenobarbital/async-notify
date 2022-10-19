@@ -106,7 +106,7 @@ setup(
         "boto3==1.21.21",
         "aiobotocore==2.3.4",
         "o365==2.0.20",
-        "slack_bolt==1.15.1"
+        "slack_bolt==1.15.2"
     ],
     tests_require=[
             'pytest>=5.4.0',
