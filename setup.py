@@ -20,7 +20,7 @@ def readme():
         return rd.read()
 
 
-version = get_path('datamodel/version.py')
+version = get_path('notify/version.py')
 with open(version, 'r', encoding='utf-8') as meta:
     # exec(meta.read())
     t = compile(meta.read(), version, 'exec', ast.PyCF_ONLY_AST)
@@ -34,19 +34,19 @@ with open(version, 'r', encoding='utf-8') as meta:
                             '__description__',
                             '__author__',
                             '__license__', '__author_email__'):
-                        v = node.value
-                        if name.id == '__version__':
-                            __version__ = v.s
-                        if name.id == '__title__':
-                            __title__ = v.s
-                        if name.id == '__description__':
-                            __description__ = v.s
-                        if name.id == '__license__':
-                            __license__ = v.s
-                        if name.id == '__author__':
-                            __author__ = v.s
-                        if name.id == '__author_email__':
-                            __author_email__ = v.s
+                v = node.value
+                if name.id == '__version__':
+                    __version__ = v.s
+                if name.id == '__title__':
+                    __title__ = v.s
+                if name.id == '__description__':
+                    __description__ = v.s
+                if name.id == '__license__':
+                    __license__ = v.s
+                if name.id == '__author__':
+                    __author__ = v.s
+                if name.id == '__author_email__':
+                    __author_email__ = v.s
 
 setup(
     name=__title__,
@@ -102,9 +102,9 @@ setup(
         'twilio==7.12.0',
         'tweepy==4.10.0',
         'slixmpp==1.8.2',
-        "botocore==1.24.21",
-        "boto3==1.21.21",
-        "aiobotocore==2.3.4",
+        "botocore==1.27.59",
+        "boto3==1.24.91",
+        "aiobotocore=2.4.0",
         "o365==2.0.20",
         "slack_bolt==1.14.3"
     ],
