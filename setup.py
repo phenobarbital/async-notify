@@ -99,7 +99,7 @@ setup(
         'msal==1.20.0',
         'PySocks==1.7.1',
         'pyshorteners==1.0.1',
-        'twilio==7.14.2',
+        'twilio==7.15.1',
         'tweepy==4.10.1',
         'slixmpp==1.8.2',
         "botocore==1.27.59",
