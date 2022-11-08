@@ -103,7 +103,7 @@ setup(
         'tweepy==4.10.1',
         'slixmpp==1.8.2',
         "botocore==1.27.59",
-        "boto3==1.24.91",
+        "boto3==1.26.5",
         "aiobotocore==2.4.0",
         "o365==2.0.20",
         "slack_bolt==1.15.1"
