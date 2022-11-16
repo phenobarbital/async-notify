@@ -149,3 +149,4 @@ target/
 templates/.compiled
 examples/test_twilio.py
 o365_token.txt
+templates/.compiled

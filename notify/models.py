@@ -46,7 +46,7 @@ class Actor(BaseModel):
     """
     Basic Actor (meta-definition), can be an Sender or a Recipient
     """
-    userid: uuid.UUID = Column(required=True, primary_key=True, default=auto_uuid)
+    userid: uuid.UUID = Field(required=False, primary_key=True, default=auto_uuid)
     name: str
     account: Union[Account, List[Account]]
 
