@@ -104,7 +104,7 @@ setup(
         'slixmpp==1.8.2',
         "botocore==1.27.59",
         "aiobotocore==2.4.0",
-        "o365==2.0.20",
+        "o365==2.0.21",
         "slack_bolt==1.15.3"
     ],
     tests_require=[
