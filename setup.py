@@ -28,12 +28,12 @@ with open(version, 'r', encoding='utf-8') as meta:
         if len(node.targets) == 1:
             name = node.targets[0]
             if isinstance(name, ast.Name) and \
-                    name.id in (
-                            '__version__',
-                            '__title__',
-                            '__description__',
-                            '__author__',
-                            '__license__', '__author_email__'):
+                    name.id in {
+                        '__version__',
+                        '__title__',
+                        '__description__',
+                        '__author__',
+                        '__license__', '__author_email__'}:
                 v = node.value
                 if name.id == '__version__':
                     __version__ = v.s
@@ -67,6 +67,7 @@ setup(
         "Topic :: Communications",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Framework :: AsyncIO",
     ],
     keywords=['aiogram', 'asyncio', 'aioimaplib', 'aiobotocore'],
@@ -74,18 +75,13 @@ setup(
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
     setup_requires=[
-        "wheel==0.37.1",
+        "wheel==0.38.4",
         "Cython==0.29.32",
-        "asyncio==3.4.3",
-        "cchardet==2.1.7"
+        "asyncio==3.4.3"
     ],
     install_requires=[
-        'wheel==0.37.1',
         'asyncio==3.4.3',
         'uvloop==0.17.0',
-        'python-datamodel>=0.1.9',
-        'asyncdb>=2.1.26',
-        'navconfig>=1.0.3',
         'APScheduler==3.9.1',
         'aiosmtplib==1.1.6',
         'emoji==2.0.0',
@@ -102,10 +98,12 @@ setup(
         'twilio==7.12.0',
         'tweepy==4.10.0',
         'slixmpp==1.8.2',
-        "botocore==1.27.59",
-        "aiobotocore==2.4.0",
-        "o365==2.0.20",
-        "slack_bolt==1.14.3"
+        'botocore==1.27.59',
+        'aiobotocore==2.4.0',
+        'o365==2.0.20',
+        "slack_bolt==1.14.3",
+        'asyncdb>=2.1.26',
+        'navconfig>=1.0.3',
     ],
     tests_require=[
             'pytest>=5.4.0',
