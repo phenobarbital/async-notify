@@ -70,7 +70,7 @@ class ProviderEmail(ProviderBase, ABC):
                 password=self.password,
                 start_tls=True,
                 tls_context=context,
-                loop=self._loop
+                # loop=self._loop
             )
             try:
                 await self._server.connect()
