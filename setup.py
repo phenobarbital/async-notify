@@ -101,7 +101,7 @@ setup(
         "botocore==1.27.59",
         "aiobotocore==2.4.0",
         "o365==2.0.21",
-        "slack_bolt==1.15.3",
+        "slack_bolt==1.16.0",
         "asyncdb>=2.1.30",
         "navconfig>=1.0.6"
     ],
