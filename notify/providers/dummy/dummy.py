@@ -10,7 +10,8 @@ from notify.models import Actor
 from notify.providers.abstract import ProviderBase, ProviderType
 
 
-def dummy_sent(recipient: Actor, message: Union[str, Any], result: Any, task: Any): # pylint: disable=W0613
+def dummy_sent(recipient: Actor, message: Union[str, Any], result: Any, task: Any, **kwargs): # pylint: disable=W0613
+    print('RECEIVED ', recipient, message, result, task, kwargs)
     logging.debug(f'Message Sent! {recipient!s}')
     Msg(message)
 
@@ -38,7 +39,7 @@ class Dummy(ProviderBase):
 
         Logic associated with the construction of notifications
         """
-        msg = await self._render_(to, message, **kwargs)
+        msg = await self._render_(to=to, message=message, **kwargs)
         try:
             level = kwargs['level']
         except KeyError:
@@ -55,5 +56,5 @@ class Dummy(ProviderBase):
             coloring = colors.bold + colors.fg.red
         else:
             coloring = colors.reset
-        print(coloring + msg, colors.reset)
+        print(coloring + str(msg), colors.reset)
         return msg

@@ -59,6 +59,7 @@ d = Notify('dummy')
 print('Module: ', d)
 
 def status_sent(recipient, message, result, **kwargs):
+    print('DEV> ', recipient, message, result, kwargs)
     Msg(f':: Notification with status {bool(result)} for {recipient.account!s}', level='DEBUG')
 d.sent = status_sent
 

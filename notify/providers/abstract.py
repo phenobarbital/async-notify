@@ -195,9 +195,8 @@ class ProviderBase(ABC):
     def create_task(self, to, message, loop: asyncio.AbstractEventLoop, subject: str = None, **kwargs):
         asyncio.set_event_loop(loop)
         task = loop.create_task(self._send_(to, message, subject=subject, **kwargs))
-        if self.__sent__ is not None:
-            fn = partial(self.__sent__, to, message, **kwargs)
-            task.add_done_callback(fn)
+        fn = partial(self.__sent__, to, message, **kwargs)
+        task.add_done_callback(fn)
         return task
 
     async def send(
@@ -325,7 +324,7 @@ class ProviderBase(ABC):
                 self,
                 recipient: Actor,
                 message: str,
-                task: Awaitable,
+                _task: Awaitable,
                 **kwargs
             ):
         """
@@ -333,7 +332,7 @@ class ProviderBase(ABC):
         """
         if callable(self.sent):
             try:
-                result = task.result()
+                result = _task.result()
                 # logging:
                 self._logger.debug(
                     f'Notification sent to:> {recipient}'
