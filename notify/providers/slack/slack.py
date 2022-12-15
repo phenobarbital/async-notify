@@ -15,7 +15,7 @@ from slack_bolt.async_app import AsyncApp
 from slack_sdk.web.async_client import AsyncWebClient
 from slack_sdk.errors import SlackApiError
 # notify
-from navconfig.logging import logging
+from navconfig.logging import logging, loglevel
 from notify.providers.abstract import ProviderIM, ProviderType
 from notify.models import Actor, Channel
 from notify.exceptions import ProviderError, MessageError
@@ -60,6 +60,7 @@ class Slack(ProviderIM):
         """
         self.client: Callable = None
         self.app: Callable = None
+        self.conversations: list = []
         super(Slack, self).__init__(*args, **kwargs)
 
 
@@ -69,9 +70,7 @@ class Slack(ProviderIM):
             logger = logging.getLogger(__name__)
             logger.setLevel(logging.INFO)
             self.client = AsyncWebClient(token=SLACK_BOT_TOKEN, logger=logger, team_id=SLACK_TEAM_ID)
-            # print('CONN ', self.client)
-            # conversations = await self.client.conversations_list(limit=100, team_id='T80VD72KT')
-            # print(conversations)
+            self.conversations = await self.client.conversations_list(limit=10, team_id=SLACK_TEAM_ID)
         except Exception as err:
 
             self._logger.error(err)

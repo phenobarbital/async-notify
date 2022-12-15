@@ -5,8 +5,10 @@ from notify.providers.slack import Slack
 from notify.providers.slack.settings import SLACK_DEFAULT_CHANNEL
 
 
-channel = Channel(channel_id=SLACK_DEFAULT_CHANNEL, channel_name='navigator-tests')
-
+# channel = Channel(channel_id=SLACK_DEFAULT_CHANNEL, channel_name='navigator-tests')
+channel = Channel(
+    channel_id='C02GZ0LCMLN', channel_name='navigator-development'
+)
 Msg('==== SLACK to CHANNEL === ')
 
 async def send_slack():
@@ -14,7 +16,7 @@ async def send_slack():
     async with slack as conn:
         await conn.send(
             recipient=channel,
-            message='🛑⚠️✅ Mensaje de PRUEBAS enviado a Navigator Daily-Stand Up.'
+            message='🛑⚠️✅ Mensaje de PRUEBAS enviado a Navigator Development.'
         )
 
 asyncio.run(send_slack())
@@ -23,18 +25,18 @@ Msg('==== SLACK to User === ')
 
 
 user = {
-    "name": "Jesus Lara",
+    "name": "Javier León",
     "account": {
         "provider": "slack",
-        "userid": "U82HJF9F1"
+        "userid": "U01FF7KSG6P"
     }
 }
-jesus = Actor(**user)
+jelitox = Actor(**user)
 async def send_to_user():
     slack = Slack()
     async with slack as conn:
         await conn.send(
-            recipient=jesus,
-            message='🛑⚠️✅ Mensaje de PRUEBAS enviado en Privado.'
+            recipient=jelitox,
+            message='🛑⚠️✅ Mensaje a Jelitox enviado en Privado.'
         )
 asyncio.run(send_to_user())

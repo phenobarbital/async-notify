@@ -337,10 +337,12 @@ class ProviderBase(ABC):
                 self._logger.debug(
                     f'Notification sent to:> {recipient}'
                 )
-                loop = asyncio.new_event_loop()
-                fn = partial(self.callback_sent, recipient, message, result, loop, **kwargs)
+                evt = asyncio.new_event_loop()
+                if 'task' in kwargs:
+                    del kwargs['task']
+                fn = partial(self.callback_sent, recipient, message, result, evt, **kwargs)
                 with ThreadPoolExecutor(max_workers=1) as executor:
-                    loop.run_in_executor(executor, fn)
+                    evt.run_in_executor(executor, fn)
             except (AttributeError, RuntimeError) as ex:
                 self._logger.exception(
                     f'Notify: *Sent* Function fail with error {ex}'
@@ -351,18 +353,18 @@ class ProviderBase(ABC):
             recipient: Actor,
             message: Any,
             result: Any,
-            loop: asyncio.AbstractEventLoop,
+            evt: asyncio.AbstractEventLoop,
             **kwargs
         ) -> None:
         """callback_sent.
 
         Function for running Callback in a Thread.
         """
-        asyncio.set_event_loop(loop)
+        asyncio.set_event_loop(evt)
         fn = partial(self.sent, recipient, message, result, **kwargs)
         try:
             if asyncio.iscoroutinefunction(self.sent):
-                loop.run_until_complete(fn)
+                evt.run_until_complete(fn)
             else:
                 fn()
         except (asyncio.CancelledError, asyncio.TimeoutError) as ex:
