@@ -82,7 +82,7 @@ setup(
     install_requires=[
         'asyncio==3.4.3',
         'uvloop==0.17.0',
-        'APScheduler==3.9.1',
+        'APScheduler==3.10.0',
         'aiosmtplib==2.0.0',
         'emoji==2.1.0',
         'aiogram==2.23.1',
