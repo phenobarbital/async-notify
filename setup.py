@@ -100,7 +100,7 @@ setup(
         'slixmpp==1.8.3',
         "botocore==1.27.59",
         "aiobotocore==2.4.0",
-        "o365==2.0.21",
+        "o365==2.0.26",
         "slack_bolt==1.15.3",
         "asyncdb>=2.1.30",
         "navconfig>=1.0.6"
