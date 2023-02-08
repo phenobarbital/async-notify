@@ -82,7 +82,7 @@ setup(
     install_requires=[
         'asyncio==3.4.3',
         'uvloop==0.17.0',
-        'APScheduler==3.9.1',
+        'APScheduler==3.10.0',
         'aiosmtplib==2.0.0',
         'emoji==2.1.0',
         'aiogram==2.23.1',
@@ -102,8 +102,8 @@ setup(
         "aiobotocore==2.4.0",
         "o365==2.0.21",
         "slack_bolt==1.15.3",
-        "asyncdb>=2.1.30",
-        "navconfig>=1.0.6"
+        "asyncdb[default]>=2.1.30",
+        "navconfig[default]>=1.0.6"
     ],
     tests_require=[
             'pytest>=5.4.0',
