@@ -102,8 +102,8 @@ setup(
         "aiobotocore==2.4.0",
         "o365==2.0.26",
         "slack_bolt==1.15.3",
-        "asyncdb[default]>=2.1.30",
-        "navconfig[default]>=1.0.6"
+        "asyncdb[default]>=2.1.38",
+        "navconfig[default]>=1.0.15"
     ],
     tests_require=[
             'pytest>=5.4.0',
