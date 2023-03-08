@@ -9,7 +9,6 @@ import ast
 from os import path
 from setuptools import find_packages, setup
 
-
 def get_path(filename):
     return path.join(path.dirname(path.abspath(__file__)), filename)
 
@@ -50,7 +49,8 @@ with open(version, 'r', encoding='utf-8') as meta:
 setup(
     name=__title__,
     version=__version__,
-    python_requires=">=3.9.16",
+    author='Jesus Lara',
+    author_email='jesuslara@phenobarbital.info',
     url='https://github.com/phenobarbital/async-notify',
     description=__description__,
     long_description=readme(),
@@ -67,13 +67,12 @@ setup(
         'Framework :: AsyncIO',
         'License :: OSI Approved :: BSD License',
     ],
-    author='Jesus Lara',
-    author_email='jesuslara@phenobarbital.info',
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
     package_data={"notify": ["py.typed"]},
     include_package_data=True,
+    python_requires=">=3.9.16",
+    zip_safe=False,
     setup_requires=[
-        'setuptools==67.5.1',
         'Cython==0.29.33',
         'wheel==0.38.4',
     ],
