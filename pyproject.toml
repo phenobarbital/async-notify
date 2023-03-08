@@ -1,6 +1,5 @@
 [project]
 name = "async-notify"
-version = "0.9.2"
 authors = [
   {name = "Jesus Lara Gimenez", email = "jesuslarag@gmail.com"},
 ]
@@ -24,7 +23,7 @@ classifiers=[
   "License :: OSI Approved :: BSD License",
 ]
 requires-python = ">=3.9.16"
-dynamic = ["readme", "dependencies", "license", "urls"]
+dynamic = ["version", "readme", "dependencies", "license", "urls"]
 
 [options]
 packages = "find:"
