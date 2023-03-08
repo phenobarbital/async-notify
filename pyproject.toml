@@ -19,6 +19,7 @@ classifiers=[
   "Intended Audience :: Developers",
   "Intended Audience :: System Administrators",
   "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
@@ -30,6 +31,7 @@ classifiers=[
   "Topic :: Software Development :: Libraries :: Python Modules",
   "License :: OSI Approved :: BSD License",
 ]
+dynamic = ['version', 'description']
 description-file = "README.md"
 requires-python = ">=3.9.16"
 
@@ -43,3 +45,10 @@ filterwarnings = [
     "error",
     'ignore:The loop argument is deprecated since Python 3\.8, and scheduled for removal in Python 3\.10:DeprecationWarning:asyncio',
 ]
+
+[tool.mypy]
+pretty = true
+ignore_missing_imports = true
+
+[tool.flake8]
+ignore = 'E501,W503,E203'
