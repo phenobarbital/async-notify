@@ -92,7 +92,7 @@ setup(
         'google-auth-httplib2>=0.1.0',
         'onesignal-sdk==2.0.0',
         'pyo365==0.1.3',
-        'msal==1.20.0',
+        'msal==1.21.0',
         'PySocks==1.7.1',
         'pyshorteners==1.0.1',
         'twilio==7.16.3',
