@@ -86,7 +86,7 @@ setup(
         'aiosmtplib==2.0.0',
         'emoji==2.2.0',
         'aiogram==2.25.1',
-        'pillow==9.3.0',
+        'pillow==9.4.0',
         'gmail==0.6.3',
         'google-auth>=2.6.0',
         'google-auth-httplib2>=0.1.0',
