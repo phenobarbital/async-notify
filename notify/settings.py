@@ -11,16 +11,15 @@ NOTIFY_DIR = Path(__file__).resolve().parent.parent
 
 # config settings
 NAVCONFIG = config
-DEBUG = config.getboolean('DEBUG', fallback=True)
+DEBUG = config.getboolean("DEBUG", fallback=True)
 
 # Facebook Messenger
-FB_USER = config.get('FB_USER')
-FB_PASSWORD = config.get('FB_PASSWORD')
+FB_USER = config.get("FB_USER")
+FB_PASSWORD = config.get("FB_PASSWORD")
 
 
 # TEMPLATE SYSTEM
-template_dir = config.get('TEMPLATE_DIR')
-if not template_dir:
-    TEMPLATE_DIR = BASE_DIR.joinpath('templates')
+if (template_dir := config.get('TEMPLATE_DIR')):
+    TEMPLATE_DIR = BASE_DIR.joinpath("templates")
 else:
     TEMPLATE_DIR = Path(template_dir).resolve()

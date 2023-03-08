@@ -4,8 +4,9 @@ from .settings import (
     EMAIL_SMTP_USERNAME,
     EMAIL_SMTP_PASSWORD,
     EMAIL_SMTP_HOST,
-    EMAIL_SMTP_PORT
+    EMAIL_SMTP_PORT,
 )
+
 
 class Email(ProviderEmail):
     """
@@ -13,14 +14,19 @@ class Email(ProviderEmail):
 
     Basic SMTP Provider.
     """
-    provider = 'email'
+
+    provider = "email"
     blocking: bool = False
 
-
-    def __init__(self, hostname: str = None, port: str = None, username: str = None, password: str = None, **kwargs):
-        """
-
-        """
+    def __init__(
+        self,
+        hostname: str = None,
+        port: str = None,
+        username: str = None,
+        password: str = None,
+        **kwargs,
+    ):
+        """ """
         self._attachments: list = []
         self.force_tls: bool = True
         self.username = None
@@ -29,7 +35,7 @@ class Email(ProviderEmail):
         super(Email, self).__init__(**kwargs)
         # port
         self.host = hostname
-        if not self.host: # already configured
+        if not self.host:  # already configured
             self.host = EMAIL_SMTP_HOST
         # port
         self.port = port
@@ -47,15 +53,15 @@ class Email(ProviderEmail):
 
         if self.username is None or self.password is None:
             raise RuntimeWarning(
-                f'to send messages via **{self._name}** you need to configure user & password. \n'
-                'Either send them as function argument via key \n'
-                '`username` & `password` or set up env variable \n'
-                'as `EMAIL_USERNAME` & `EMAIL_PASSWORD`.'
+                f"to send messages via **{self._name}** you need to configure user & password. \n"
+                "Either send them as function argument via key \n"
+                "`username` & `password` or set up env variable \n"
+                "as `EMAIL_USERNAME` & `EMAIL_PASSWORD`."
             )
         try:
             # sent from another account
-            if 'account' in kwargs:
-                self.actor = kwargs['account']
+            if "account" in kwargs:
+                self.actor = kwargs["account"]
             else:
                 self.actor = self.username
         except KeyError:

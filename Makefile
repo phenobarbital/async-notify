@@ -19,7 +19,7 @@ format:
 	python -m black notify
 
 lint:
-	python -m pylint --rcfile .pylint notify/*.py
+	python -m pylint --rcfile .pylintrc notify/*.py
 	python -m black --check notify
 	flake8 $(CODE_DIRS)
 

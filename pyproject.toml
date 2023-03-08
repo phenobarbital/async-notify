@@ -1,13 +1,12 @@
 [build-system]
 requires = [
     'setuptools==67.5.1',
+    'setuptools-scm',
     'Cython==0.29.33',
     'wheel==0.38.4',
-    'toml>=0.10.2',
     'flit'
 ]
-
-build-backend = "setuptools.build_meta"
+build-backend = "setuptools.build_meta:__legacy__"
 
 [tool.flit.metadata]
 module = "notify"
@@ -31,7 +30,6 @@ classifiers=[
   "Topic :: Software Development :: Libraries :: Python Modules",
   "License :: OSI Approved :: BSD License",
 ]
-dynamic = ['version', 'description']
 description-file = "README.md"
 requires-python = ">=3.9.16"
 

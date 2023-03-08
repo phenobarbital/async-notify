@@ -10,8 +10,10 @@ from notify.models import Actor
 from notify.providers.abstract import ProviderBase, ProviderType
 
 
-def dummy_sent(obj: ProviderBase, recipient: Actor, message: Union[str, Any], result: Any, **kwargs): # pylint: disable=W0613
-    logging.debug(f'Message Sent! {recipient!s}')
+def dummy_sent(
+    obj: ProviderBase, recipient: Actor, message: Union[str, Any], result: Any, **kwargs
+):  # pylint: disable=W0613
+    logging.debug(f"Message Sent! {recipient!s}")
     #
 
 
@@ -21,18 +23,21 @@ class Dummy(ProviderBase):
 
     Dummy Provider to send messages to stdout
     """
-    provider = 'dummy'
+
+    provider = "dummy"
     provider_type = ProviderType.NOTIFY
     blocking: bool = True
     sent: Callable = dummy_sent
 
     async def connect(self, *args, **kwargs):
-        print('Connecting to Dummy ...')
+        print("Connecting to Dummy ...")
 
     async def close(self):
-        print('Closing to Dummy...')
+        print("Closing to Dummy...")
 
-    async def _send_(self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs):
+    async def _send_(
+        self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs
+    ):
         """
         _send.
 
