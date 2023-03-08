@@ -83,7 +83,7 @@ setup(
         'asyncio==3.4.3',
         'uvloop==0.17.0',
         'APScheduler==3.10.1',
-        'aiosmtplib==2.0.0',
+        'aiosmtplib==2.0.1',
         'emoji==2.2.0',
         'aiogram==2.25.1',
         'pillow==9.3.0',
