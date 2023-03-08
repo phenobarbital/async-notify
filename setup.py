@@ -70,6 +70,7 @@ setup(
     author='Jesus Lara',
     author_email='jesuslara@phenobarbital.info',
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
+    package_data={"notify": ["py.typed"]},
     include_package_data=True,
     setup_requires=[
         'setuptools==67.5.1',
