@@ -19,7 +19,7 @@ FB_PASSWORD = config.get("FB_PASSWORD")
 
 
 # TEMPLATE SYSTEM
-if (template_dir := config.get('TEMPLATE_DIR')):
+if not (template_dir := config.get('TEMPLATE_DIR')):
     TEMPLATE_DIR = BASE_DIR.joinpath("templates")
 else:
     TEMPLATE_DIR = Path(template_dir).resolve()
