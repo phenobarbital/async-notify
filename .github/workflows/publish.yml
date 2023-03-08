@@ -25,10 +25,10 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.ASYNC_NOTIFY_TEST_PYPI_API_TOKEN }}
       run: |
-        twine upload -r testpypi dist/*-manylinux*.whl
+        twine upload -r testpypi dist/*.whl
     - name: Publish wheels to Production PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.ASYNC_NOTIFY_PYPI_API_TOKEN }}
       run: |
-        twine upload  dist/*-manylinux*.whl
+        twine upload  dist/*.whl
