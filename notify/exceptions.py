@@ -1,10 +1,13 @@
 class notifyException(Exception):
     """Base class for other exceptions."""
+
     code: int = None
     payload: str = None
 
-    def __init__(self, message: str, *args, code: int = None, payload: str = None, **kwargs):
-        super(notifyException, self).__init__(*args, **kwargs)
+    def __init__(
+        self, message: str, *args, code: int = None, payload: str = None, **kwargs
+    ):
+        super().__init__(*args, **kwargs)
         self.args = (
             message,
             code,
@@ -33,11 +36,14 @@ class NotSupported(notifyException):
 class ProviderError(notifyException):
     """Database Provider Error."""
 
+
 class MessageError(notifyException):
     """Raises when an error on Message."""
 
+
 class UninitializedError(ProviderError):
     """Exception when provider cant be initialized."""
+
 
 class ConnectionTimeout(ProviderError):
     """Connection Timeout Error."""

@@ -5,4 +5,4 @@ Sending Emails using Amazon SMTP services
 """
 from .aws import Aws
 
-__all__ = ['Aws']
+__all__ = ["Aws"]

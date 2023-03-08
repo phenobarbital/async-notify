@@ -6,4 +6,4 @@ Using gmail library to send Email Messages
 
 from .gmail import Gmail
 
-__all__ = ['Gmail']
+__all__ = ["Gmail"]

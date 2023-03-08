@@ -3,10 +3,8 @@ Google Mail (gmail).
 
 Using gmail library to send Email Messages.
 """
-from typing import (
-    Union,
-    Any
-)
+from typing import Union, Any
+
 # 3rd party gmail support
 import smtplib
 from gmail import GMail as GMailWorker, Message
@@ -14,6 +12,7 @@ from notify.providers.mail import ProviderEmail
 from notify.exceptions import ProviderError
 from notify.models import Actor
 from .settings import GMAIL_USERNAME, GMAIL_PASSWORD
+
 
 class Gmail(ProviderEmail):
     """
@@ -24,7 +23,8 @@ class Gmail(ProviderEmail):
         :param username: Email client username
         :param password: Email client password
     """
-    provider = 'gmail'
+
+    provider = "gmail"
     blocking: bool = True
 
     def __init__(self, username: str = None, password: str = None, **kwargs):
@@ -41,10 +41,10 @@ class Gmail(ProviderEmail):
 
         if self.username is None or self.password is None:
             raise RuntimeWarning(
-                f'to send emails via **{self.provider}** you need to configure username & password. \n'
-                'Either send them as function argument via key \n'
-                '`username` & `password` or set up env variable \n'
-                'as `GMAIL_USERNAME` & `GMAIL_PASSWORD`.'
+                f"to send emails via **{self.provider}** you need to configure username & password. \n"
+                "Either send them as function argument via key \n"
+                "`username` & `password` or set up env variable \n"
+                "as `GMAIL_USERNAME` & `GMAIL_PASSWORD`."
             )
         self.actor = self.username
 
@@ -62,19 +62,14 @@ class Gmail(ProviderEmail):
         Making a connection to Gmail Servers
         """
         try:
-            self._server = GMailWorker(
-                self.username, self.password
-            )
+            self._server = GMailWorker(self.username, self.password)
         except smtplib.SMTPAuthenticationError as err:
-            raise Exception(
-                f'Authentication Error: {err}'
-            ) from err
+            raise Exception(f"Authentication Error: {err}") from err
         except Exception as err:
             raise RuntimeError(err) from err
 
     def _render_(self, to: Actor, content: str = None, subject: str = None, **kwargs):
-        """
-        """
+        """ """
         msg = content
         if self._template:
             self._templateargs = {
@@ -82,25 +77,27 @@ class Gmail(ProviderEmail):
                 "username": to,
                 "message": content,
                 "content": content,
-                **kwargs
+                **kwargs,
             }
             msg = self._template.render(**self._templateargs)
         else:
             try:
-                msg = kwargs['body']
+                msg = kwargs["body"]
             except KeyError:
                 msg = content
         # email
         email = {
-            'subject': subject,
-            'text': msg,
-            'sender': self.actor,
-            'to': to.account.address,
-            'html': msg
+            "subject": subject,
+            "text": msg,
+            "sender": self.actor,
+            "to": to.account.address,
+            "html": msg,
         }
         return Message(**email)
 
-    async def _send_(self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs) -> Any:
+    async def _send_(
+        self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs
+    ) -> Any:
         """
         _send_.
 
@@ -111,6 +108,4 @@ class Gmail(ProviderEmail):
         try:
             return self._server.send(data)
         except Exception as e:
-            raise ProviderError(
-                f"Gmail: Error sending Email to {to}: {e}"
-            ) from e
+            raise ProviderError(f"Gmail: Error sending Email to {to}: {e}") from e

@@ -5,10 +5,8 @@ XMPP use slixmpp to send jabber messages (XMPP protocol)
 """
 import logging
 import ssl
-from typing import (
-    Union,
-    Any
-)
+from typing import Union, Any
+
 # XMPP library
 from slixmpp import ClientXMPP
 from slixmpp.exceptions import IqError, IqTimeout
@@ -26,7 +24,8 @@ class Client(ClientXMPP):
 
     Extending Class to registering session and plugins
     """
-    provider = 'xmpp'
+
+    provider = "xmpp"
     provider_type = IM
 
     def __init__(self, jid, password, plugins: list = None):
@@ -46,7 +45,7 @@ class Client(ClientXMPP):
         if isinstance(plugins, list):
             for p in plugins:
                 self.register_plugin(p)
-        self['xep_0030'].add_feature('echo_demo')
+        self["xep_0030"].add_feature("echo_demo")
         self.ssl_version = ssl.PROTOCOL_SSLv3
 
     async def session_start(self, event):
@@ -54,18 +53,18 @@ class Client(ClientXMPP):
         try:
             await self.get_roster()
         except IqError as err:
-            logging.error('There was an error getting the roster')
-            logging.error(err.iq['error']['condition'])
+            logging.error("There was an error getting the roster")
+            logging.error(err.iq["error"]["condition"])
             self.disconnect()
         except IqTimeout:
-            logging.error('Server is taking too long to respond')
+            logging.error("Server is taking too long to respond")
             self.disconnect()
 
     def message(self, msg):
         """
         called by slixmpp on incoming XMPP messages
         """
-        if msg['type'] in ('chat', 'normal'):
+        if msg["type"] in ("chat", "normal"):
             msg.reply("Thanks for sending\n%(body)s" % msg).send()
 
     def on_disconnect(self, event):
@@ -75,10 +74,7 @@ class Client(ClientXMPP):
     def on_connection_failure(self, event):
         self.log("XMPP connection failed. Try to reconnect in 5min.")
         self.schedule(
-            "Reconnect after connection failure",
-            60*5,
-            self.on_disconnect,
-            event
+            "Reconnect after connection failure", 60 * 5, self.on_disconnect, event
         )
 
     async def close(self):
@@ -97,19 +93,19 @@ class Xmpp(ProviderIMBase):
     :param password: Jabber password
     """
 
-    provider = 'xmpp'
+    provider = "xmpp"
     provider_type = IM
     client = None
     _session = None
     _id = None
     _plugins = [
-        'xep_0030',  # Service Discovery
-        'xep_0199',  # XMPP Ping
-        'xep_0060',  # PubSub
-        'xep_0004',  # Data Forms
+        "xep_0030",  # Service Discovery
+        "xep_0199",  # XMPP Ping
+        "xep_0060",  # PubSub
+        "xep_0004",  # Data Forms
     ]
 
-    def __init__(self, username: str = None, password:str = None, **kwargs):
+    def __init__(self, username: str = None, password: str = None, **kwargs):
         """
         XMPP Provider.
         """
@@ -126,36 +122,32 @@ class Xmpp(ProviderIMBase):
 
         if self.username is None or self.password is None:
             raise RuntimeWarning(
-                f'to send emails via {self.name} you need to configure username & password. \n'
-                'Either send them as function argument via key \n'
-                '`username` & `password` or set up env variable \n'
-                'as `GMAIL_USERNAME` & `GMAIL_PASSWORD`.'
+                f"to send emails via {self.name} you need to configure username & password. \n"
+                "Either send them as function argument via key \n"
+                "`username` & `password` or set up env variable \n"
+                "as `GMAIL_USERNAME` & `GMAIL_PASSWORD`."
             )
         self.actor = self.username
-        if 'plugins' in kwargs and isinstance(kwargs['plugins'], list):
-            self._plugins = self._plugins + kwargs['plugins']
+        if "plugins" in kwargs and isinstance(kwargs["plugins"], list):
+            self._plugins = self._plugins + kwargs["plugins"]
 
     async def test(self, jid: str = None):
         if not jid:
             jid = self.client.boundjid.bare
         try:
-            rtt = await self.client['xep_0199'].ping(jid, timeout=10)
+            rtt = await self.client["xep_0199"].ping(jid, timeout=10)
             self._logger.info(f"Success! RTT: {rtt!s}")
         except IqError as e:
-            error = e.iq['error']['condition']
-            self._logger.info(f'Error pinging {jid}: {error}')
+            error = e.iq["error"]["condition"]
+            self._logger.info(f"Error pinging {jid}: {error}")
         except IqTimeout:
-            self._logger.info(f'No response from {jid}')
+            self._logger.info(f"No response from {jid}")
         finally:
             self.client.disconnect()
 
     def connect(self):
         try:
-            self.client = Client(
-                self.username,
-                self.password,
-                plugins=self._plugins
-            )
+            self.client = Client(self.username, self.password, plugins=self._plugins)
             # Connect to the XMPP server and start processing XMPP stanzas
             self.client.connect()
             self.client.process(forever=False)
@@ -163,16 +155,16 @@ class Xmpp(ProviderIMBase):
             raise ProviderError(e) from e
         return self.client
 
-    async def _send_(self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs) -> Any:
+    async def _send_(
+        self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs
+    ) -> Any:
         try:
-            context = kwargs['context']
+            context = kwargs["context"]
         except KeyError:
             context = None
         try:
             self.client.send_message(
-                mto=to,
-                mbody=f"{subject}: {message}",
-                mtype='chat'
+                mto=to, mbody=f"{subject}: {message}", mtype="chat"
             )
         except NotConnectedError:
             self.log("Message NOT SENT, not connected.")

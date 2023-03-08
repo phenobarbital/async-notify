@@ -1,8 +1,4 @@
-
-from typing import (
-    Union,
-    Any
-)
+from typing import Union, Any
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 from notify.providers.abstract import ProviderMessageBase, ProviderType
@@ -10,10 +6,11 @@ from notify.models import Actor
 from notify.exceptions import ProviderError
 from .settings import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, TWILIO_PHONE
 
+
 class Twilio(ProviderMessageBase):
-    provider = 'sms'
+    provider = "sms"
     provider_type = ProviderType.SMS
-    level = ''
+    level = ""
 
     def __init__(self, sid: str = None, token: str = None, **kwargs):
         """
@@ -37,8 +34,8 @@ class Twilio(ProviderMessageBase):
         """
         if self.token is None or self.sid is None:
             raise RuntimeError(
-                f'to send SMS via {self.__name__} you need to configure TWILIO_ACCOUNT_SID & TWILIO_AUTH_TOKEN in \n'
-                'environment variables or send account_sid & auth_token in instance.'
+                f"to send SMS via {self.__name__} you need to configure TWILIO_ACCOUNT_SID & TWILIO_AUTH_TOKEN in \n"
+                "environment variables or send account_sid & auth_token in instance."
             )
         self.client = Client(self.sid, self.token)
 
@@ -52,14 +49,14 @@ class Twilio(ProviderMessageBase):
         """
         try:
             data = self._render(to, message, **kwargs)
-            phone = to.account['phone']
+            phone = to.account["phone"]
             msg = self.client.messages.create(to=phone, from_=TWILIO_PHONE, body=data)
-            #print(msg)
-            #print(msg.sid)
+            # print(msg)
+            # print(msg.sid)
             # TODO: processing the output, adding callbacks
             return msg
         except TwilioRestException as ex:
             print(ex)
             raise ProviderError(
-                f'Error Sending SMS on Twilio, current error: {ex}'
+                f"Error Sending SMS on Twilio, current error: {ex}"
             ) from ex

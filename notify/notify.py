@@ -1,13 +1,11 @@
 import logging
 import importlib
-from .exceptions import (
-    ProviderError,
-    notifyException
-)
+from .exceptions import ProviderError, notifyException
 
 PROVIDERS = {}
 
-class Notify(object):
+
+class Notify:
     """Notify
 
         Factory object for getting a new Notification Provider.
@@ -20,6 +18,7 @@ class Notify(object):
     Returns:
         ProviderBase: a Notify Provider.
     """
+
     def __new__(cls, provider: str, *args, **kwargs):
         _provider = None
         try:
@@ -28,14 +27,10 @@ class Notify(object):
                 PROVIDERS[provider] = obj
             obj = PROVIDERS[provider]
             _provider = obj(*args, **kwargs)
-            logging.debug(
-                f':: Load Provider: {provider}'
-            )
+            logging.debug(f":: Load Provider: {provider}")
             return _provider
         except Exception as ex:
-            logging.exception(
-                f"Cannot Load provider {provider}: {ex}"
-            )
+            logging.exception(f"Cannot Load provider {provider}: {ex}")
             raise ProviderError(
                 message=f"Cannot Load provider {provider}: {ex}"
             ) from ex
@@ -48,14 +43,10 @@ class Notify(object):
                 PROVIDERS[provider] = obj
             obj = PROVIDERS[provider]
             _provider = obj(*args, **kwargs)
-            logging.debug(
-                f':: Load Provider: {provider}'
-            )
+            logging.debug(f":: Load Provider: {provider}")
             return _provider
         except Exception as ex:
-            logging.exception(
-                f"Cannot Load provider {provider}: {ex}"
-            )
+            logging.exception(f"Cannot Load provider {provider}: {ex}")
             raise ProviderError(
                 message=f"Cannot Load provider {provider}: {ex}"
             ) from ex
@@ -69,8 +60,8 @@ def LoadProvider(provider):
     """
     try:
         # try to using importlib
-        classpath = f'notify.providers.{provider}'
-        module = importlib.import_module(classpath, package='providers')
+        classpath = f"notify.providers.{provider}"
+        module = importlib.import_module(classpath, package="providers")
         obj = getattr(module, provider.capitalize())
         return obj
     except ImportError:
@@ -78,6 +69,4 @@ def LoadProvider(provider):
             obj = __import__(classpath, fromlist=[provider])
             return obj
         except ImportError as e:
-            raise notifyException(
-                f'Error: No Provider {provider} was Found'
-            ) from e
+            raise notifyException(f"Error: No Provider {provider} was Found") from e

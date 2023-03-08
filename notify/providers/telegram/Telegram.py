@@ -1,14 +1,13 @@
 import logging
 from io import BytesIO
 from pathlib import PurePath
-from typing import (
-    Union,
-    Any
-)
+from typing import Union, Any
 import emoji
 from PIL import Image
+
 # telegram
 from aiogram import Bot, types
+
 # from aiogram.dispatcher import Dispatcher
 # from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.exceptions import (
@@ -18,9 +17,10 @@ from aiogram.utils.exceptions import (
     MessageError,
     Unauthorized,
     NetworkError,
-    ChatNotFound
+    ChatNotFound,
 )
 import aiofiles
+
 # from aiogram.utils.emoji import emojize
 # from aiogram.utils.markdown import bold, code, italic, text
 # TODO: web-hooks
@@ -30,21 +30,22 @@ from notify.exceptions import notifyException
 from notify.providers.abstract import ProviderIM, ProviderType
 from .settings import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
-aiogram_logger = logging.getLogger('aiogram')
+aiogram_logger = logging.getLogger("aiogram")
 aiogram_logger.setLevel(logging.WARNING)
 
+
 class Telegram(ProviderIM):
-    provider: str = 'telegram'
+    provider: str = "telegram"
     provider_type = ProviderType.IM
     blocking: bool = False
-    parseMode: str = 'html'  # can be MARKDOWN_V2 or HTML
+    parseMode: str = "html"  # can be MARKDOWN_V2 or HTML
 
     def __init__(self, *args, **kwargs):
         try:
-            self.parseMode = kwargs['parse_mode']
-            del kwargs['parse_mode']
+            self.parseMode = kwargs["parse_mode"]
+            del kwargs["parse_mode"]
         except KeyError:
-            self.parseMode = 'html'
+            self.parseMode = "html"
         self._bot = None
         self._info = None
         self._bot_token = None
@@ -53,14 +54,13 @@ class Telegram(ProviderIM):
         super(Telegram, self).__init__(*args, **kwargs)
         # connection related settings
         try:
-            self._bot_token = kwargs['bot_token']
+            self._bot_token = kwargs["bot_token"]
         except KeyError:
             self._bot_token = TELEGRAM_BOT_TOKEN
         try:
-            self._chat_id = kwargs['chat_id']
+            self._chat_id = kwargs["chat_id"]
         except KeyError:
             self._chat_id = TELEGRAM_CHAT_ID
-
 
     async def close(self):
         self._bot = None
@@ -76,9 +76,7 @@ class Telegram(ProviderIM):
             )
             self._connected = True
         except Exception as err:
-            raise notifyException(
-                f"Notify: Error creating Telegram Bot {err}"
-            ) from err
+            raise notifyException(f"Notify: Error creating Telegram Bot {err}") from err
 
     def set_chat(self, chat):
         self._chat_id = chat
@@ -86,21 +84,21 @@ class Telegram(ProviderIM):
     def get_chat(self, **kwargs):
         # define destination
         try:
-            chat = kwargs['chat_id']
+            chat = kwargs["chat_id"]
             if isinstance(chat, Chat):
                 self._chat_id = chat.chat_id
-            del kwargs['chat_id']
+            del kwargs["chat_id"]
         except KeyError:
             self._chat_id = TELEGRAM_CHAT_ID
         return self._chat_id
 
     async def _send_(
-            self,
-            to: Union[str, Actor, Chat],
-            message: Any = None,
-            subject: str = None,
-            **kwargs
-        ): # pylint: disable=W0221
+        self,
+        to: Union[str, Actor, Chat],
+        message: Any = None,
+        subject: str = None,
+        **kwargs,
+    ):  # pylint: disable=W0221
         """
         _send_.
 
@@ -109,17 +107,17 @@ class Telegram(ProviderIM):
         # start sending a message:
         try:
             msg = await self._render_(to, message, subject=subject, **kwargs)
-            self._logger.info(f'Messsage> {msg}')
+            self._logger.info(f"Messsage> {msg}")
         except Exception as err:
             raise RuntimeError(
-                f'Notify Telegram: Error Parsing Message: {err}'
+                f"Notify Telegram: Error Parsing Message: {err}"
             ) from err
         # Parsing Mode:
-        if self.parseMode == 'html':
+        if self.parseMode == "html":
             mode = types.ParseMode.HTML
         else:
             mode = types.ParseMode.MARKDOWN_V2
-        if 'chat_id' in kwargs:
+        if "chat_id" in kwargs:
             chat_id = self.get_chat(**kwargs)
         else:
             if isinstance(to, Chat):
@@ -129,16 +127,9 @@ class Telegram(ProviderIM):
             else:
                 chat_id = self._chat_id
         try:
-            args = {
-                'chat_id': chat_id,
-                'text': msg,
-                'parse_mode': mode,
-                **kwargs
-            }
+            args = {"chat_id": chat_id, "text": msg, "parse_mode": mode, **kwargs}
             print(args)
-            response = await self._bot.send_message(
-                **args
-            )
+            response = await self._bot.send_message(**args)
             # TODO: make the processing of response
             return response
         except Unauthorized as err:
@@ -157,8 +148,7 @@ class Telegram(ProviderIM):
             # handle all other telegram related errors
             print(err)
         except Exception as err:
-            print('ERROR: ', err)
-
+            print("ERROR: ", err)
 
     async def prepare_photo(self, photo):
         # Migrate to aiofile
@@ -185,9 +175,7 @@ class Telegram(ProviderIM):
         if image:
             chat_id = self.get_chat()
             try:
-                response = await self._bot.send_photo(
-                    chat_id, photo=image, **kwargs
-                )
+                response = await self._bot.send_photo(chat_id, photo=image, **kwargs)
                 # print(response) # TODO: make the processing of response
                 return response
             except Unauthorized as err:
@@ -206,18 +194,16 @@ class Telegram(ProviderIM):
                 # handle all other telegram related errors
                 print(err)
             except Exception as err:
-                print('ERROR: ', err)
+                print("ERROR: ", err)
 
     async def get_document(self, doc: Union[str, PurePath, Any]) -> Any:
-        if isinstance(doc, PurePath): # Path to a File:
+        if isinstance(doc, PurePath):  # Path to a File:
             if doc.exists():
-                async with aiofiles.open(doc, 'rb') as f:
+                async with aiofiles.open(doc, "rb") as f:
                     content = await f.read()
                 return content
             else:
-                raise FileNotFoundError(
-                    f"Telegram Bot: file {doc} doesn't exists."
-                )
+                raise FileNotFoundError(f"Telegram Bot: file {doc} doesn't exists.")
         else:
             # TODO: check if URL or get file_id
             return doc
@@ -226,11 +212,7 @@ class Telegram(ProviderIM):
         chat_id = self.get_chat()
         doc = await self.get_document(document)
         try:
-            response = await self._bot.send_document(
-                chat_id,
-                document=doc,
-                **kwargs
-            )
+            response = await self._bot.send_document(chat_id, document=doc, **kwargs)
             # print(response) # TODO: make the processing of response
             return response
         except Unauthorized as err:
@@ -251,38 +233,32 @@ class Telegram(ProviderIM):
             # handle all other telegram related errors
             print(err)
         except Exception as err:
-            print('ERROR: ', err)
+            print("ERROR: ", err)
 
     async def get_sticker(self, sticker_id):
-        if isinstance(sticker_id, dict): # getting from an sticker_set
-            name = sticker_id['set']
-            em = sticker_id['emoji']
+        if isinstance(sticker_id, dict):  # getting from an sticker_set
+            name = sticker_id["set"]
+            em = sticker_id["emoji"]
             print(emoji.emojize(em))
-            if isinstance(em, str) and em.startswith(':'):
+            if isinstance(em, str) and em.startswith(":"):
                 em = emoji.emojize(em)
             try:
                 sticker_set = await self._bot.get_sticker_set(name)
-                self._logger.debug(
-                    f"Set Found: {sticker_set!r}"
-                )
-                st = [x for x in sticker_set['stickers'] if x['emoji'] == em]
+                self._logger.debug(f"Set Found: {sticker_set!r}")
+                st = [x for x in sticker_set["stickers"] if x["emoji"] == em]
                 sticker = st[0].file_id
                 return sticker
             except Exception as err:
-                self._logger.warning(f'Sticker finder error: {err}')
+                self._logger.warning(f"Sticker finder error: {err}")
                 return None
         else:
-            return 'CAACAgEAAxkBAAIuOWMze9CZzg6cQaEulHqjrcRCvBh2AAK_AgACJjFuAVdTX0Nu_LoxKgQ'
+            return "CAACAgEAAxkBAAIuOWMze9CZzg6cQaEulHqjrcRCvBh2AAK_AgACJjFuAVdTX0Nu_LoxKgQ"
 
     async def send_sticker(self, sticker: Union[str, Any], **kwargs):
         chat_id = self.get_chat()
         sticker = await self.get_sticker(sticker)
         try:
-            response = await self._bot.send_sticker(
-                chat_id,
-                sticker=sticker,
-                **kwargs
-            )
+            response = await self._bot.send_sticker(chat_id, sticker=sticker, **kwargs)
             # print(response) # TODO: make the processing of response
             return response
         except Unauthorized as err:
@@ -303,18 +279,16 @@ class Telegram(ProviderIM):
             # handle all other telegram related errors
             print(err)
         except Exception as err:
-            print('ERROR: ', err)
+            print("ERROR: ", err)
 
     async def get_media(self, media: Union[str, PurePath, Any]) -> Any:
-        if isinstance(media, PurePath): # Path to a File:
+        if isinstance(media, PurePath):  # Path to a File:
             if media.exists():
-                async with aiofiles.open(media, 'rb') as f:
+                async with aiofiles.open(media, "rb") as f:
                     content = await f.read()
                 return content
             else:
-                raise FileNotFoundError(
-                    f"Telegram Bot: file {media} doesn't exists."
-                )
+                raise FileNotFoundError(f"Telegram Bot: file {media} doesn't exists.")
         else:
             # TODO: check if URL or get file_id
             return media
@@ -323,11 +297,7 @@ class Telegram(ProviderIM):
         chat_id = self.get_chat()
         media = await self.get_media(video)
         try:
-            response = await self._bot.send_video(
-                chat_id,
-                video=media,
-                **kwargs
-            )
+            response = await self._bot.send_video(chat_id, video=media, **kwargs)
             # print(response) # TODO: make the processing of response
             return response
         except Unauthorized as err:
@@ -348,17 +318,13 @@ class Telegram(ProviderIM):
             # handle all other telegram related errors
             print(err)
         except Exception as err:
-            print('ERROR: ', err)
+            print("ERROR: ", err)
 
     async def send_audio(self, audio: Union[str, PurePath, Any], **kwargs):
         chat_id = self.get_chat()
         sound = await self.get_media(audio)
         try:
-            response = await self._bot.send_audio(
-                chat_id,
-                audio=sound,
-                **kwargs
-            )
+            response = await self._bot.send_audio(chat_id, audio=sound, **kwargs)
             # print(response) # TODO: make the processing of response
             return response
         except Unauthorized as err:
@@ -379,4 +345,4 @@ class Telegram(ProviderIM):
             # handle all other telegram related errors
             print(err)
         except Exception as err:
-            print('ERROR: ', err)
+            print("ERROR: ", err)
