@@ -1,7 +1,7 @@
 CODE_DIRS := notify/ tests/ examples/
 
 venv:
-	python3.9 -m venv .venv
+	python3.10 -m venv .venv
 	echo 'run `source .venv/bin/activate` to start develop Notify'
 
 develop:

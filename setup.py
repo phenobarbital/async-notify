@@ -55,7 +55,7 @@ setup(
     description=__description__,
     long_description=readme(),
     long_description_content_type='text/markdown',
-    python_requires=">=3.8.0",
+    python_requires=">=3.9.16",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -68,6 +68,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Framework :: AsyncIO",
     ],
     keywords=['aiogram', 'asyncio', 'aioimaplib', 'aiobotocore'],
@@ -76,13 +77,12 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
     setup_requires=[
         "wheel==0.38.4",
-        "Cython==0.29.32",
-        "asyncio==3.4.3"
+        "Cython==0.29.33"
     ],
     install_requires=[
         'asyncio==3.4.3',
         'uvloop==0.17.0',
-        'APScheduler==3.10.0',
+        'APScheduler==3.10.1',
         'aiosmtplib==2.0.0',
         'emoji==2.2.0',
         'aiogram==2.25.1',
@@ -104,17 +104,9 @@ setup(
         "aioboto3==10.4.0",
         "o365==2.0.26",
         "slack_bolt==1.16.1",
-        "asyncdb[default]>=2.1.38",
-        "navconfig[default]>=1.0.15"
+        "asyncdb[default]>=2.2.0",
+        "navconfig[default]>=1.1.0"
     ],
-    tests_require=[
-            'pytest>=5.4.0',
-            'coverage',
-            'pytest-asyncio',
-            'pytest-xdist',
-            'pytest-assume'
-    ],
-    test_suite='tests',
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/async-notify',
         'Funding': 'https://paypal.me/phenobarbital',
