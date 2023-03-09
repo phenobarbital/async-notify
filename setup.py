@@ -94,7 +94,7 @@ setup(
         'msal==1.21.0',
         'PySocks==1.7.1',
         'pyshorteners==1.0.1',
-        'twilio==7.16.4',
+        'twilio==7.16.5',
         'tweepy==4.12.1',
         'slixmpp==1.8.3',
         "botocore==1.27.59",
