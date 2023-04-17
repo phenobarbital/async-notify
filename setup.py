@@ -74,11 +74,10 @@ setup(
     zip_safe=False,
     setup_requires=[
         'Cython==0.29.33',
-        'wheel==0.38.4',
+        'wheel==0.40.0',
     ],
     install_requires=[
         'Cython==0.29.33',
-        'wheel==0.38.4',
         'asyncio==3.4.3',
         'uvloop==0.17.0',
         'APScheduler==3.10.1',
