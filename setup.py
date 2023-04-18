@@ -101,7 +101,7 @@ setup(
         "aiobotocore==2.4.2",
         "aioboto3==10.4.0",
         "o365==2.0.26",
-        "slack_bolt==1.16.3",
+        "slack_bolt==1.17.2",
         "asyncdb[default]>=2.2.0",
         "navconfig[default]>=1.1.0"
     ],
