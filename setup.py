@@ -78,6 +78,7 @@ setup(
     ],
     install_requires=[
         'Cython==0.29.33',
+        'wheel==0.40.0',
         'asyncio==3.4.3',
         'uvloop==0.17.0',
         'APScheduler==3.10.1',
