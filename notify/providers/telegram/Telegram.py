@@ -62,7 +62,14 @@ class Telegram(ProviderIM):
         except KeyError:
             self._chat_id = TELEGRAM_CHAT_ID
 
+    def bot(self):
+        return self._bot
+
     async def close(self):
+        try:
+            await self._bot.close()
+        except Exception:
+            pass
         self._bot = None
         self._connected = False
 
