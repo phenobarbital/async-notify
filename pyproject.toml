@@ -23,7 +23,8 @@ classifiers=[
   "License :: OSI Approved :: BSD License",
 ]
 requires-python = ">=3.9.16"
-dynamic = ["version", "readme", "dependencies", "license", "urls"]
+dynamic = ["version", "readme", "dependencies", "license", "urls", "optional-dependencies"]
+
 
 [options]
 packages = "find:"

@@ -10,11 +10,11 @@ from functools import partial
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Union
 from collections.abc import Awaitable, Callable
+from navconfig import config, DEBUG
 from navconfig.logging import logging
-from notify.utils import SafeDict, cPrint
+from notify.utils import SafeDict
 from notify.exceptions import ProviderError, MessageError
 from notify.models import Actor
-from notify.settings import NAVCONFIG, DEBUG
 
 
 class ProviderType(Enum):
@@ -39,9 +39,9 @@ class ProviderBase(ABC):
     def __init__(self, **kwargs):
         self.__name__ = str(self.__class__.__name__)
         self._params = kwargs
-        self._logger = logging.getLogger("Notify")
+        self.logger = logging.getLogger("Notify")
         # environment config
-        self._config = NAVCONFIG
+        self._config = config
         if "loop" in kwargs:
             self._loop = kwargs["loop"]
             del kwargs["loop"]
@@ -311,7 +311,7 @@ class ProviderBase(ABC):
             try:
                 result = _task.result()
                 # logging:
-                self._logger.debug(f"Notification sent to:> {recipient}")
+                self.logger.debug(f"Notification sent to:> {recipient}")
                 evt = asyncio.new_event_loop()
                 if "task" in kwargs:
                     del kwargs["task"]
@@ -321,7 +321,7 @@ class ProviderBase(ABC):
                 with ThreadPoolExecutor(max_workers=1) as executor:
                     evt.run_in_executor(executor, fn)
             except (AttributeError, RuntimeError) as ex:
-                self._logger.exception(f"Notify: *Sent* Function fail with error {ex}")
+                self.logger.exception(f"Notify: *Sent* Function fail with error {ex}")
 
     def callback_sent(
         self,

@@ -7,7 +7,9 @@ See:
 """
 import ast
 from os import path
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup, Extension
+from Cython.Build import cythonize
+
 
 def get_path(filename):
     return path.join(path.dirname(path.abspath(__file__)), filename)
@@ -16,6 +18,19 @@ def get_path(filename):
 def readme():
     with open(get_path('README.md'), 'r', encoding='utf-8') as rd:
         return rd.read()
+
+
+COMPILE_ARGS = ["-O2"]
+
+
+extensions = [
+    Extension(
+        name='notify.exceptions',
+        sources=['notify/exceptions.pyx'],
+        extra_compile_args=COMPILE_ARGS,
+        language="c"
+    ),
+]
 
 
 version = get_path('notify/version.py')
@@ -131,6 +146,7 @@ setup(
             "slack_bolt==1.18.0"
         ]
     },
+    ext_modules=cythonize(extensions),
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/async-notify',
         'Funding': 'https://paypal.me/phenobarbital',
