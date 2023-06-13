@@ -115,7 +115,7 @@ setup(
         "all": [
             'emoji==2.2.0',
             'aiogram==2.25.1',
-            'pillow==9.4.0',
+            'pillow==9.5.0',
             'gmail==0.6.3',
             'google-auth>=2.6.0',
             'google-auth-httplib2>=0.1.0',
