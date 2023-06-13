@@ -5,9 +5,9 @@ Asyncio-based Notifications connectors for NAV.
 """
 import asyncio
 import uvloop
-from notify.conf import TEMPLATE_DIR
-from notify.templates import TemplateParser
-from notify.providers.abstract import ProviderType
+from .conf import TEMPLATE_DIR
+from .templates import TemplateParser
+from .providers.base import ProviderType
 from .notify import Notify
 
 # install uvloop and set as default loop for asyncio.
