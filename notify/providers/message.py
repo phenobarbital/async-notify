@@ -33,7 +33,12 @@ class ThreadMessage(threading.Thread):
         asyncio.set_event_loop(self._loop)
         try:
             task = self._loop.create_task(
-                self._fn(self._rcpt, self._message, subject=self._subject, **self._kwargs)
+                self._fn(
+                    self._rcpt,
+                    self._message,
+                    subject=self._subject,
+                    **self._kwargs
+                )
             )
             fn = partial(self._callback, self._rcpt, self._message, **self._kwargs)
             task.add_done_callback(fn)

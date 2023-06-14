@@ -1,9 +1,9 @@
+import time
 import asyncio
 from notify import Notify
 from notify.utils import Msg
 from notify.models import Actor
 from notify.providers.dummy import Dummy
-import time
 
 
 started_at = time.monotonic()
