@@ -7,7 +7,7 @@ from collections.abc import Callable
 from navconfig.logging import logging
 from notify.utils import Msg
 from notify.models import Actor
-from notify.providers.abstract import ProviderBase, ProviderType
+from notify.providers.base import ProviderBase, ProviderType
 
 
 def dummy_sent(
@@ -26,7 +26,7 @@ class Dummy(ProviderBase):
 
     provider = "dummy"
     provider_type = ProviderType.NOTIFY
-    blocking: bool = True
+    blocking: bool = False
     sent: Callable = dummy_sent
 
     async def connect(self, *args, **kwargs):

@@ -1,10 +1,13 @@
 import importlib
-from navconfig.logging import Logger
+from navconfig.logging import logger
 from .providers.base import ProviderBase
 from .exceptions import ProviderError, NotifyException
+from .conf import TEMPLATE_DIR
+from .templates import TemplateParser
+
 
 PROVIDERS = {}
-
+TemplateEnv = None
 
 class Notify:
     """Notify
@@ -26,12 +29,12 @@ class Notify:
                 PROVIDERS[provider] = LoadProvider(provider)
             obj = PROVIDERS[provider]
             _provider = obj(*args, **kwargs)
-            Logger.debug(
+            logger.debug(
                 f":: Load Provider: {provider}"
             )
             return _provider
         except Exception as ex:
-            Logger.exception(
+            logger.critical(
                 f"Cannot Load provider {provider}: {ex}"
             )
             raise ProviderError(
@@ -45,12 +48,12 @@ class Notify:
                 PROVIDERS[provider] = LoadProvider(provider)
             obj = PROVIDERS[provider]
             _provider = obj(*args, **kwargs)
-            Logger.debug(
-                f":: Load Provider: {provider}"
+            logger.debug(
+                f":: Loaded Provider: {provider}"
             )
             return _provider
         except Exception as ex:
-            Logger.exception(
+            logger.critical(
                 f"Cannot Load provider {provider}: {ex}"
             )
             raise ProviderError(
@@ -75,3 +78,10 @@ def LoadProvider(provider: str):
             raise NotifyException(
                 f"Error: No Provider {provider} was Found: {exc}"
             ) from exc
+
+
+if __name__ == "notify.notify":
+    # loading template parser:
+    TemplateEnv = TemplateParser(
+        directory=TEMPLATE_DIR
+    )

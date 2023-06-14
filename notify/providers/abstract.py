@@ -56,7 +56,7 @@ class ProviderBase(ABC):
             self._debug = DEBUG
         # add the Jinja Template Parser
         try:
-            from notify import TemplateEnv  # pylint: disable=C0415
+            from notify.notify import TemplateEnv  # pylint: disable=C0415
 
             self._tpl = TemplateEnv
             self._template = None

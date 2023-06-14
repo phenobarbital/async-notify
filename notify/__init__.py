@@ -5,8 +5,6 @@ Asyncio-based Notifications connectors for NAV.
 """
 import asyncio
 import uvloop
-from .conf import TEMPLATE_DIR
-from .templates import TemplateParser
 from .providers.base import ProviderType
 from .notify import Notify
 
@@ -18,11 +16,3 @@ __all__ = (
     "Notify",
     "ProviderType",
 )
-
-TemplateEnv = None
-
-if __name__ == "notify":
-    # loading template parser:
-    TemplateEnv = TemplateParser(
-        directory=TEMPLATE_DIR
-    )
