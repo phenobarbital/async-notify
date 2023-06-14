@@ -37,6 +37,7 @@ class NotifyWorker:
             port: int = NOTIFY_DEFAULT_PORT,
             debug: bool = False
     ):
+        print('HOST ', host, port)
         self.host = host
         self.port = port
         self.debug = debug
@@ -80,6 +81,8 @@ class NotifyWorker:
                 await asyncio.sleep(0.001)  # sleep a bit to prevent high CPU usage
             except asyncio.CancelledError:
                 await pubsub.unsubscribe(NOTIFY_CHANNEL)
+                break
+            except KeyboardInterrupt:
                 break
             except Exception as exc:
                 # Handle other exceptions as necessary
@@ -134,7 +137,7 @@ class NotifyWorker:
 
     async def stop(self):
         if self.debug is True:
-            logging.debug(
+            self.logger.debug(
                 'Shutting down Notify Service.'
             )
         try:

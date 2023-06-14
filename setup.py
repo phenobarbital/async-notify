@@ -103,7 +103,8 @@ setup(
         'aiosmtplib==2.0.1',
         'python-datamodel>=0.3.12',
         'navconfig[default]>=1.3.5',
-        'cloudpickle==2.2.1'
+        'cloudpickle==2.2.1',
+        'redis==4.5.5'
     ],
     extras_require={
         "default": [
@@ -153,6 +154,11 @@ setup(
         ]
     },
     ext_modules=cythonize(extensions),
+    entry_points={
+        'console_scripts': [
+            'notify = notify.__main__:main'
+        ]
+    },
     project_urls={  # Optional
         'Source': 'https://github.com/phenobarbital/async-notify',
         'Funding': 'https://paypal.me/phenobarbital',
