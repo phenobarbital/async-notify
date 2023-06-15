@@ -92,6 +92,7 @@ class QueueManager:
             id (str): the id of the Task
         """
         try:
+            # asyncio.create_task(self.queue.put(task))
             await self.queue.put(task)
             await asyncio.sleep(.1)
             self.logger.info(
@@ -122,35 +123,19 @@ class QueueManager:
         """Method for handling the tasks received by the connection handler."""
         while True:
             result = None
-            task = await self.queue.get()
+            message = await self.queue.get()
             self.logger.notice(
-                f"Task started {task}"
+                f"Message started {message}"
             )
             ### Process Message:
             try:
-                #     executor = TaskExecutor(task)
-                #     result = await executor.run()
-                #     if type(result) == asyncio.TimeoutError:
-                #         raise
-                #     elif type(result) in (DataNotFound, FileNotFound):
-                #         raise
-                #     elif isinstance(result, BaseException):
-                #         if task.retries < WORKER_RETRY_COUNT - 1:
-                #             task.add_retries()
-                #             self.logger.warning(
-                #                 f"Task {task} failed. Retrying. Retry count: {task.retries}"
-                #             )
-                #             # Wait some seconds before retrying.
-                #             await asyncio.sleep(WORKER_RETRY_INTERVAL)
-                #             await self.queue.put(task)
-                #         else:
-                #             cnt = WORKER_RETRY_COUNT
-                #             self.logger.warning(
-                #                 f"{task} Failed after {cnt} times. Discarding task."
-                #             )
-                #             raise result
+                result = await message()
+                if isinstance(result, asyncio.TimeoutError):
+                    raise result
+                elif isinstance(result, BaseException):
+                    raise result
                 self.logger.debug(
-                    f'Consumed Message: {task} at {int(time.time())}'
+                    f'Consumed Message: {message} at {int(time.time())}'
                 )
             except RuntimeError as exc:
                 result = exc
@@ -166,5 +151,6 @@ class QueueManager:
                 ### Task Completed
                 self.queue.task_done()
                 await self._callback(
-                    task, result=result
+                    message, result=result
                 )
+                await asyncio.sleep(.1)

@@ -26,7 +26,21 @@ if __name__ == '__main__':
     # Define a message
     msg = {
         "provider": "dummy",
-        "recipients": [],
+        "recipient": [
+            {
+                "name": "Steven Smith",
+                "account": {
+                    "provider": "o365",
+                    "address": "guillermo@outlook.com"
+                }
+            },
+            {
+                "name": "Javier León",
+                "account": {
+                    "address": "jelitox@gmail.com"
+                }
+            }
+        ],
         "message": 'Congratulations!',
         "template": 'template_hello.txt'
     }
@@ -36,7 +50,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     try:
-        for _ in range(0, 5):
+        for _ in range(0, 500):
             # Send the message via TCP
             loop.run_until_complete(tcp_send(data))
             # Publish the same message to Redis

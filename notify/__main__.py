@@ -41,16 +41,16 @@ def main():
             worker.start()
         )
     except KeyboardInterrupt:
-        print('::: Closing Workers ::: ')
-        loop.run_until_complete(
-            worker.stop()
-        )
+        pass
     except Exception as ex:
         # log the unexpected error
         print(
             f"Unexpected error: {ex}"
         )
     finally:
+        loop.run_until_complete(
+            worker.stop()
+        )
         loop.close()  # close the event loop
 
 
