@@ -12,7 +12,7 @@ from O365 import Account, Connection, MSOffice365Protocol, Message
 from navconfig.logging import logging
 from notify.providers.mail import ProviderEmail
 from notify.models import Actor
-from .settings import (
+from notify.conf import (
     O365_CLIENT_ID,
     O365_CLIENT_SECRET,
     O365_TENANT_ID,
@@ -36,12 +36,12 @@ class Office365(ProviderEmail):
 
     def __init__(
         self,
+        *args,
         client_id: str = None,
         client_secret: str = None,
         tenant_id: str = None,
         username: str = None,
         password: str = None,
-        *args,
         **kwargs,
     ):
         self.account: Callable = None
@@ -74,9 +74,9 @@ class Office365(ProviderEmail):
                 "as `O365_CLIENT_ID` & `O365_CLIENT_SECRET`."
             )
 
-    def connect(self):
+    async def connect(self, **kwargs):
         """ """
-        self.protocol = MSOffice365Protocol()
+        self.protocol = MSOffice365Protocol(**kwargs)
         # scopes_graph = self.protocol.get_scopes_for('Mail.ReadWrite')
         scopes = ["https://graph.microsoft.com/.default"]
         if self.username is not None:
@@ -102,37 +102,37 @@ class Office365(ProviderEmail):
     async def close(self):
         pass
 
-    def _render_(self, to: Actor, subject: str = None, content: str = None, **kwargs):
+    async def _render_(self, to: Actor, message: str = None, subject: str = None, **kwargs):
         """ """
-        msg = content
+        msg = message
         if self._template:
             templateargs = {
                 "recipient": to,
                 "username": to,
-                "message": content,
-                "content": content,
+                "message": message,
+                "content": message,
                 **kwargs,
             }
-            msg = self._template.render(**templateargs)
+            msg = await self._template.render_async(**templateargs)
         else:
             try:
                 msg = kwargs["body"]
             except KeyError:
-                msg = content
+                msg = message
         # email message
         if self.username is not None:
             # using basic auth instead API
-            message = Message(
+            content = Message(
                 auth=(self.username, self.password),
                 protocol=self.protocol,
                 con=self.account,
             )
         else:
-            message = self.account.new_message()
-        message.to.add(to.account.address)
-        message.subject = subject
-        message.body = msg
-        return message
+            content = self.account.new_message()
+        content.to.add(to.account.address)
+        content.subject = subject
+        content.body = msg
+        return content
 
     async def _send_(self, to: Actor, message: str, subject: str, **kwargs):
         """
@@ -141,7 +141,7 @@ class Office365(ProviderEmail):
         """
         # making email connnection
         try:
-            message = self._render_(to, subject, message, **kwargs)
+            message = await self._render_(to, message, subject, **kwargs)
             status = message.send()
             logging.debug(status)
             return status
