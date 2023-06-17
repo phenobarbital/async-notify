@@ -9,7 +9,7 @@ user = {
     "name": "Jesus Lara",
     "account": {
         "address": "jesuslarag@gmail.com",
-        "phone": "+34692817379"
+        "number": "+34692817379"
     }
 }
 recipients = [Actor(**user)]

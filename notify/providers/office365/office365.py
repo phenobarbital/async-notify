@@ -32,7 +32,7 @@ class Office365(ProviderEmail):
     """
 
     provider = "office365"
-    blocking: bool = True
+    blocking: str = 'asyncio'
 
     def __init__(
         self,
