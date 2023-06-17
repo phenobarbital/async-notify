@@ -131,7 +131,7 @@ class ProviderEmail(ProviderBase, ABC):
         return message
 
     async def _render_(
-        self, to: Actor = None, subject: str = None, content: str = None, **kwargs
+        self, to: Actor = None, message: str = None, subject: str = None, **kwargs
     ):
         """
         _render_.
@@ -139,36 +139,33 @@ class ProviderEmail(ProviderBase, ABC):
         Returns the parseable version of Email.
         """
         # TODO: add attachments
-        message = MIMEMultipart("alternative")
-        message["From"] = self.actor
+        msg = MIMEMultipart("alternative")
+        msg["From"] = self.actor
         if isinstance(to, list):
             # TODO: iterate over actors
-            message["To"] = ", ".join(to)
+            msg["To"] = ", ".join(to)
         else:
-            message["To"] = to.account.address
-        message["Subject"] = subject
-        message["Date"] = formatdate(localtime=True)
-        message["sender"] = self.actor
-        message.preamble = subject
-        if content:
-            message.attach(MIMEText(content, "plain"))
+            msg["To"] = to.account.address
+        msg["Subject"] = subject
+        msg["Date"] = formatdate(localtime=True)
+        msg["sender"] = self.actor
+        msg.preamble = subject
+        if message:
+            msg.attach(MIMEText(message, "plain"))
         if self._template:
             self._templateargs = {
                 "recipient": to,
                 "username": to,
-                "message": content,
-                "content": content,
+                "message": message,
+                "content": message,
                 **kwargs,
             }
-            msg = await self._template.render_async(**self._templateargs)
+            content = await self._template.render_async(**self._templateargs)
         else:
-            msg = content
-        message.add_header("Content-Type", "text/html")
-        # message.add_header('Content-Type', 'multipart/mixed')
-        # message.add_header('Content-Transfer-Encoding', 'base64')
-        message.attach(MIMEText(msg, "html"))
-        # message.set_payload(msg)
-        return message
+            content = message
+        msg.add_header("Content-Type", "text/html")
+        msg.attach(MIMEText(content, "html"))
+        return msg
 
     def add_attachment(self, message, filename, mimetype="octect-stream"):
         content = None
@@ -192,7 +189,7 @@ class ProviderEmail(ProviderBase, ABC):
 
         Logic associated with the construction of notifications
         """
-        msg = await self._render_(to, subject, message, **kwargs)
+        msg = await self._render_(to, message, subject, **kwargs)
         if "attachments" in kwargs:
             for attach in kwargs["attachments"]:
                 self.add_attachment(message=msg, filename=attach)

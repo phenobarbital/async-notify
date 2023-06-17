@@ -11,7 +11,7 @@ from gmail import GMail as GMailWorker, Message
 from notify.providers.mail import ProviderEmail
 from notify.exceptions import ProviderError
 from notify.models import Actor
-from .settings import GMAIL_USERNAME, GMAIL_PASSWORD
+from notify.conf import GMAIL_USERNAME, GMAIL_PASSWORD
 
 
 class Gmail(ProviderEmail):
@@ -48,14 +48,14 @@ class Gmail(ProviderEmail):
             )
         self.actor = self.username
 
-    def close(self):
+    async def close(self):
         if self._server:
             try:
                 self._server.close()
             except Exception as err:
-                self._logger.warning(err)
+                self.logger.warning(err)
 
-    def connect(self):
+    async def connect(self):
         """
         connect.
 
@@ -64,27 +64,29 @@ class Gmail(ProviderEmail):
         try:
             self._server = GMailWorker(self.username, self.password)
         except smtplib.SMTPAuthenticationError as err:
-            raise Exception(f"Authentication Error: {err}") from err
+            raise ProviderError(
+                f"Authentication Error: {err}"
+            ) from err
         except Exception as err:
             raise RuntimeError(err) from err
 
-    def _render_(self, to: Actor, content: str = None, subject: str = None, **kwargs):
+    async def _render_(self, to: Actor, message: str = None, subject: str = None, **kwargs):
         """ """
-        msg = content
+        msg = message
         if self._template:
             self._templateargs = {
                 "recipient": to,
                 "username": to,
-                "message": content,
-                "content": content,
+                "message": message,
+                "content": message,
                 **kwargs,
             }
-            msg = self._template.render(**self._templateargs)
+            msg = await self._template.render_async(**self._templateargs)
         else:
             try:
                 msg = kwargs["body"]
             except KeyError:
-                msg = content
+                msg = message
         # email
         email = {
             "subject": subject,
@@ -103,7 +105,7 @@ class Gmail(ProviderEmail):
 
         Logic associated with the construction of notifications
         """
-        data = self._render_(to, message, subject, **kwargs)
+        data = await self._render_(to, message, subject, **kwargs)
         # making email connnection
         try:
             return self._server.send(data)

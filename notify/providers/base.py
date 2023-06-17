@@ -87,7 +87,7 @@ class ProviderBase(ABC):
         try:
             await self.close()
         except Exception as err:  # pylint: disable=W0703
-            self._logger.error(err)
+            self.logger.error(err)
 
     @abstractmethod
     async def connect(self, *args, **kwargs):

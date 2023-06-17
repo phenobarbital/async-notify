@@ -49,6 +49,10 @@ SLACK_TEAM_ID = config.get("SLACK_TEAM_ID")
 JABBER_JID = config.get("JABBER_JID")
 JABBER_PASSWORD = config.get("JABBER_PASSWORD")
 
+# gmail
+GMAIL_USERNAME = config.get("GMAIL_USERNAME")
+GMAIL_PASSWORD = config.get("GMAIL_PASSWORD")
+
 try:
     from settings.settings import *  # pylint: disable=W0614,W0401
 except ImportError:

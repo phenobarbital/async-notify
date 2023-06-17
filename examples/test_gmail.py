@@ -11,7 +11,7 @@ user = {
     "name": "Jesus Lara",
     "account": {
         "address": "jesuslarag@gmail.com",
-        "phone": "+34692817379"
+        "number": "+34692817379"
     }
 }
 user2 = {
@@ -21,7 +21,7 @@ user2 = {
         "address": "jesuslara@devel.com.ve"
     }
 }
-recipients = [ Actor(**user), Actor(**user2) ]
+recipients = [Actor(**user), Actor(**user2)]
 
 Msg('=== GMAIL ===')
 d = Gmail()
@@ -40,7 +40,9 @@ result = loop.run_until_complete(
     )
 )
 print(result)
-d.close() # close is not async on gmail.
+loop.run_until_complete(
+    d.close()
+)
 
 Msg('=== GMAIL in a Context Method ===')
 
