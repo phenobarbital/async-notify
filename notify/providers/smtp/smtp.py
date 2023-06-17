@@ -2,7 +2,6 @@
 import os
 import ssl
 import asyncio
-from abc import ABC
 from typing import Union, Any
 from collections.abc import Callable
 from email import encoders
@@ -12,30 +11,79 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.utils import formatdate
-from functools import partial
-import aiosmtplib
+import smtplib
 from notify.models import Actor
 from notify.exceptions import ProviderError
 # abstract class
-from .base import ProviderBase, ProviderType
+from notify.providers.base import ProviderBase, ProviderType
+from notify.providers.message import ThreadMessage
+from notify.conf import (
+    EMAIL_SMTP_USERNAME,
+    EMAIL_SMTP_PASSWORD,
+    EMAIL_SMTP_HOST,
+    EMAIL_SMTP_PORT,
+)
 
 
-class ProviderEmail(ProviderBase, ABC):
+class SMTP(ProviderBase):
     """
-    ProviderEmail.
+    ProviderSMTP.
 
-    Base class for All Email-based providers
+    Provider using simple SMTP connection.
     """
 
     provider_type = ProviderType.EMAIL
-    blocking: str = 'asyncio'
+    blocking: str = 'executor'
     timeout: int = 60
 
-    def __init__(self, *args, **kwargs):
-        self.host: str = None
-        self.port: int = None
+    def __init__(
+        self,
+        hostname: str = None,
+        port: str = None,
+        username: str = None,
+        password: str = None,
+        **kwargs,
+    ):
+        """ """
+        self._attachments: list = []
+        self.force_tls: bool = True
+        self.username = None
+        self.password = None
         self._server: Callable = None
-        super(ProviderEmail, self).__init__(*args, **kwargs)
+        super(SMTP, self).__init__(**kwargs)
+        # port
+        self.host = hostname
+        if not self.host:  # already configured
+            self.host = EMAIL_SMTP_HOST
+        # port
+        self.port = port
+        if not self.port:
+            self.port = EMAIL_SMTP_PORT
+
+        # connection related settings
+        self.username = username
+        if self.username is None:
+            self.username = EMAIL_SMTP_USERNAME
+
+        self.password = password
+        if self.password is None:
+            self.password = EMAIL_SMTP_PASSWORD
+
+        if self.username is None or self.password is None:
+            raise RuntimeWarning(
+                f"to send messages via **{self._name}** you need to configure user & password. \n"
+                "Either send them as function argument via key \n"
+                "`username` & `password` or set up env variable \n"
+                "as `EMAIL_USERNAME` & `EMAIL_PASSWORD`."
+            )
+        try:
+            # sent from another account
+            if "account" in kwargs:
+                self.actor = kwargs["account"]
+            else:
+                self.actor = self.username
+        except KeyError:
+            self.actor = self.username
 
     @property
     def user(self):
@@ -44,8 +92,8 @@ class ProviderEmail(ProviderBase, ABC):
     async def close(self):
         if self._server:
             try:
-                await self._server.quit()
-            except aiosmtplib.errors.SMTPServerDisconnected:
+                self._server.quit()
+            except smtplib.SMTPServerDisconnected:
                 pass
             except Exception as err:  # pylint: disable=W0703
                 self.logger.exception(err, stack_info=True)
@@ -63,44 +111,38 @@ class ProviderEmail(ProviderBase, ABC):
         context.options |= ssl.OP_NO_TLSv1_1
         context.options |= ssl.OP_NO_COMPRESSION
         try:
-            self._server = aiosmtplib.SMTP(
-                hostname=self.host,
-                port=self.port,
-                username=self.username,
-                password=self.password,
-                start_tls=True,
-                tls_context=context,
-                # loop=self._loop
+            self._server = smtplib.SMTP(
+                host=self.host, port=self.port
             )
+            self._server.connect(self.host, self.port)
+            self._server.set_debuglevel(0)
             try:
-                await self._server.connect()
+                try:
+                    self._server.ehlo()
+                except smtplib.SMTPHeloError as exc:
+                    print(exc)
+                if self._server.has_extn('STARTTLS'):
+                    self._server.starttls(context=context)
+                    self._server.ehlo()  # ehlo again after starttls
+                # You can then authenticate yourself with ehlo() and login()
+                if self.username and self.password:
+                    self._server.login(self.username, self.password)
                 self.logger.debug(
                     f":: {self.__name__}: Connected to: {self._server}"
                 )
-                try:
-                    if self._server.is_ehlo_or_helo_needed:
-                        await self._server.ehlo()
-                except aiosmtplib.errors.SMTPHeloError as exc:
-                    print(exc)
-                await asyncio.sleep(.1)
-                # # making authentication:
-                # await self._server.login(
-                #     username=self.username,
-                #     password=self.password
-                # )
-            except aiosmtplib.errors.SMTPAuthenticationError as err:
+            except smtplib.SMTPAuthenticationError as err:
                 raise RuntimeError(
                     f"{self.__name__} Error: Invalid credentials: {err}"
                 ) from err
-            except aiosmtplib.errors.SMTPServerDisconnected as err:
+            except smtplib.SMTPServerDisconnected as err:
                 raise RuntimeError(
                     f"{self.__name__} Server Disconnected: {err}"
                 ) from err
-        except aiosmtplib.SMTPRecipientsRefused as err:
+        except smtplib.SMTPRecipientsRefused as err:
             raise RuntimeError(
                 f"{self.__name__} Error: got SMTPRecipientsRefused: {err.recipients}"
             ) from err
-        except (OSError, aiosmtplib.errors.SMTPException) as e:
+        except (smtplib.SMTPException) as e:
             raise RuntimeError(f"{self.__name__} Error: got {e.__class__}, {e}") from e
 
     def is_connected(self):
@@ -130,8 +172,8 @@ class ProviderEmail(ProviderBase, ABC):
             message.attach(MIMEText(text, "plain"))
         return message
 
-    async def _render_(
-        self, to: Actor = None, subject: str = None, content: str = None, **kwargs
+    def _render_(
+        self, to: Actor = None, message: str = None, subject: str = None, **kwargs
     ):
         """
         _render_.
@@ -139,36 +181,33 @@ class ProviderEmail(ProviderBase, ABC):
         Returns the parseable version of Email.
         """
         # TODO: add attachments
-        message = MIMEMultipart("alternative")
-        message["From"] = self.actor
+        msg = MIMEMultipart("alternative")
+        msg["From"] = self.actor
         if isinstance(to, list):
             # TODO: iterate over actors
-            message["To"] = ", ".join(to)
+            msg["To"] = ", ".join(to)
         else:
-            message["To"] = to.account.address
-        message["Subject"] = subject
-        message["Date"] = formatdate(localtime=True)
-        message["sender"] = self.actor
-        message.preamble = subject
-        if content:
-            message.attach(MIMEText(content, "plain"))
+            msg["To"] = to.account.address
+        msg["Subject"] = subject
+        msg["Date"] = formatdate(localtime=True)
+        # msg["sender"] = self.actor
+        msg.preamble = subject
+        if message:
+            msg.attach(MIMEText(message, "plain"))
         if self._template:
             self._templateargs = {
                 "recipient": to,
                 "username": to,
-                "message": content,
-                "content": content,
+                "message": message,
+                "content": message,
                 **kwargs,
             }
-            msg = await self._template.render_async(**self._templateargs)
+            content = self._template.render(**self._templateargs)
         else:
-            msg = content
-        message.add_header("Content-Type", "text/html")
-        # message.add_header('Content-Type', 'multipart/mixed')
-        # message.add_header('Content-Transfer-Encoding', 'base64')
-        message.attach(MIMEText(msg, "html"))
-        # message.set_payload(msg)
-        return message
+            content = message
+        msg.add_header("Content-Type", "text/html")
+        msg.attach(MIMEText(content, "html"))
+        return msg
 
     def add_attachment(self, message, filename, mimetype="octect-stream"):
         content = None
@@ -184,7 +223,7 @@ class ProviderEmail(ProviderBase, ABC):
         part.add_header("Content-Disposition", "attachment", filename=str(file))
         message.attach(part)
 
-    async def _send_(
+    def _send_(
         self, to: Actor, message: str, subject: str, **kwargs
     ):  # pylint: disable=W0221
         """
@@ -192,16 +231,16 @@ class ProviderEmail(ProviderBase, ABC):
 
         Logic associated with the construction of notifications
         """
-        msg = await self._render_(to, subject, message, **kwargs)
+        msg = self._render_(to, message, subject, **kwargs)
         if "attachments" in kwargs:
             for attach in kwargs["attachments"]:
                 self.add_attachment(message=msg, filename=attach)
         try:
             try:
-                response = await self._server.send_message(msg)
+                response = self._server.send_message(msg)
                 if self._debug is True:
                     self.logger.debug(response)
-            except aiosmtplib.errors.SMTPServerDisconnected as err:
+            except smtplib.SMTPServerDisconnected as err:
                 raise RuntimeError(
                     f"{self.__name__} Server Disconnected {err}"
                 ) from err
@@ -211,59 +250,3 @@ class ProviderEmail(ProviderBase, ABC):
             raise ProviderError(
                 f"{self.__name__} Error: got {e.__class__}, {e}"
             ) from e
-
-    async def send(
-        self,
-        recipient: list[Actor] = None,
-        message: Union[str, Any] = None,
-        subject: str = None,
-        **kwargs,
-    ):
-        result = None
-        # making the connection to the service:
-        loop = asyncio.get_running_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            await self.connect()
-        except Exception as err:
-            raise ProviderError(
-                f"Error connecting to Mail Backend: {err}"
-            ) from err
-        # after connection, proceed exactly like other connectors.
-        ## recipients:
-        # template (or message) for preparation
-        message = await self._prepare_(
-            recipient=recipient,
-            message=message,
-            **kwargs
-        )
-        results = []
-        recipients = [recipient] if not isinstance(recipient, list) else recipient
-        tasks = []
-        for to in recipients:
-            task = loop.create_task(
-                self._send_(to, message, subject=subject, **kwargs)
-            )
-            fn = partial(self.__sent__, to, message, **kwargs)
-            task.add_done_callback(fn)
-            tasks.append(task)
-            done, pending = await asyncio.wait(
-                tasks,
-                timeout=self.timeout,
-                return_when="ALL_COMPLETED"
-            )
-            for task in done:
-                exception = task.exception()
-                if exception is not None:
-                    self.logger.error(
-                        f"Mail error: {exception}"
-                    )
-                else:
-                    result = task.result()
-                    results.append(result)
-            for task in pending:
-                self.logger.warning(
-                    f"Task {task} pending, not completed"
-                )
-                task.cancel()
-        return results

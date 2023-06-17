@@ -2,7 +2,7 @@ import asyncio
 from notify.utils import Msg
 from notify.models import Actor, Channel
 from notify.providers.slack import Slack
-from notify.providers.slack.settings import SLACK_DEFAULT_CHANNEL
+from notify.conf import SLACK_DEFAULT_CHANNEL
 
 
 # channel = Channel(channel_id=SLACK_DEFAULT_CHANNEL, channel_name='navigator-tests')

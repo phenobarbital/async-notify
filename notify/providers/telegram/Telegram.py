@@ -1,13 +1,11 @@
-import logging
 from io import BytesIO
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from typing import Union, Any
 import emoji
 from PIL import Image
 
 # telegram
 from aiogram import Bot, types
-
 # from aiogram.dispatcher import Dispatcher
 # from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.exceptions import (
@@ -20,15 +18,19 @@ from aiogram.utils.exceptions import (
     ChatNotFound,
 )
 import aiofiles
-
 # from aiogram.utils.emoji import emojize
 # from aiogram.utils.markdown import bold, code, italic, text
 # TODO: web-hooks
 # from aiogram.utils.executor import start_webhook
+from navconfig.logging import logging
 from notify.models import Actor, Chat
-from notify.exceptions import notifyException
-from notify.providers.abstract import ProviderIM, ProviderType
-from .settings import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+from notify.exceptions import NotifyException
+from notify.providers.base import ProviderIM, ProviderType
+
+from notify.conf import (
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID
+)
 
 aiogram_logger = logging.getLogger("aiogram")
 aiogram_logger.setLevel(logging.WARNING)
@@ -37,7 +39,7 @@ aiogram_logger.setLevel(logging.WARNING)
 class Telegram(ProviderIM):
     provider: str = "telegram"
     provider_type = ProviderType.IM
-    blocking: bool = False
+    blocking: str = 'asyncio'
     parseMode: str = "html"  # can be MARKDOWN_V2 or HTML
 
     def __init__(self, *args, **kwargs):
@@ -78,12 +80,14 @@ class Telegram(ProviderIM):
         try:
             self._bot = Bot(token=self._bot_token)
             self._info = await self._bot.get_me()
-            self._logger.debug(
+            self.logger.debug(
                 f"🤖 Hello, I'm {self._info.first_name}.\nHave a nice Day!"
             )
             self._connected = True
         except Exception as err:
-            raise notifyException(f"Notify: Error creating Telegram Bot {err}") from err
+            raise NotifyException(
+                f"Notify: Error creating Telegram Bot {err}"
+            ) from err
 
     def set_chat(self, chat):
         self._chat_id = chat
@@ -114,7 +118,9 @@ class Telegram(ProviderIM):
         # start sending a message:
         try:
             msg = await self._render_(to, message, subject=subject, **kwargs)
-            self._logger.info(f"Messsage> {msg}")
+            self.logger.info(
+                f"Messsage> {msg}"
+            )
         except Exception as err:
             raise RuntimeError(
                 f"Notify Telegram: Error Parsing Message: {err}"
@@ -156,6 +162,9 @@ class Telegram(ProviderIM):
             print(err)
         except Exception as err:
             print("ERROR: ", err)
+            raise NotifyException(
+                f"{err}"
+            ) from err
 
     async def prepare_photo(self, photo):
         # Migrate to aiofile
@@ -201,7 +210,9 @@ class Telegram(ProviderIM):
                 # handle all other telegram related errors
                 print(err)
             except Exception as err:
-                print("ERROR: ", err)
+                raise NotifyException(
+                    f"{err}"
+                ) from err
 
     async def get_document(self, doc: Union[str, PurePath, Any]) -> Any:
         if isinstance(doc, PurePath):  # Path to a File:
@@ -219,7 +230,11 @@ class Telegram(ProviderIM):
         chat_id = self.get_chat()
         doc = await self.get_document(document)
         try:
-            response = await self._bot.send_document(chat_id, document=doc, **kwargs)
+            response = await self._bot.send_document(
+                chat_id,
+                document=doc,
+                **kwargs
+            )
             # print(response) # TODO: make the processing of response
             return response
         except Unauthorized as err:
@@ -241,6 +256,9 @@ class Telegram(ProviderIM):
             print(err)
         except Exception as err:
             print("ERROR: ", err)
+            raise NotifyException(
+                f"{err}"
+            ) from err
 
     async def get_sticker(self, sticker_id):
         if isinstance(sticker_id, dict):  # getting from an sticker_set
@@ -251,12 +269,14 @@ class Telegram(ProviderIM):
                 em = emoji.emojize(em)
             try:
                 sticker_set = await self._bot.get_sticker_set(name)
-                self._logger.debug(f"Set Found: {sticker_set!r}")
+                self.logger.debug(f"Set Found: {sticker_set!r}")
                 st = [x for x in sticker_set["stickers"] if x["emoji"] == em]
                 sticker = st[0].file_id
                 return sticker
             except Exception as err:
-                self._logger.warning(f"Sticker finder error: {err}")
+                self.logger.warning(
+                    f"Sticker finder error: {err}"
+                )
                 return None
         else:
             return "CAACAgEAAxkBAAIuOWMze9CZzg6cQaEulHqjrcRCvBh2AAK_AgACJjFuAVdTX0Nu_LoxKgQ"
@@ -287,6 +307,9 @@ class Telegram(ProviderIM):
             print(err)
         except Exception as err:
             print("ERROR: ", err)
+            raise NotifyException(
+                f"{err}"
+            ) from err
 
     async def get_media(self, media: Union[str, PurePath, Any]) -> Any:
         if isinstance(media, PurePath):  # Path to a File:
@@ -326,6 +349,9 @@ class Telegram(ProviderIM):
             print(err)
         except Exception as err:
             print("ERROR: ", err)
+            raise NotifyException(
+                f"{err}"
+            ) from err
 
     async def send_audio(self, audio: Union[str, PurePath, Any], **kwargs):
         chat_id = self.get_chat()
@@ -353,3 +379,6 @@ class Telegram(ProviderIM):
             print(err)
         except Exception as err:
             print("ERROR: ", err)
+            raise NotifyException(
+                f"{err}"
+            ) from err

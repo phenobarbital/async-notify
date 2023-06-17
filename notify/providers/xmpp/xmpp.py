@@ -3,19 +3,20 @@ xmpp.
 
 XMPP use slixmpp to send jabber messages (XMPP protocol)
 """
-import logging
-import ssl
 from typing import Union, Any
-
+import ssl
 # XMPP library
 from slixmpp import ClientXMPP
 from slixmpp.exceptions import IqError, IqTimeout
 from slixmpp.xmlstream.xmlstream import NotConnectedError
+from navconfig.logging import logging
 from notify.models import Actor
-from notify.providers import ProviderIMBase, IM
+from notify.providers.base import ProviderIM, ProviderType
 from notify.exceptions import ProviderError
-
-from .settings import JABBER_JID, JABBER_PASSWORD
+from notify.conf import (
+    JABBER_JID,
+    JABBER_PASSWORD
+)
 
 
 class Client(ClientXMPP):
@@ -24,9 +25,8 @@ class Client(ClientXMPP):
 
     Extending Class to registering session and plugins
     """
-
     provider = "xmpp"
-    provider_type = IM
+    provider_type = ProviderType.IM
 
     def __init__(self, jid, password, plugins: list = None):
         ClientXMPP.__init__(self, jid, password)
@@ -35,13 +35,25 @@ class Client(ClientXMPP):
         # and the XML streams are ready for use. We want to
         # listen for this event so that we we can initialize
         # our roster.
-        self.add_event_handler("session_start", self.session_start)
+        self.add_event_handler(
+            "session_start",
+            self.session_start
+        )
         # The message event is triggered whenever a message
         # stanza is received. Be aware that that includes
         # MUC messages and error messages.
-        self.add_event_handler("message", self.message)
-        self.add_event_handler("disconnected", self.on_disconnect)
-        self.add_event_handler("connection_failed", self.on_connection_failure)
+        self.add_event_handler(
+            "message",
+            self.message
+        )
+        self.add_event_handler(
+            "disconnected",
+            self.on_disconnect
+        )
+        self.add_event_handler(
+            "connection_failed",
+            self.on_connection_failure
+        )
         if isinstance(plugins, list):
             for p in plugins:
                 self.register_plugin(p)
@@ -53,11 +65,15 @@ class Client(ClientXMPP):
         try:
             await self.get_roster()
         except IqError as err:
-            logging.error("There was an error getting the roster")
+            logging.error(
+                "There was an error getting the roster"
+            )
             logging.error(err.iq["error"]["condition"])
             self.disconnect()
         except IqTimeout:
-            logging.error("Server is taking too long to respond")
+            logging.error(
+                "Server is taking too long to respond"
+            )
             self.disconnect()
 
     def message(self, msg):
@@ -84,7 +100,7 @@ class Client(ClientXMPP):
         logging.info("XMPP session terminated.")
 
 
-class Xmpp(ProviderIMBase):
+class Xmpp(ProviderIM):
     """
     xmpp.
 
@@ -94,7 +110,7 @@ class Xmpp(ProviderIMBase):
     """
 
     provider = "xmpp"
-    provider_type = IM
+    provider_type = ProviderType.IM
     client = None
     _session = None
     _id = None
@@ -136,18 +152,22 @@ class Xmpp(ProviderIMBase):
             jid = self.client.boundjid.bare
         try:
             rtt = await self.client["xep_0199"].ping(jid, timeout=10)
-            self._logger.info(f"Success! RTT: {rtt!s}")
+            self.logger.info(f"Success! RTT: {rtt!s}")
         except IqError as e:
             error = e.iq["error"]["condition"]
-            self._logger.info(f"Error pinging {jid}: {error}")
+            self.logger.info(f"Error pinging {jid}: {error}")
         except IqTimeout:
-            self._logger.info(f"No response from {jid}")
+            self.logger.info(f"No response from {jid}")
         finally:
             self.client.disconnect()
 
-    def connect(self):
+    def connect(self, **kwargs):
         try:
-            self.client = Client(self.username, self.password, plugins=self._plugins)
+            self.client = Client(
+                self.username,
+                self.password,
+                plugins=self._plugins
+            )
             # Connect to the XMPP server and start processing XMPP stanzas
             self.client.connect()
             self.client.process(forever=False)
@@ -167,7 +187,9 @@ class Xmpp(ProviderIMBase):
                 mto=to, mbody=f"{subject}: {message}", mtype="chat"
             )
         except NotConnectedError:
-            self.log("Message NOT SENT, not connected.")
+            self.logger.warning(
+                "Message NOT SENT, not connected."
+            )
         except IqError as e:
             raise ProviderError(e) from e
         except IqTimeout as e:

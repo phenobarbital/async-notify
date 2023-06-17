@@ -33,6 +33,7 @@ class Account(BaseModel):
     provider: str = Column(required=True, default="dummy")
     enabled: bool = Column(required=True, default=True)
     address: Union[str, list[str]] = Column(required=False, default_factory=list)
+    number: Union[str, list[str]] = Column(required=False, default_factory=list)
     userid: str = Column(required=False, default="")
     attributes: dict = Column(required=False, default_factory=dict)
 

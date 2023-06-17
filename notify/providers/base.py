@@ -134,6 +134,26 @@ class ProviderBase(ABC):
             self._template = None
         return msg
 
+    def _render_sync_(
+        self, to: Actor = None, message: str = None, subject: str = None, **kwargs
+    ):  # pylint: disable=W0613
+        """
+        _render_.
+
+        Returns the parseable version of Message template.
+        """
+        msg = message
+        if self._template:
+            self._templateargs = {
+                "recipient": to,
+                "username": to,
+                "message": message,
+                "subject": subject,
+                **kwargs,
+            }
+            msg = self._template.render(**self._templateargs)
+        return msg
+
     async def _render_(
         self, to: Actor = None, message: str = None, subject: str = None, **kwargs
     ):  # pylint: disable=W0613
@@ -172,19 +192,37 @@ class ProviderBase(ABC):
             Any: Result of sending process.
         """
 
-    def __sent__(self, recipient: Actor, message: str, _task: Awaitable, **kwargs):
+    def __sent__(
+        self,
+        recipient: Actor,
+        message: str,
+        _task: Awaitable,
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+        **kwargs
+    ):
         """
         processing the callback for every notification that we sent.
         """
         if callable(self.sent):
+            _new = False
             try:
-                result = _task.result()
+                if isinstance(_task, str):
+                    result = _task
+                else:
+                    try:
+                        result = _task.result()
+                    except (TypeError, ValueError):
+                        result = str(_task)
                 # logging:
                 self.logger.debug(
                     f"Notification sent to:> {recipient}"
                 )
                 try:
-                    evt = asyncio.new_event_loop()
+                    if loop:
+                        evt = loop
+                    else:
+                        evt = asyncio.new_event_loop()
+                        _new = True
                     if "task" in kwargs:
                         del kwargs["task"]
                     fn = partial(
@@ -201,7 +239,8 @@ class ProviderBase(ABC):
                             fn
                         )
                 finally:
-                    evt.close()
+                    if _new is True:
+                        evt.close()
             except (AttributeError, RuntimeError) as ex:
                 self.logger.error(
                     f"Notify: *Sent* Function fail with error {ex}"
@@ -255,10 +294,6 @@ class ProviderBase(ABC):
         public method to send messages and notifications
         """
         # template (or message) for preparation
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.get_event_loop()
         message = await self._prepare_(
             recipient=recipient,
             message=message,
@@ -266,7 +301,11 @@ class ProviderBase(ABC):
         )
         results = None
         recipients = [recipient] if not isinstance(recipient, list) else recipient
-        if self.blocking is False:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.get_event_loop()
+        if self.blocking == 'asyncio':
             # asyncio:
             tasks = []
             for to in recipients:
@@ -282,7 +321,21 @@ class ProviderBase(ABC):
                     self.logger.warning(
                         f'Task {idx} raised exception: {result}'
                     )
-
+        elif self.blocking == 'executor':
+            results = []
+            for to in recipients:
+                with ThreadPoolExecutor(max_workers=10) as executor:
+                    result = await loop.run_in_executor(
+                        executor,
+                        partial(self._send_, to, message, subject=subject, **kwargs)
+                    )
+                    self.__sent__(to, message, _task=result, **kwargs)
+                    results.append(result)
+            for idx, result in enumerate(results):
+                if isinstance(result, Exception):
+                    self.logger.warning(
+                        f'Task {idx} raised exception: {result}'
+                    )
         else:
             # is blocking, using threads and an asyncio queue
             msg_queue = asyncio.Queue()
@@ -314,3 +367,35 @@ class ProviderBase(ABC):
                     f"An unexpected error occurred: {str(e)}"
                 )
         return results
+
+
+class ProviderMessaging(ProviderBase):
+    """ProviderMessaging.
+
+    Base class for All Messaging Service providers (like SMS).
+
+    """
+
+    provider_type = ProviderType.SMS
+
+
+class ProviderIM(ProviderBase):
+    """ProviderIM.
+
+    Base class for All Message to Instant messenger providers
+
+    """
+
+    provider_type = ProviderType.IM
+    _response = None
+
+
+class ProviderPush(ProviderBase):
+    """ProviderPush.
+
+    Base class for All Message to Push Notifications.
+
+    """
+
+    provider_type = ProviderType.PUSH
+    _response = None

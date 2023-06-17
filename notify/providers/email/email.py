@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from notify.providers.mail import ProviderEmail
-from .settings import (
+from notify.conf import (
     EMAIL_SMTP_USERNAME,
     EMAIL_SMTP_PASSWORD,
     EMAIL_SMTP_HOST,
@@ -16,7 +16,7 @@ class Email(ProviderEmail):
     """
 
     provider = "email"
-    blocking: bool = False
+    blocking: str = 'asyncio'
 
     def __init__(
         self,

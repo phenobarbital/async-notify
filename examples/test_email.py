@@ -9,16 +9,17 @@ from notify import Notify
 loop = asyncio.get_event_loop()
 asyncio.set_event_loop(loop)
 
-stmp_host_user=config.get('stmp_host_user')
-stmp_host_password=config.get('stmp_host_password')
-stmp_host=config.get('stmp_host')
-stmp_port=config.get('stmp_port')
+stmp_host_user = config.get('stmp_host_user')
+stmp_host_password = config.get('stmp_host_password')
+stmp_host = config.get('stmp_host')
+stmp_port = config.get('stmp_port')
+
 
 user = {
     "name": "Jesus Lara",
     "account": {
         "address": "jesuslarag@gmail.com",
-        "phone": "+34692817379"
+        "number": "+34692817379"
     }
 }
 user2 = {
@@ -40,18 +41,18 @@ account = {
     "username": stmp_host_user
 }
 
-e = Notify('email', **account)
-result = loop.run_until_complete(
-    e.send(
-        recipient=recipients,
-        subject='Epale, vente a jugar bolas criollas!',
-        event_name='Partido de bolas Criollas',
-        event_address='Bolodromo Caucagua',
-        template='email_applied.html'
-    )
-)
-print(result)
-loop.run_until_complete(e.close())
+# e = Notify('email', **account)
+# result = loop.run_until_complete(
+#     e.send(
+#         recipient=recipients,
+#         subject='Epale, vente a jugar bolas criollas!',
+#         event_name='Partido de bolas Criollas',
+#         event_address='Bolodromo Caucagua',
+#         template='email_applied.html'
+#     )
+# )
+# print(result)
+# loop.run_until_complete(e.close())
 
 Msg('=== Test EMAIL with Default Settings === ')
 async def send_email():
@@ -65,4 +66,6 @@ async def send_email():
             template='email_applied.html'
         )
 
-asyncio.run(send_email())
+
+if __name__ == '__main__':
+    asyncio.run(send_email())

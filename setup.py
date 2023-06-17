@@ -115,6 +115,7 @@ setup(
         "telegram": [
             'emoji==2.2.0',
             'aiogram==2.25.1',
+            'pillow==9.5.0'
         ],
         "push": [
             'onesignal-sdk==2.0.0',
@@ -136,8 +137,6 @@ setup(
         ],
         "all": [
             'emoji==2.2.0',
-            'aiogram==2.25.1',
-            'pillow==9.4.0',
             'gmail==0.6.3',
             'google-auth>=2.6.0',
             'google-auth-httplib2>=0.1.0',
@@ -150,7 +149,9 @@ setup(
             'tweepy==4.14.0',
             'twilio==8.2.2',
             'slixmpp==1.8.3',
-            "slack_bolt==1.18.0"
+            "slack_bolt==1.18.0",
+            'aiogram==2.25.1',
+            'pillow==9.5.0'
         ]
     },
     ext_modules=cythonize(extensions),

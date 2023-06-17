@@ -24,6 +24,31 @@ NOTIFY_QUEUE_CALLBACK = config.get(
     'NOTIFY_QUEUE_CALLBACK', fallback=None
 )
 
+## Email
+EMAIL_SMTP_USERNAME = config.get("stmp_host_user")
+EMAIL_SMTP_PASSWORD = config.get("stmp_host_password")
+EMAIL_SMTP_PORT = config.get("smtp_port", fallback=587)
+EMAIL_SMTP_HOST = config.get("stmp_host")
+
+## Telegram:
+# Telegram credentials
+TELEGRAM_BOT_TOKEN = config.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = config.get("TELEGRAM_CHAT_ID")
+
+## Slack
+SLACK_APP_ID = config.get("SLACK_APP_ID")
+SLACK_CLIENT_ID = config.get("SLACK_CLIENT_ID")
+SLACK_CLIENT_SECRET = config.get("SLACK_CLIENT_SECRET")
+SLACK_SIGNING_SECRET = config.get("SLACK_SIGNING_SECRET")
+# Bot information:
+SLACK_BOT_TOKEN = config.get("SLACK_BOT_TOKEN")
+SLACK_DEFAULT_CHANNEL = config.get("SLACK_DEFAULT_CHANNEL")
+SLACK_TEAM_ID = config.get("SLACK_TEAM_ID")
+
+# Jabber Service
+JABBER_JID = config.get("JABBER_JID")
+JABBER_PASSWORD = config.get("JABBER_PASSWORD")
+
 try:
     from settings.settings import *  # pylint: disable=W0614,W0401
 except ImportError:
