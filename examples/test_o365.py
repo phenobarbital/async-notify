@@ -21,7 +21,7 @@ user2 = {
 
 async def send_mail():
     recipients = [Actor(**user), Actor(**user2)]
-    mail = Notify('office365')
+    mail = Notify('office365', use_credentials=True)
     async with mail as m:
         result = await m.send(
             recipient=recipients,

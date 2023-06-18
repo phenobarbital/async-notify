@@ -41,3 +41,6 @@ cdef class UninitializedError(ProviderError):
 
 cdef class NotifyTimeout(ProviderError):
     """Connection Timeout Error."""
+
+cdef class NotifyAuthError(ProviderError):
+    """Notify Authentication error."""
