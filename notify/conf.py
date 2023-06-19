@@ -49,7 +49,7 @@ SLACK_TEAM_ID = config.get("SLACK_TEAM_ID")
 JABBER_JID = config.get("JABBER_JID")
 JABBER_PASSWORD = config.get("JABBER_PASSWORD")
 
-# gmail
+# Gmail
 GMAIL_USERNAME = config.get("GMAIL_USERNAME")
 GMAIL_PASSWORD = config.get("GMAIL_PASSWORD")
 
@@ -63,6 +63,33 @@ O365_PASSWORD = config.get("O365_PASSWORD")
 # Sendgrid
 SENDGRID_USER = config.get("SENDGRID_USER")
 SENDGRID_KEY = config.get("SENDGRID_KEY")
+
+## Amazon AWS SMTP:
+# Amazon AWS
+AWS_EMAIL_USER = config.get("aws_email_user")
+AWS_EMAIL_PASSWORD = config.get("aws_email_password")
+AWS_EMAIL_HOST = config.get(
+    "aws_email_host", fallback="email-smtp.us-east-1.amazonaws.com"
+)
+AWS_EMAIL_PORT = config.get("aws_email_port", fallback=587)
+AWS_EMAIL_ACCOUNT = config.get("aws_email_account")
+
+# OneSignail
+ONESIGNAL_PLAYER_ID = config.get("ONESIGNAL_PLAYER_ID")
+ONESIGNAL_OS_APP_ID = config.get("ONESIGNAL_OS_APP_ID")
+ONESIGNAL_OS_API_KEY = config.get("ONESIGNAL_OS_API_KEY")
+
+# Twilio credentials
+TWILIO_ACCOUNT_SID = config.get("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = config.get("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE = config.get("TWILIO_PHONE")
+
+# Twitter Tweets:
+TWITTER_ACCESS_TOKEN = config.get("TWITTER_ACCESS_TOKEN")
+TWITTER_TOKEN_SECRET = config.get("TWITTER_TOKEN_SECRET")
+TWITTER_CONSUMER_KEY = config.get("TWITTER_CONSUMER_KEY")
+TWITTER_CONSUMER_SECRET = config.get("TWITTER_CONSUMER_SECRET")
+
 
 try:
     from settings.settings import *  # pylint: disable=W0614,W0401
