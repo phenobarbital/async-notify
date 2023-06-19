@@ -181,7 +181,10 @@ class Office365(ProviderEmail):
             content = self.mailbox.new_message()
         content.to.add(to.account.address)
         content.subject = subject
-        content.body = msg
+        try:
+            content.setBodyHTML(msg)
+        except (AttributeError, ValueError):
+            content.body = msg
         return content
 
     async def _send_(self, to: Actor, message: str, subject: str, **kwargs):
