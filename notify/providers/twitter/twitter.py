@@ -5,10 +5,10 @@ Using tweepy to send (publish) Tweets.
 """
 from typing import Optional, Union, Any
 import tweepy
-from notify.providers import ProviderIMBase, ProviderType
+from notify.providers.base import ProviderIMBase, ProviderType
 from notify.models import Actor
 from notify.exceptions import ProviderError
-from .settings import (
+from notify.conf import (
     TWITTER_ACCESS_TOKEN,
     TWITTER_TOKEN_SECRET,
     TWITTER_CONSUMER_KEY,
@@ -24,7 +24,7 @@ class Twitter(ProviderIMBase):
     _token: str = None
     _secret: str = None
     client = None
-
+    blocking: str = 'asyncio'
     sid = None
 
     def __init__(
@@ -51,17 +51,18 @@ class Twitter(ProviderIMBase):
             TWITTER_CONSUMER_SECRET if consumer_secret is None else consumer_secret
         )
 
-    def close(self):
+    async def close(self):
         self.client = None
 
-    def connect(self):
+    async def connect(self):
         """
         Verifies that a token and sid were given
 
         """
         if self._token is None or self._secret is None:
             raise RuntimeError(
-                f"to send Tweets via {self._token} you need to configure TWITTER_ACCESS_TOKEN & TWITTER_TOKEN_SECRET in \n"
+                f"to send Tweets via {self._token} you need to configure \
+                TWITTER_ACCESS_TOKEN & TWITTER_TOKEN_SECRET in \n"
                 "environment variables or send properties to theinstance."
             )
         try:

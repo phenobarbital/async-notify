@@ -9,7 +9,12 @@ from email.policy import default as policy_default
 from datamodel import BaseModel, Column, Field
 
 
-CONTENT_TYPES = ["text/plain", "text/html", "multipart/alternative", "application/json"]
+CONTENT_TYPES = [
+    "text/plain",
+    "text/html",
+    "multipart/alternative",
+    "application/json"
+]
 
 
 def auto_uuid(*args, **kwargs):  # pylint: disable=W0613
@@ -27,12 +32,16 @@ class Account(BaseModel):
 
     provider: str = Column(required=True, default="dummy")
     enabled: bool = Column(required=True, default=True)
-    address: Union[str, list] = Column(required=False, default="")
-    phone: Union[str, list] = Column(required=False, default="")
+    address: Union[str, list[str]] = Column(required=False, default_factory=list)
+    number: Union[str, list[str]] = Column(required=False, default_factory=list)
     userid: str = Column(required=False, default="")
+    attributes: dict = Column(required=False, default_factory=dict)
 
-    def set_address(self, address: str):
-        self.address = address
+    def set_address(self, address: Union[str, list[str]]):
+        if isinstance(address, str):
+            self.address = [address]
+        else:
+            self.address = address
 
 
 class Actor(BaseModel):
@@ -63,7 +72,7 @@ class Chat(BaseModel):
 
 class Channel(BaseModel):
     """
-    Basic configuration for Channel (group) notifications.
+    Basic configuration for Channel (Group-based) notifications.
     """
 
     channel_name: str = Column(required=False)

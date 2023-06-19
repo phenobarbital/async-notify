@@ -4,15 +4,22 @@ o365.
 
 Office 365 Email-based provider
 """
-from typing import Union, Any
 from collections.abc import Callable
-
+from datetime import datetime
 # 3rd party Office 365 support
-from O365 import Account, Connection, MSOffice365Protocol, Message
+from O365 import (
+    Account,
+    MSOffice365Protocol,
+    Message,
+    Connection,
+    FileSystemTokenBackend
+)
+from navconfig import BASE_DIR
 from navconfig.logging import logging
 from notify.providers.mail import ProviderEmail
+from notify.exceptions import NotifyAuthError
 from notify.models import Actor
-from .settings import (
+from notify.conf import (
     O365_CLIENT_ID,
     O365_CLIENT_SECRET,
     O365_TENANT_ID,
@@ -22,7 +29,7 @@ from .settings import (
 
 
 logging.getLogger("requests_oauthlib").setLevel(logging.CRITICAL)
-
+logging.getLogger("O365.connection").setLevel(logging.CRITICAL)
 
 class Office365(ProviderEmail):
     """O365-based Email Provider
@@ -32,18 +39,21 @@ class Office365(ProviderEmail):
     """
 
     provider = "office365"
-    blocking: bool = True
+    blocking: str = 'asyncio'
 
     def __init__(
         self,
+        *args,
+        username: str = None,
+        password: str = None,
+        use_credentials: bool = True,
         client_id: str = None,
         client_secret: str = None,
         tenant_id: str = None,
-        username: str = None,
-        password: str = None,
-        *args,
+
         **kwargs,
     ):
+        self.authenticate: bool = False
         self.account: Callable = None
         self.protocol: Callable = None
         super(Office365, self).__init__(*args, **kwargs)
@@ -60,12 +70,13 @@ class Office365(ProviderEmail):
 
         # username and password:
         self.username = username
-        if not self.username:
-            self.username = O365_USER
-
         self.password = password
-        if not self.password:
-            self.password = O365_PASSWORD
+        self.use_credentials = use_credentials
+        if use_credentials is True:
+            if not self.username:
+                self.username = O365_USER
+            if not self.password:
+                self.password = O365_PASSWORD
 
         if self.client_id is None or self.client_secret is None:
             raise RuntimeWarning(
@@ -74,65 +85,107 @@ class Office365(ProviderEmail):
                 "as `O365_CLIENT_ID` & `O365_CLIENT_SECRET`."
             )
 
-    def connect(self):
-        """ """
-        self.protocol = MSOffice365Protocol()
-        # scopes_graph = self.protocol.get_scopes_for('Mail.ReadWrite')
-        scopes = ["https://graph.microsoft.com/.default"]
-        if self.username is not None:
-            self.account = Connection(
-                credentials=(self.client_id, self.client_secret),
-                auth_flow_type="credentials",
-                tenant_id=self.tenant_id,
-            )
-        else:
+    async def connect(self, **kwargs):
+        """Connect.
+        Making a connection using MS Office 365 Protocol.
+        """
+        self.protocol = MSOffice365Protocol(**kwargs)
+        credentials = (self.client_id, self.client_secret)
+        # "https://graph.microsoft.com/.default",
+        scopes = ["https://outlook.office.com/.default"]
+        # first: check if credential file exists:
+        o365_token = BASE_DIR.joinpath('.o365_token.txt')
+        token_backend = FileSystemTokenBackend(
+            token_path='.',
+            token_filename='.o365_token.txt'
+        )
+        if not o365_token.exists():
+            ## create a authorization code flow:
             self.account = Account(
-                credentials=(self.client_id, self.client_secret),
+                credentials=credentials,
+                auth_flow_type="authorization",
+                tenant_id=self.tenant_id,
+                protocol=self.protocol,
+                token_backend=token_backend
+            )
+            # This will print the URL to the console
+            print(self.account.con.get_authorization_url(scopes))
+            # After you have logged in in the browser, you need to paste the resulting URL back into the console
+            result_url = input('Paste the result URL here: ')
+            # This will save the token to a file
+            self.account.con.request_token(result_url)
+            self.mailbox = self.account.mailbox(
+                resource=self.username
+            )
+            return self.account
+        if self.use_credentials is True:
+            self.account = Connection(
+                credentials=credentials,
                 auth_flow_type="credentials",
                 tenant_id=self.tenant_id,
                 protocol=self.protocol,
+                token_backend=token_backend
             )
-            result = self.account.authenticate(scope=scopes)
-            print("OFFICE635 Auth: ", result)
-        try:
-            return self.account
-        except Exception as e:
-            return e
+        else:
+            self.account = Account(
+                credentials=credentials,
+                auth_flow_type="credentials",
+                tenant_id=self.tenant_id,
+                protocol=self.protocol,
+                token_backend=token_backend
+            )
+            try:
+                if result := self.account.authenticate(scopes=scopes):
+                    self.authenticate = True
+                    self.mailbox = self.account.mailbox(
+                        resource=self.username
+                    )
+                    return self.account
+                raise NotifyAuthError(
+                    f"Unable to authenticate with Office 365 Backend: {result}"
+                )
+            except Exception as e:
+                print(f"Error during authentication: {e}")
+                # Token might be expired or invalid, delete it and start over
+                o365_token.unlink()
+                return await self.connect(**kwargs)
 
     async def close(self):
         pass
 
-    def _render_(self, to: Actor, subject: str = None, content: str = None, **kwargs):
+    async def _render_(self, to: Actor, message: str = None, subject: str = None, **kwargs):
         """ """
-        msg = content
         if self._template:
             templateargs = {
                 "recipient": to,
                 "username": to,
-                "message": content,
-                "content": content,
+                "message": message,
+                "content": message,
                 **kwargs,
             }
-            msg = self._template.render(**templateargs)
+            msg = await self._template.render_async(**templateargs)
         else:
             try:
                 msg = kwargs["body"]
             except KeyError:
-                msg = content
+                msg = message
         # email message
-        if self.username is not None:
+        if self.use_credentials is True:
             # using basic auth instead API
-            message = Message(
+            content = Message(
                 auth=(self.username, self.password),
                 protocol=self.protocol,
                 con=self.account,
             )
         else:
-            message = self.account.new_message()
-        message.to.add(to.account.address)
-        message.subject = subject
-        message.body = msg
-        return message
+            content = self.mailbox.new_message()
+        content.to.add(to.account.address)
+        content.subject = subject
+        try:
+            content.setBodyHTML(msg)
+        except (AttributeError, ValueError):
+            content.body = msg
+        return content
 
     async def _send_(self, to: Actor, message: str, subject: str, **kwargs):
         """
@@ -141,10 +194,14 @@ class Office365(ProviderEmail):
         """
         # making email connnection
         try:
-            message = self._render_(to, subject, message, **kwargs)
-            status = message.send()
-            logging.debug(status)
-            return status
-        except Exception as e:
-            print(e)
-            raise RuntimeError(f"{e}") from e
+            message = await self._render_(to, message, subject, **kwargs)
+        except (TypeError, ValueError) as exc:
+            print(exc)
+            return False
+        try:
+            result = message.send()
+            return result
+        except Exception as exc:
+            print('Error: ', exc)
+            logging.exception(exc, stack_info=True)
+            raise RuntimeError(f"{exc}") from exc

@@ -5,20 +5,18 @@ Using OneSignal infraestructure to send push notifications to browsers.
 """
 from typing import Union, Any
 from collections.abc import Callable
-from requests.exceptions import HTTPError
-
 # Slack API
 from slack_bolt.authorization import AuthorizeResult
-from slack_bolt.async_app import AsyncApp
+# from slack_bolt.async_app import AsyncApp
 from slack_sdk.web.async_client import AsyncWebClient
 from slack_sdk.errors import SlackApiError
 
 # notify
-from navconfig.logging import logging, loglevel
-from notify.providers.abstract import ProviderIM, ProviderType
+from navconfig.logging import logging
+from notify.providers.base import ProviderIM, ProviderType
 from notify.models import Actor, Channel
 from notify.exceptions import ProviderError, MessageError
-from .settings import (
+from notify.conf import (
     SLACK_APP_ID,
     SLACK_CLIENT_ID,
     SLACK_CLIENT_SECRET,
@@ -46,10 +44,9 @@ class Slack(ProviderIM):
     param:: player_ids: a list of "players", recipients of push messages
     param:: app_id: passing an APP_ID
     """
-
     provider = "slack"
     provider_type = ProviderType.IM
-    blocking: bool = False
+    blocking: str = 'asyncio'
 
     def __init__(self, *args, **kwargs):
         """
@@ -76,7 +73,9 @@ class Slack(ProviderIM):
             )
         except Exception as err:
             self._logger.error(err)
-            raise ProviderError(f"Error connecting to Slack API {err}") from err
+            raise ProviderError(
+                f"Error connecting to Slack API {err}"
+            ) from err
 
     async def close(self):
         print("CLOSE")
@@ -124,4 +123,6 @@ class Slack(ProviderIM):
                 f"Slack: Error sending Notification: {ex}",
             ) from ex
         except Exception as ex:
-            raise ProviderError(f"Slack: Exception on Slack Client: {ex}") from ex
+            raise ProviderError(
+                f"Slack: Exception on Slack Client: {ex}"
+            ) from ex

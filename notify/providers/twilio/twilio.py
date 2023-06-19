@@ -4,13 +4,17 @@ from twilio.rest import Client
 from notify.providers.abstract import ProviderMessageBase, ProviderType
 from notify.models import Actor
 from notify.exceptions import ProviderError
-from .settings import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, TWILIO_PHONE
-
+from notify.conf import (
+    TWILIO_AUTH_TOKEN,
+    TWILIO_ACCOUNT_SID,
+    TWILIO_PHONE
+)
 
 class Twilio(ProviderMessageBase):
     provider = "sms"
     provider_type = ProviderType.SMS
     level = ""
+    blocking: str = 'asyncio'
 
     def __init__(self, sid: str = None, token: str = None, **kwargs):
         """
@@ -24,17 +28,18 @@ class Twilio(ProviderMessageBase):
         self.token = TWILIO_AUTH_TOKEN if token is None else token
         self.sid = TWILIO_ACCOUNT_SID if sid is None else sid
 
-    def close(self):
+    async def close(self):
         self.client = None
 
-    def connect(self):
+    async def connect(self):
         """
         Verifies that a token and sid were given
 
         """
         if self.token is None or self.sid is None:
             raise RuntimeError(
-                f"to send SMS via {self.__name__} you need to configure TWILIO_ACCOUNT_SID & TWILIO_AUTH_TOKEN in \n"
+                f"to send SMS via {self.__name__} you need to configure \
+                TWILIO_ACCOUNT_SID & TWILIO_AUTH_TOKEN in \n"
                 "environment variables or send account_sid & auth_token in instance."
             )
         self.client = Client(self.sid, self.token)

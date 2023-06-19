@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from notify.providers.mail import ProviderEmail
-from .settings import SENDGRID_USER, SENDGRID_KEY
+from notify.conf import SENDGRID_USER, SENDGRID_KEY
 
 
 class Sendgrid(ProviderEmail):
@@ -12,7 +12,7 @@ class Sendgrid(ProviderEmail):
     """
 
     provider = "sendgrid"
-    blocking: bool = False
+    blocking: str = 'asyncio'
 
     def __init__(self, username: str = None, password: str = None, **kwargs):
         """ """
@@ -22,8 +22,8 @@ class Sendgrid(ProviderEmail):
         super(Sendgrid, self).__init__(**kwargs)
 
         # server information
-        self._host = "smtp.sendgrid.net"
-        self._port = 587
+        self.host = "smtp.sendgrid.net"
+        self.port = 587
         # connection related settings
         self.username = username
         if not self.username:

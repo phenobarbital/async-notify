@@ -6,19 +6,18 @@ from abc import ABC
 from typing import Union, Any
 from collections.abc import Callable
 from email import encoders
-
 # from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.utils import formatdate
+from functools import partial
 import aiosmtplib
 from notify.models import Actor
 from notify.exceptions import ProviderError
-
 # abstract class
-from .abstract import ProviderBase, ProviderType
+from .base import ProviderBase, ProviderType
 
 
 class ProviderEmail(ProviderBase, ABC):
@@ -29,6 +28,8 @@ class ProviderEmail(ProviderBase, ABC):
     """
 
     provider_type = ProviderType.EMAIL
+    blocking: str = 'asyncio'
+    timeout: int = 60
 
     def __init__(self, *args, **kwargs):
         self.host: str = None
@@ -47,7 +48,7 @@ class ProviderEmail(ProviderBase, ABC):
             except aiosmtplib.errors.SMTPServerDisconnected:
                 pass
             except Exception as err:  # pylint: disable=W0703
-                self._logger.exception(err, stack_info=True)
+                self.logger.exception(err, stack_info=True)
             finally:
                 self._server = None
 
@@ -73,13 +74,15 @@ class ProviderEmail(ProviderBase, ABC):
             )
             try:
                 await self._server.connect()
-                self._logger.debug(f":: {self.__name__}: Connected to: {self._server}")
+                self.logger.debug(
+                    f":: {self.__name__}: Connected to: {self._server}"
+                )
                 try:
                     if self._server.is_ehlo_or_helo_needed:
                         await self._server.ehlo()
-                except aiosmtplib.errors.SMTPHeloError:
-                    pass
-                await asyncio.sleep(0)
+                except aiosmtplib.errors.SMTPHeloError as exc:
+                    print(exc)
+                await asyncio.sleep(.1)
                 # # making authentication:
                 # await self._server.login(
                 #     username=self.username,
@@ -128,44 +131,41 @@ class ProviderEmail(ProviderBase, ABC):
         return message
 
     async def _render_(
-        self, to: Actor = None, subject: str = None, content: str = None, **kwargs
+        self, to: Actor = None, message: str = None, subject: str = None, **kwargs
     ):
         """
-        _render.
+        _render_.
 
         Returns the parseable version of Email.
         """
         # TODO: add attachments
-        message = MIMEMultipart("alternative")
-        message["From"] = self.actor
+        msg = MIMEMultipart("alternative")
+        msg["From"] = self.actor
         if isinstance(to, list):
             # TODO: iterate over actors
-            message["To"] = ", ".join(to)
+            msg["To"] = ", ".join(to)
         else:
-            message["To"] = to.account.address
-        message["Subject"] = subject
-        message["Date"] = formatdate(localtime=True)
-        message["sender"] = self.actor
-        message.preamble = subject
-        if content:
-            message.attach(MIMEText(content, "plain"))
+            msg["To"] = to.account.address
+        msg["Subject"] = subject
+        msg["Date"] = formatdate(localtime=True)
+        msg["sender"] = self.actor
+        msg.preamble = subject
+        if message:
+            msg.attach(MIMEText(message, "plain"))
         if self._template:
             self._templateargs = {
                 "recipient": to,
                 "username": to,
-                "message": content,
-                "content": content,
+                "message": message,
+                "content": message,
                 **kwargs,
             }
-            msg = self._template.render(**self._templateargs)
+            content = await self._template.render_async(**self._templateargs)
         else:
-            msg = content
-        message.add_header("Content-Type", "text/html")
-        # message.add_header('Content-Type', 'multipart/mixed')
-        # message.add_header('Content-Transfer-Encoding', 'base64')
-        message.attach(MIMEText(msg, "html"))
-        # message.set_payload(msg)
-        return message
+            content = message
+        msg.add_header("Content-Type", "text/html")
+        msg.attach(MIMEText(content, "html"))
+        return msg
 
     def add_attachment(self, message, filename, mimetype="octect-stream"):
         content = None
@@ -185,11 +185,11 @@ class ProviderEmail(ProviderBase, ABC):
         self, to: Actor, message: str, subject: str, **kwargs
     ):  # pylint: disable=W0221
         """
-        _send.
+        _send_.
 
         Logic associated with the construction of notifications
         """
-        msg = await self._render_(to, subject, message, **kwargs)
+        msg = await self._render_(to, message, subject, **kwargs)
         if "attachments" in kwargs:
             for attach in kwargs["attachments"]:
                 self.add_attachment(message=msg, filename=attach)
@@ -197,16 +197,17 @@ class ProviderEmail(ProviderBase, ABC):
             try:
                 response = await self._server.send_message(msg)
                 if self._debug is True:
-                    self._logger.debug(response)
+                    self.logger.debug(response)
             except aiosmtplib.errors.SMTPServerDisconnected as err:
                 raise RuntimeError(
                     f"{self.__name__} Server Disconnected {err}"
                 ) from err
             return response
         except Exception as e:
-            print("AQUI ERROR: ", e)
-            self._logger.exception(e)
-            raise ProviderError(f"{self.__name__} Error: got {e.__class__}, {e}") from e
+            self.logger.exception(e)
+            raise ProviderError(
+                f"{self.__name__} Error: got {e.__class__}, {e}"
+            ) from e
 
     async def send(
         self,
@@ -217,19 +218,49 @@ class ProviderEmail(ProviderBase, ABC):
     ):
         result = None
         # making the connection to the service:
-        if not self._server:
-            try:
-                if asyncio.iscoroutinefunction(self.connect):
-                    await self.connect()
-                else:
-                    self.connect()
-            except Exception as err:
-                raise ProviderError(f"Error connecting to Mail Backend: {err}") from err
-        # after connection, proceed exactly like other connectors.
+        loop = asyncio.get_running_loop()
+        asyncio.set_event_loop(loop)
         try:
-            result = await super(ProviderEmail, self).send(
-                recipient, message, subject=subject, **kwargs
-            )
+            await self.connect()
         except Exception as err:
-            raise ProviderError(f"Error sending Email: {err}") from err
-        return result
+            raise ProviderError(
+                f"Error connecting to Mail Backend: {err}"
+            ) from err
+        # after connection, proceed exactly like other connectors.
+        ## recipients:
+        # template (or message) for preparation
+        message = await self._prepare_(
+            recipient=recipient,
+            message=message,
+            **kwargs
+        )
+        results = []
+        recipients = [recipient] if not isinstance(recipient, list) else recipient
+        tasks = []
+        for to in recipients:
+            task = loop.create_task(
+                self._send_(to, message, subject=subject, **kwargs)
+            )
+            fn = partial(self.__sent__, to, message, **kwargs)
+            task.add_done_callback(fn)
+            tasks.append(task)
+            done, pending = await asyncio.wait(
+                tasks,
+                timeout=self.timeout,
+                return_when="ALL_COMPLETED"
+            )
+            for task in done:
+                exception = task.exception()
+                if exception is not None:
+                    self.logger.error(
+                        f"Mail error: {exception}"
+                    )
+                else:
+                    result = task.result()
+                    results.append(result)
+            for task in pending:
+                self.logger.warning(
+                    f"Task {task} pending, not completed"
+                )
+                task.cancel()
+        return results

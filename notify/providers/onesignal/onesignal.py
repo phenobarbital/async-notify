@@ -7,10 +7,10 @@ from typing import Union, Any
 from requests.exceptions import HTTPError
 from onesignal_sdk.client import AsyncClient
 from onesignal_sdk.error import OneSignalHTTPError
-from notify.providers.abstract import ProviderIMBase, ProviderType
+from notify.providers.base import ProviderIMBase, ProviderType
 from notify.models import Actor
 from notify.exceptions import ProviderError
-from .settings import ONESIGNAL_PLAYER_ID, ONESIGNAL_OS_APP_ID, ONESIGNAL_OS_API_KEY
+from notify.conf import ONESIGNAL_PLAYER_ID, ONESIGNAL_OS_APP_ID, ONESIGNAL_OS_API_KEY
 
 
 class Onesignal(ProviderIMBase):
@@ -23,7 +23,7 @@ class Onesignal(ProviderIMBase):
 
     provider = "onesignal"
     provider_type = ProviderType.PUSH
-    blocking: bool = False
+    blocking: str = 'asyncio'
 
     def __init__(
         self,

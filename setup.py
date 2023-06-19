@@ -7,7 +7,9 @@ See:
 """
 import ast
 from os import path
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup, Extension
+from Cython.Build import cythonize
+
 
 def get_path(filename):
     return path.join(path.dirname(path.abspath(__file__)), filename)
@@ -16,6 +18,24 @@ def get_path(filename):
 def readme():
     with open(get_path('README.md'), 'r', encoding='utf-8') as rd:
         return rd.read()
+
+
+COMPILE_ARGS = ["-O2"]
+
+
+extensions = [
+    Extension(
+        name='notify.exceptions',
+        sources=['notify/exceptions.pyx'],
+        extra_compile_args=COMPILE_ARGS,
+        language="c"
+    ),
+    Extension(
+        name='notify.types.typedefs',
+        sources=['notify/types/typedefs.pyx'],
+        extra_compile_args=COMPILE_ARGS,
+    ),
+]
 
 
 version = get_path('notify/version.py')
@@ -81,8 +101,10 @@ setup(
         'asyncio==3.4.3',
         'uvloop==0.17.0',
         'aiosmtplib==2.0.1',
-        'asyncdb[default]>=2.2.16',
-        'navconfig[default]>=1.3.5'
+        'python-datamodel>=0.3.12',
+        'navconfig[default]>=1.3.5',
+        'cloudpickle==2.2.1',
+        'redis==4.5.5'
     ],
     extras_require={
         "default": [
@@ -93,6 +115,7 @@ setup(
         "telegram": [
             'emoji==2.2.0',
             'aiogram==2.25.1',
+            'pillow==9.5.0'
         ],
         "push": [
             'onesignal-sdk==2.0.0',
@@ -109,26 +132,33 @@ setup(
         ],
         "azure": [
             'pyo365==0.1.3',
-            "o365==2.0.26",
-            'msal==1.21.0',
+            "o365==2.0.27",
+            'msal==1.22.0',
+            "Office365-REST-Python-Client==2.4.1",
         ],
         "all": [
             'emoji==2.2.0',
-            'aiogram==2.25.1',
-            'pillow==9.4.0',
             'gmail==0.6.3',
             'google-auth>=2.6.0',
             'google-auth-httplib2>=0.1.0',
             'onesignal-sdk==2.0.0',
-            'pyo365==0.1.3',
-            "o365==2.0.26",
-            'msal==1.21.0',
+            "o365==2.0.27",
+            "Office365-REST-Python-Client==2.4.1",
+            'msal==1.22.0',
             'PySocks==1.7.1',
             'pyshorteners==1.0.1',
             'tweepy==4.14.0',
             'twilio==8.2.2',
             'slixmpp==1.8.3',
-            "slack_bolt==1.18.0"
+            "slack_bolt==1.18.0",
+            'aiogram==2.25.1',
+            'pillow==9.5.0'
+        ]
+    },
+    ext_modules=cythonize(extensions),
+    entry_points={
+        'console_scripts': [
+            'notify = notify.__main__:main'
         ]
     },
     project_urls={  # Optional

@@ -1,9 +1,13 @@
-import logging
 import importlib
-from .exceptions import ProviderError, notifyException
+from navconfig.logging import logger
+from .providers.base import ProviderBase
+from .exceptions import ProviderError, NotifyException
+from .conf import TEMPLATE_DIR
+from .templates import TemplateParser
+
 
 PROVIDERS = {}
-
+TemplateEnv = None
 
 class Notify:
     """Notify
@@ -18,55 +22,66 @@ class Notify:
     Returns:
         ProviderBase: a Notify Provider.
     """
-
-    def __new__(cls, provider: str, *args, **kwargs):
+    def __new__(cls: type['ProviderBase'], provider: str, *args, **kwargs):
         _provider = None
         try:
-            if not provider in PROVIDERS:
-                obj = LoadProvider(provider)
-                PROVIDERS[provider] = obj
+            if provider not in PROVIDERS:
+                PROVIDERS[provider] = LoadProvider(provider)
             obj = PROVIDERS[provider]
             _provider = obj(*args, **kwargs)
-            logging.debug(f":: Load Provider: {provider}")
+            logger.debug(
+                f":: Load Provider: {provider}"
+            )
             return _provider
         except Exception as ex:
-            logging.exception(f"Cannot Load provider {provider}: {ex}")
+            logger.critical(
+                f"Cannot Load provider {provider}: {ex}"
+            )
             raise ProviderError(
                 message=f"Cannot Load provider {provider}: {ex}"
             ) from ex
 
     @classmethod
-    def provider(cls, provider, *args, **kwargs):
+    def provider(cls: type['ProviderBase'], provider: str, *args, **kwargs):
         try:
-            if not provider in PROVIDERS:
-                obj = LoadProvider(provider)
-                PROVIDERS[provider] = obj
+            if provider not in PROVIDERS:
+                PROVIDERS[provider] = LoadProvider(provider)
             obj = PROVIDERS[provider]
             _provider = obj(*args, **kwargs)
-            logging.debug(f":: Load Provider: {provider}")
+            logger.debug(
+                f":: Loaded Provider: {provider}"
+            )
             return _provider
         except Exception as ex:
-            logging.exception(f"Cannot Load provider {provider}: {ex}")
+            logger.critical(
+                f"Cannot Load provider {provider}: {ex}"
+            )
             raise ProviderError(
                 message=f"Cannot Load provider {provider}: {ex}"
             ) from ex
 
 
-def LoadProvider(provider):
+def LoadProvider(provider: str):
     """
     loadProvider.
-
-    Dynamically load a defined provider
+    Dynamically load a Notify provider
     """
     try:
-        # try to using importlib
         classpath = f"notify.providers.{provider}"
         module = importlib.import_module(classpath, package="providers")
-        obj = getattr(module, provider.capitalize())
-        return obj
+        return getattr(module, provider.capitalize())
     except ImportError:
         try:
             obj = __import__(classpath, fromlist=[provider])
             return obj
-        except ImportError as e:
-            raise notifyException(f"Error: No Provider {provider} was Found") from e
+        except ImportError as exc:
+            raise NotifyException(
+                f"Error: No Provider {provider} was Found: {exc}"
+            ) from exc
+
+
+if __name__ == "notify.notify":
+    # loading template parser:
+    TemplateEnv = TemplateParser(
+        directory=TEMPLATE_DIR
+    )

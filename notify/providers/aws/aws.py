@@ -5,7 +5,7 @@ Amazon AWS Email.
 Sending Emails using Amazon SMTP services
 """
 from notify.providers.mail import ProviderEmail
-from .settings import (
+from notify.conf import (
     AWS_EMAIL_USER,
     AWS_EMAIL_ACCOUNT,
     AWS_EMAIL_PASSWORD,
@@ -22,15 +22,15 @@ class Aws(ProviderEmail):
     """
 
     provider = "aws_email"
-    blocking: bool = False
+    blocking: str = 'asyncio'
 
     def __init__(
         self,
+        *args,
         hostname: str = None,
         port: str = None,
         username: str = None,
         password: str = None,
-        *args,
         **kwargs
     ):
         super(Aws, self).__init__(*args, **kwargs)

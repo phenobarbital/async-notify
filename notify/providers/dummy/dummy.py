@@ -7,7 +7,7 @@ from collections.abc import Callable
 from navconfig.logging import logging
 from notify.utils import Msg
 from notify.models import Actor
-from notify.providers.abstract import ProviderBase, ProviderType
+from notify.providers.base import ProviderBase, ProviderType
 
 
 def dummy_sent(
@@ -26,7 +26,7 @@ class Dummy(ProviderBase):
 
     provider = "dummy"
     provider_type = ProviderType.NOTIFY
-    blocking: bool = True
+    blocking: str = 'asyncio'
     sent: Callable = dummy_sent
 
     async def connect(self, *args, **kwargs):
@@ -44,6 +44,7 @@ class Dummy(ProviderBase):
         Logic associated with the construction of notifications
         """
         msg = await self._render_(to=to, message=message, **kwargs)
+        # msg = self._render_sync_(to=to, message=message, **kwargs)
         try:
             Msg(str(msg))
         except TypeError:
