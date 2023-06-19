@@ -2,10 +2,10 @@
 Outlook Client.
 """
 from collections.abc import Callable
-import msal
 import base64
-import aiofiles
 from pathlib import Path
+import aiofiles
+import msal
 from office365.graph_client import GraphClient
 from navconfig.logging import logging
 from notify.providers.mail import ProviderEmail
@@ -17,6 +17,7 @@ from notify.conf import (
     O365_USER,
     O365_PASSWORD,
 )
+
 
 class Outlook(ProviderEmail):
     """Outlook-based Email Provider
@@ -44,6 +45,7 @@ class Outlook(ProviderEmail):
         self.account: Callable = None
         self.protocol: Callable = None
         self._attachments: dict = {}
+        self.client: Callable = None
         super(Outlook, self).__init__(*args, **kwargs)
 
         # connection related settings
@@ -119,12 +121,17 @@ class Outlook(ProviderEmail):
         try:
             if self.use_credentials is True:
                 self.client = GraphClient(self.acquire_token_by_username)
+                self.authenticate = True
             else:
                 self.client = GraphClient(self.acquire_token)
+                self.authenticate = True
         except Exception as exc:
             self.logger.error(
                 f"Error during authentication: {exc}"
             )
+
+    async def close(self):
+        self.client = None
 
     async def _render_(self, to: Actor, message: str = None, subject: str = None, **kwargs):
         """ """
