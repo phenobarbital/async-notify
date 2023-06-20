@@ -44,7 +44,6 @@ class Dummy(ProviderBase):
         Logic associated with the construction of notifications
         """
         msg = await self._render_(to=to, message=message, **kwargs)
-        # msg = self._render_sync_(to=to, message=message, **kwargs)
         try:
             Msg(str(msg))
         except TypeError:
