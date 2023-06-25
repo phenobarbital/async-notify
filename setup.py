@@ -134,7 +134,7 @@ setup(
             'pyo365==0.1.3',
             "o365==2.0.27",
             'msal==1.22.0',
-            "Office365-REST-Python-Client==2.4.1",
+            "Office365-REST-Python-Client==2.2.1",
         ],
         "all": [
             'emoji==2.2.0',
@@ -143,7 +143,7 @@ setup(
             'google-auth-httplib2>=0.1.0',
             'onesignal-sdk==2.0.0',
             "o365==2.0.27",
-            "Office365-REST-Python-Client==2.4.1",
+            "Office365-REST-Python-Client==2.2.1",
             'msal==1.22.0',
             'PySocks==1.7.1',
             'pyshorteners==1.0.1',
