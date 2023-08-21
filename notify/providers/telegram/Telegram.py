@@ -1,12 +1,11 @@
 from io import BytesIO
-from pathlib import Path, PurePath
+from pathlib import PurePath
 from typing import Union, Any
 import emoji
 from PIL import Image
 
 # telegram
-from aiogram import Bot, types
-# from aiogram.dispatcher import Dispatcher
+from aiogram import Bot, Dispatcher, types
 # from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.exceptions import (
     TelegramAPIError,
@@ -49,6 +48,7 @@ class Telegram(ProviderIM):
         except KeyError:
             self.parseMode = "html"
         self._bot = None
+        self._dispatcher = None
         self._info = None
         self._bot_token = None
         self._chat_id: str = None
@@ -69,7 +69,9 @@ class Telegram(ProviderIM):
 
     async def close(self):
         try:
-            await self._bot.close()
+            session = await self._bot.get_session()
+            await session.close()
+            await self._dispatcher.stop()
         except Exception:
             pass
         self._bot = None
@@ -79,6 +81,7 @@ class Telegram(ProviderIM):
         # creation of bot
         try:
             self._bot = Bot(token=self._bot_token)
+            self._dispatcher = Dispatcher(bot=self._bot)
             self._info = await self._bot.get_me()
             self.logger.debug(
                 f"🤖 Hello, I'm {self._info.first_name}.\nHave a nice Day!"

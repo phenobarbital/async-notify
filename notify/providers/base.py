@@ -70,6 +70,8 @@ class ProviderBase(ABC):
             raise RuntimeError(
                 f"Notify: Can't load the Jinja2 Template Parser: {err}"
             ) from err
+        # sent attribute:
+        self.sent = kwargs.pop('sent', None)
         # set the values of attributes:
         for arg, val in kwargs.items():
             try:
@@ -192,94 +194,42 @@ class ProviderBase(ABC):
             Any: Result of sending process.
         """
 
-    def __sent__(
+    async def __sent__(
         self,
         recipient: Actor,
         message: str,
-        _task: Awaitable,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
+        result: Optional[Any],
         **kwargs
     ):
         """
         processing the callback for every notification that we sent.
         """
         if callable(self.sent):
-            _new = False
+            # logging:
+            self.logger.debug(
+                f"Notification sent to:> {recipient}"
+            )
             try:
-                if isinstance(_task, str):
-                    result = _task
+                if asyncio.iscoroutinefunction(self.sent):
+                    await self.sent(
+                        recipient, message, result, **kwargs
+                    )  # type: ignore
                 else:
-                    try:
-                        result = _task.result()
-                    except (TypeError, ValueError):
-                        result = str(_task)
-                # logging:
-                self.logger.debug(
-                    f"Notification sent to:> {recipient}"
-                )
-                try:
-                    if loop:
-                        evt = loop
-                    else:
-                        evt = asyncio.new_event_loop()
-                        _new = True
-                    if "task" in kwargs:
-                        del kwargs["task"]
                     fn = partial(
-                        self.callback_sent,
+                        self.sent,
                         recipient,
                         message,
                         result,
-                        evt,
                         **kwargs
                     )
-                    with ThreadPoolExecutor(max_workers=2) as executor:
-                        evt.run_in_executor(
-                            executor,
-                            fn
-                        )
-                finally:
-                    if _new is True:
-                        evt.close()
+                    result = await asyncio.to_thread(fn)
+            except (asyncio.CancelledError, asyncio.TimeoutError) as ex:
+                self.logger.warning(str(ex))
             except (AttributeError, RuntimeError) as ex:
                 self.logger.error(
-                    f"Notify: *Sent* Function fail with error {ex}"
+                    f"Notify: Callback *Sent* Function fail with error {ex}"
                 )
-
-    def callback_sent(
-        self,
-        recipient: Actor,
-        message: Any,
-        result: Any,
-        evt: asyncio.AbstractEventLoop,
-        **kwargs,
-    ) -> None:
-        """callback_sent.
-
-        Function for running Callback in a Thread.
-        """
-        asyncio.set_event_loop(evt)
-        fn = partial(
-            self.sent,
-            recipient,
-            message,
-            result,
-            **kwargs
-        )
-        try:
-            if asyncio.iscoroutinefunction(self.sent):
-                evt.run_until_complete(fn)
-            else:
-                fn()
-        except (asyncio.CancelledError, asyncio.TimeoutError) as ex:
-            self.logger.warning(ex)
-        except RuntimeError:
-            raise
-        except Exception as ex:  # pylint: disable=W0703
-            self.logger.exception(ex, stack_info=False)
-            raise ProviderError(
-                f"Error calling Callback function: {ex}"
-            ) from ex
+                raise
 
     async def send(
         self,
@@ -299,7 +249,7 @@ class ProviderBase(ABC):
             message=message,
             **kwargs
         )
-        results = None
+        results = []
         recipients = [recipient] if not isinstance(recipient, list) else recipient
         try:
             loop = asyncio.get_running_loop()
@@ -307,19 +257,23 @@ class ProviderBase(ABC):
             loop = asyncio.get_event_loop()
         if self.blocking == 'asyncio':
             # asyncio:
-            tasks = []
-            for to in recipients:
-                task = loop.create_task(
-                    self._send_(to, message, subject=subject, **kwargs)
-                )
-                fn = partial(self.__sent__, to, message, **kwargs)
-                task.add_done_callback(fn)
-                tasks.append(task)
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            for idx, result in enumerate(results):
-                if isinstance(result, Exception):
-                    self.logger.warning(
-                        f'Task {idx} raised exception: {result}'
+            tasks = [self._send_(to, message, subject=subject, **kwargs) for to in recipients]
+            # Using asyncio.as_completed to get results as they become available
+            for to, future in zip(recipients, asyncio.as_completed(tasks)):
+                try:
+                    result = await future
+                except Exception as e:
+                    self.logger.exception(
+                        f'Send for recipient {to} raised an exception: {e}',
+                        stack_info=True
+                    )
+                try:
+                    await self.__sent__(to, message, result, loop=loop, **kwargs)
+                    results.append(result)
+                except Exception as e:
+                    self.logger.exception(
+                        f'Send for recipient {to} raised an exception: {e}',
+                        stack_info=True
                     )
         elif self.blocking == 'executor':
             results = []
