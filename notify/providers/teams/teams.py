@@ -2,6 +2,7 @@ from typing import Union, Any
 import json
 import aiohttp
 import msal
+from navconfig.logging import logging
 from notify.models import Actor, TeamsWebhook, TeamsChannel, TeamsCard
 from notify.providers.base import ProviderIM, ProviderType
 from notify.exceptions import NotifyException
@@ -17,6 +18,10 @@ from notify.conf import (
     O365_PASSWORD
 )
 from notify.exceptions import MessageError
+
+# disable MSAL debug:
+logging.getLogger('msal').setLevel(logging.INFO)
+
 
 class Teams(ProviderIM):
     """
@@ -79,7 +84,11 @@ class Teams(ProviderIM):
             ) from exc
 
     async def _render_(
-        self, to: Actor = None, message: Union[str, TeamsCard] = None, subject: str = None, **kwargs
+        self,
+        to: Actor = None,
+        message: Union[str, TeamsCard] = None,
+        _type: str = 'card',
+        **kwargs
     ):  # pylint: disable=W0613
         """
         _render_.
@@ -87,8 +96,22 @@ class Teams(ProviderIM):
         Returns the parseable version of Message template.
         """
         if isinstance(message, TeamsCard):
-            # converting message to a dictionary
-            payload = message.to_dict()
+            if _type == 'card':
+                # converting message to a dictionary
+                payload = message.to_dict()
+            else:
+                card = {
+                    "id": str(message.card_id),
+                    "contentType": message.content_type,
+                    "content": json.dumps(message.to_adaptative())
+                }
+                payload = {
+                    "body": {
+                        "contentType": "html",
+                        "content": f"<attachment id=\"{message.card_id}\"></attachment>"
+                    },
+                    "attachments": [card]
+                }
         elif isinstance(message, dict):
             # is already a dictionary
             payload = message
@@ -104,29 +127,32 @@ class Teams(ProviderIM):
                 f"Invalid Message Type: {type(message)}"
             )
         # TODO: using Jinja Templates on Teams Cards.
+        print('PAYLOAD IS > ', payload)
         return payload
 
     async def _send_(self, to: Actor, message: Union[str, Any], **kwargs) -> Any:
         """_send_.
         Send message to Microsoft Teams channel using an incoming webhook.
         """
-        msg = await self._render_(to, message, **kwargs)
         result = None
         if isinstance(to, TeamsWebhook):
             # using webhook instead channel ID
+            msg = await self._render_(to, message, _type='card', **kwargs)
             try:
                 webhook_url = to.uri
+                if not webhook_url:
+                    webhook_url = MS_TEAMS_DEFAULT_WEBHOOK
             except (KeyError, ValueError):
                 webhook_url = MS_TEAMS_DEFAULT_WEBHOOK
             result = await self.send_webhook(webhook_url, msg)
         else:
-            if isinstance(to, str):
-                # is a message to Default Channel/Team
-                channel = MS_TEAMS_DEFAULT_CHANNEL_ID
-                team = MS_TEAMS_DEFAULT_TEAMS_ID
-            elif isinstance(to, TeamsChannel):
-                channel = MS_TEAMS_DEFAULT_CHANNEL_ID
-                team = MS_TEAMS_DEFAULT_TEAMS_ID
+            msg = await self._render_(to, message, _type='adaptative', **kwargs)
+            if isinstance(to, TeamsChannel):
+                channel = to.channel_id
+                team = to.team_id
+                if not channel:
+                    channel = MS_TEAMS_DEFAULT_CHANNEL_ID
+                    team = MS_TEAMS_DEFAULT_TEAMS_ID
             else:
                 raise NotifyException(
                     "Invalid Recipient Object: Need an string or a TeamsChannel Object"
@@ -142,11 +168,10 @@ class Teams(ProviderIM):
             'Authorization': f'Bearer {self._token}',
             'Content-Type': 'application/json'
         }
-        message_url = f"https://graph.microsoft.com/beta/teams/{team_id}/channels/{channel_id}/messages"
-
+        message_url = f'https://graph.microsoft.com/v1.0/teams/{team_id}/channels/{channel_id}/messages'
         async with aiohttp.ClientSession() as session:
             async with session.post(message_url, headers=headers, json=message) as response:
-                if response.status != 200:
+                if response.status not in [200, 201]:
                     raise MessageError(
                         f"Teams: Error sending Notification: {await response.text()}"
                     )
