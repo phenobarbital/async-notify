@@ -3,7 +3,7 @@ import uuid
 from pathlib import Path
 from datetime import datetime
 from dataclasses import InitVar
-from typing import Any, Union
+from typing import Any, Union, Optional
 from email.parser import Parser
 from email.policy import default as policy_default
 from datamodel import BaseModel, Column, Field
@@ -183,3 +183,168 @@ class MailMessage(BlockMessage):
 
     def get_attachments_names(self):
         return [at.filename for at in self.attachments]
+
+
+class TeamsChannel(BaseModel):
+    name: str
+    channel_id: str
+    team_id: str
+
+class TeamsWebhook(BaseModel):
+    uri: str = Column(required=True)
+
+
+class TeamsTarget(BaseModel):
+    os: str = Column(default='default')
+    uri: str = Column(required=True)
+
+class TeamsAction(BaseModel):
+    name: str = Column(required=False, default=None)
+    targets: list[TeamsTarget] = Column(default_factory=list)
+
+class TeamsSection(BaseModel):
+    activityTitle: str = Column(required=False, default=None)
+    activitySubtitle: str = Column(required=False, default=None)
+    activityImage: str = Column(required=False, default=None)
+    facts: list[dict] = Column(required=False, default_factory=list)
+    text: str = Column(required=False, default=None)
+    potentialAction: list[TeamsAction] = Column(required=False, default=None, default_factory=list)
+
+    def addFacts(self, facts: list):
+        self.facts = facts
+
+    def to_adaptative(self):
+        items = []
+
+        if self.activityTitle:
+            items.append({
+                "type": "TextBlock",
+                "size": "medium",
+                "weight": "bolder",
+                "text": self.activityTitle
+            })
+        if self.activitySubtitle:
+            items.append({
+                "type": "TextBlock",
+                "spacing": "none",
+                "weight": "bold",
+                "text": self.activitySubtitle
+            })
+        if self.activityImage:
+            items.append({
+                "type": "Image",
+                "size": "small",
+                "url": self.activityImage
+            })
+        if self.facts:
+            items.append({
+                "type": "FactSet",
+                "facts": self.facts
+            })
+
+        return {
+            "type": "Container",
+            "items": items
+        }
+
+class CardAction(BaseModel):
+    type: str = Column(required=False, default=None)
+    title: str = Column(required=False, default=None)
+    data: dict = Column(required=False, default_factory={})
+
+
+class TeamsCard(BaseModel):
+    card_id: uuid.UUID = Field(required=False, default=auto_uuid, repr=False)
+    content_type: str = Field(required=False, default="application/vnd.microsoft.card.adaptive", repr=False)
+    summary: str
+    sections: list[TeamsSection] = Column(required=False, default_factory=list)
+    text: str = Column(required=False, default=None)
+    title: str = Column(required=False, default=None)
+    body_objects: list[dict] = Column(required=False, default_factory=dict, repr=False)
+    actions: list[CardAction] = Column(required=False, default_factory=list, repr=False)
+
+    def addAction(self, type: str, title: str, **kwargs):
+        self.actions.append(
+            CardAction(type, title, data=kwargs)
+        )
+
+    def addSection(self, **kwargs):
+        section = TeamsSection(**kwargs)
+        self.sections.append(section)
+        return section
+
+    def addInput(self, id: str, label: str, is_required: bool = False, errorMessage: str = None, style: str = None):
+        element = {
+            "type": "Input.Text",
+            "id": id,
+            "label": label,
+            "isRequired": is_required,
+            "errorMessage": errorMessage
+        }
+        if style is not None:
+            element["style"] = style
+        self.body_objects.append(
+            element
+        )
+
+    def to_dict(self):
+        data = super(TeamsCard, self).to_dict()
+        del data['card_id']
+        del data['body_objects']
+        del data['actions']
+        data['@type'] = "MessageCard"
+        data['@context'] = "http://schema.org/extensions"
+        return data
+
+    def to_adaptative(self) -> dict:
+        body = []
+        if self.title:
+            body.append({
+                "type": "TextBlock",
+                "size": "Medium",
+                "weight": "Bolder",
+                "text": self.title,
+                "horizontalAlignment": "Center",
+                "wrap": True,
+                "style": "heading"
+            })
+        if self.summary:
+            body.append({
+                "type": "TextBlock",
+                "size": "large",
+                "weight": "bolder",
+                "text": self.summary
+            })
+        if self.text:
+            body.append({
+                "type": "TextBlock",
+                "text": self.text,
+                "wrap": True
+            })
+        if self.sections:
+            sections = []
+            body.append({
+                "type": "Container",
+                "items": sections
+            })
+            for section in self.sections:
+                sections.append(section.to_adaptative())
+        if self.body_objects:
+            for b in self.body_objects:
+                body.append(b)
+        if self.actions:
+            actions = [action.to_dict() for action in self.actions]
+            body.append({
+                "actions": actions
+            })
+
+        return {
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "metadata": {
+                "webUrl": "https://contoso.com/tab"
+            },
+            "body": body
+        }

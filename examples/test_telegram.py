@@ -47,7 +47,7 @@ asyncio.run(send_telegram())
 
 async def test_telegram():
     telegram = Notify('telegram')
-    async with telegram as t:
+    async with telegram as t:  # pylint: disable=not-async-context-manager
         await t.send(
             '🛑⚠️✅ Otro Mensaje de Prueba',
             disable_notification=True
