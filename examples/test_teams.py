@@ -1,15 +1,16 @@
 import asyncio
-from notify.models import TeamsWebhook, TeamsCard, TeamsChannel, TeamsSection
+from notify.models import TeamsWebhook, TeamsCard, TeamsChannel
 from notify.providers.teams import Teams
 from notify.conf import (
     MS_TEAMS_DEFAULT_TEAMS_ID,
     MS_TEAMS_DEFAULT_CHANNEL_ID,
+    MS_TEAMS_DEFAULT_WEBHOOK
 )
 
 async def send_teams_webhook():
     tm = Teams()
     channel = TeamsWebhook(
-        uri='https://symbits.webhook.office.com/webhookb2/7a795c62-c523-4b6c-aafe-fe7cb7b03d7f@af176793-abc4-423e-8fab-dfc4e2bf8b9d/IncomingWebhook/2464692884f44012b6c8e0f6e73a702e/4e2aa0ea-56b8-49fe-85cf-05e97d479ba6'
+        uri=MS_TEAMS_DEFAULT_WEBHOOK
     )
     msg = TeamsCard(text='🛑⚠️✅  Mensaje de PRUEBAS enviado a Navigator Teams', summary='Card Summary')
     #  add a section:
