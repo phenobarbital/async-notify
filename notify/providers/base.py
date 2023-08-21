@@ -260,6 +260,7 @@ class ProviderBase(ABC):
             tasks = [self._send_(to, message, subject=subject, **kwargs) for to in recipients]
             # Using asyncio.as_completed to get results as they become available
             for to, future in zip(recipients, asyncio.as_completed(tasks)):
+                result = None
                 try:
                     result = await future
                 except Exception as e:
@@ -268,7 +269,8 @@ class ProviderBase(ABC):
                         stack_info=True
                     )
                 try:
-                    await self.__sent__(to, message, result, loop=loop, **kwargs)
+                    if result:
+                        await self.__sent__(to, message, result, loop=loop, **kwargs)
                     results.append(result)
                 except Exception as e:
                     self.logger.exception(

@@ -1,7 +1,7 @@
 """
-onesignal.
+Slack.
 
-Using OneSignal infraestructure to send push notifications to browsers.
+Using Slack infraestructure to send messages to Slack Client.
 """
 from typing import Union, Any
 from collections.abc import Callable
@@ -17,10 +17,6 @@ from notify.providers.base import ProviderIM, ProviderType
 from notify.models import Actor, Channel
 from notify.exceptions import ProviderError, MessageError
 from notify.conf import (
-    SLACK_APP_ID,
-    SLACK_CLIENT_ID,
-    SLACK_CLIENT_SECRET,
-    SLACK_SIGNING_SECRET,
     # Bot information:
     SLACK_TEAM_ID,
     SLACK_BOT_TOKEN,
@@ -60,7 +56,7 @@ class Slack(ProviderIM):
         self.conversations: list = []
         super(Slack, self).__init__(*args, **kwargs)
 
-    async def connect(self):
+    async def connect(self, **kwargs):
         try:
             # self.app = AsyncApp(signing_secret=SLACK_SIGNING_SECRET, authorize=authorize)
             logger = logging.getLogger(__name__)
@@ -78,7 +74,6 @@ class Slack(ProviderIM):
             ) from err
 
     async def close(self):
-        print("CLOSE")
         self.client = None
         self.app = None
 
@@ -106,7 +101,6 @@ class Slack(ProviderIM):
         try:
             # Sends it!
             response = await self.client.chat_postMessage(**notification_body)
-            # print('RESPONSE ::: ', response)
             return response
             # if response.status_code == 200:
             #     print(response.body) # JSON parsed response

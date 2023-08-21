@@ -60,6 +60,8 @@ O365_TENANT_ID = config.get("O365_TENANT_ID")
 O365_USER = config.get("O365_USER")
 O365_PASSWORD = config.get("O365_PASSWORD")
 
+TEAMS_DEFAULT_CHANNEL = config.get("TEAMS_DEFAULT_CHANNEL")
+
 # Sendgrid
 SENDGRID_USER = config.get("SENDGRID_USER")
 SENDGRID_KEY = config.get("SENDGRID_KEY")

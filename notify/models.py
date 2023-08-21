@@ -183,3 +183,40 @@ class MailMessage(BlockMessage):
 
     def get_attachments_names(self):
         return [at.filename for at in self.attachments]
+
+
+class TeamsChannel(BaseModel):
+    channel_id: str
+    team_id: str
+
+
+class TeamsWebhook(BaseModel):
+    uri: str = Column(required=True)
+
+
+class TeamsTarget(BaseModel):
+    os: str = Column(default='default')
+    uri: str = Column(required=True)
+
+class TeamsAction(BaseModel):
+    name: str = Column(required=False, default=None)
+    targets: list[TeamsTarget] = Column(default_factory=list)
+
+class TeamsSection(BaseModel):
+    activityTitle: str = Column(required=False, default=None)
+    activitySubtitle: str = Column(required=False, default=None)
+    activityImage: str = Column(required=False, default=None)
+    facts: list[str] = Column(required=False, default_factory=list)
+    text: str = Column(required=False, default=None)
+    potentialAction: list[TeamsAction] = Column(required=False, default=None, default_factory=list)
+
+class TeamsCard(BaseModel):
+    summary: str
+    sections: list[TeamsSection] = Column(required=False, default_factory=list)
+    text: str = Column(required=False, default=None)
+
+    def to_dict(self):
+        data = super(TeamsCard, self).to_dict()
+        data['@type'] = "MessageCard"
+        data['@context'] = "http://schema.org/extensions"
+        return data
