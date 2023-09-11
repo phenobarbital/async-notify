@@ -127,7 +127,6 @@ class Teams(ProviderIM):
                 f"Invalid Message Type: {type(message)}"
             )
         # TODO: using Jinja Templates on Teams Cards.
-        print('PAYLOAD IS > ', payload)
         return payload
 
     async def _send_(self, to: Actor, message: Union[str, Any], **kwargs) -> Any:
