@@ -87,5 +87,5 @@ async def send_teams_login():
 
 if __name__ == "__main__":
     # asyncio.run(send_teams_webhook())
-    # asyncio.run(send_teams_api())
-    asyncio.run(send_teams_login())
+    asyncio.run(send_teams_api())
+    # asyncio.run(send_teams_login())

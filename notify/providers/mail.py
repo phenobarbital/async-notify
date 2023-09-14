@@ -218,7 +218,10 @@ class ProviderEmail(ProviderBase, ABC):
     ):
         result = None
         # making the connection to the service:
-        loop = asyncio.get_running_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.get_running_loop()
         asyncio.set_event_loop(loop)
         try:
             await self.connect()
@@ -236,31 +239,22 @@ class ProviderEmail(ProviderBase, ABC):
         )
         results = []
         recipients = [recipient] if not isinstance(recipient, list) else recipient
-        tasks = []
-        for to in recipients:
-            task = loop.create_task(
-                self._send_(to, message, subject=subject, **kwargs)
-            )
-            fn = partial(self.__sent__, to, message, **kwargs)
-            task.add_done_callback(fn)
-            tasks.append(task)
-            done, pending = await asyncio.wait(
-                tasks,
-                timeout=self.timeout,
-                return_when="ALL_COMPLETED"
-            )
-            for task in done:
-                exception = task.exception()
-                if exception is not None:
-                    self.logger.error(
-                        f"Mail error: {exception}"
-                    )
-                else:
-                    result = task.result()
-                    results.append(result)
-            for task in pending:
+        # tasks = []
+        tasks = [self._send_(to, message, subject=subject, **kwargs) for to in recipients]
+
+        for to, future in zip(recipients, asyncio.as_completed(tasks)):
+            try:
+                result = await future
+                results.append(result)
+            except Exception as e:
                 self.logger.warning(
-                    f"Task {task} pending, not completed"
+                    f'Task for recipient {to} raised exception: {e}'
                 )
-                task.cancel()
+            try:
+                await self.__sent__(to, message, result, loop=loop, **kwargs)
+            except Exception as e:
+                self.logger.exception(
+                    f'Send for recipient {to} raised an exception: {e}',
+                    stack_info=True
+                )
         return results

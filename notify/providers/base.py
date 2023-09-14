@@ -263,15 +263,14 @@ class ProviderBase(ABC):
                 result = None
                 try:
                     result = await future
+                    results.append(result)
                 except Exception as e:
                     self.logger.exception(
                         f'Send for recipient {to} raised an exception: {e}',
                         stack_info=True
                     )
                 try:
-                    if result:
-                        await self.__sent__(to, message, result, loop=loop, **kwargs)
-                    results.append(result)
+                    await self.__sent__(to, message, result, loop=loop, **kwargs)
                 except Exception as e:
                     self.logger.exception(
                         f'Send for recipient {to} raised an exception: {e}',
