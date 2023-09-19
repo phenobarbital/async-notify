@@ -126,7 +126,10 @@ class ProviderBase(ABC):
         Prepare a Message for Sending.
         """
         if self._kwargs:
-            msg = message.format_map(SafeDict(**self._kwargs))
+            try:
+                msg = message.format_map(SafeDict(**self._kwargs))
+            except (AttributeError, ValueError):
+                msg = message
         else:
             msg = message
         if template:
