@@ -99,11 +99,11 @@ setup(
         'Cython==0.29.33',
         'wheel==0.40.0',
         'asyncio==3.4.3',
-        'uvloop==0.17.0',
+        'uvloop==0.19.0',
         'aiosmtplib==2.0.1',
         'python-datamodel>=0.3.12',
         'navconfig[default]>=1.3.5',
-        'cloudpickle==2.2.1',
+        'cloudpickle==3.0.0',
         'redis==4.5.5'
     ],
     extras_require={
