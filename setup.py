@@ -123,7 +123,7 @@ setup(
         "boto3": [
             "botocore==1.29.76",
             "aiobotocore==2.5.0",
-            "aioboto3==11.2.0",
+            "aioboto3==12.0.0",
         ],
         "google": [
             'gmail==0.6.3',
