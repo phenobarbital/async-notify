@@ -110,7 +110,8 @@ setup(
         "default": [
             'emoji==2.2.0',
             'aiogram==2.25.1',
-            'slack_bolt==1.18.0'
+            'slack_bolt==1.18.0',
+            'pillow==9.5.0'
         ],
         "telegram": [
             'emoji==2.2.0',
