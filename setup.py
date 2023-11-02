@@ -104,17 +104,16 @@ setup(
         'python-datamodel>=0.3.12',
         'navconfig[default]>=1.3.5',
         'cloudpickle==3.0.0',
+        'emoji==2.8.0',
         'redis==4.5.5'
     ],
     extras_require={
         "default": [
-            'emoji==2.2.0',
             'aiogram==2.25.1',
             'slack_bolt==1.18.0',
             'pillow==9.5.0'
         ],
         "telegram": [
-            'emoji==2.2.0',
             'aiogram==2.25.1',
             'pillow==9.5.0'
         ],
@@ -138,7 +137,6 @@ setup(
             "Office365-REST-Python-Client==2.2.1",
         ],
         "all": [
-            'emoji==2.2.0',
             'gmail==0.6.3',
             'google-auth>=2.6.0',
             'google-auth-httplib2>=0.1.0',
