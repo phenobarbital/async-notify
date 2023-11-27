@@ -96,7 +96,7 @@ setup(
         'wheel==0.40.0',
     ],
     install_requires=[
-        'Cython==0.29.33',
+        'Cython==3.0.6',
         'wheel==0.40.0',
         'asyncio==3.4.3',
         'uvloop==0.19.0',
