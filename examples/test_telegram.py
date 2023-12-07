@@ -49,7 +49,8 @@ async def test_telegram():
     telegram = Notify('telegram')
     async with telegram as t:  # pylint: disable=not-async-context-manager
         await t.send(
-            '🛑⚠️✅ Otro Mensaje de Prueba',
+            recipient=chat,
+            message='🛑⚠️✅ Otro Mensaje de Prueba',
             disable_notification=True
         )
         image = Path().joinpath('docs/old-computer.jpg')
@@ -61,8 +62,8 @@ async def test_telegram():
             disable_notification=True
         )
         ### an Sticker:
-        # sticker = {"set": "RadioRochela", "emoji": '💋'}
-        sticker = {"set": "PokemonGo", "emoji": ':unamused_face:'}
+        sticker = {"set": "RadioRochela", "emoji": '💋'}
+        # sticker = {"set": "PokemonGo", "emoji": ':unamused_face:'}
         await t.send_sticker(sticker=sticker, disable_notification=True)
         ## Video:
         video = BASE_DIR.joinpath(

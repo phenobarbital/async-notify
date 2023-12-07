@@ -3,19 +3,23 @@ from pathlib import PurePath
 from typing import Union, Any
 import emoji
 from PIL import Image
-
+from pathlib import Path
+from moviepy.editor import VideoFileClip
 # telegram
-from aiogram import Bot, Dispatcher, types
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram import Bot, Dispatcher
 # from aiogram.dispatcher.webhook import SendMessage
-from aiogram.utils.exceptions import (
+# Files
+from aiogram.types import FSInputFile, BufferedInputFile, URLInputFile
+from aiogram.exceptions import (
     TelegramAPIError,
-    # BotBlocked,
-    BadRequest,
-    MessageError,
-    Unauthorized,
-    NetworkError,
-    ChatNotFound,
+    TelegramBadRequest,
+    TelegramUnauthorizedError,
+    TelegramNetworkError,
+    TelegramNotFound,
 )
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.enums import ParseMode
 import aiofiles
 # from aiogram.utils.emoji import emojize
 # from aiogram.utils.markdown import bold, code, italic, text
@@ -69,19 +73,24 @@ class Telegram(ProviderIM):
 
     async def close(self):
         try:
-            session = await self._bot.get_session()
-            await session.close()
+            if self._bot:
+                await self._bot.session.close()  # Close the bot's session
             await self._dispatcher.stop()
         except Exception:
             pass
-        self._bot = None
-        self._connected = False
+        finally:
+            self._bot = None
+            self._connected = False
 
     async def connect(self, *args, **kwargs):
         # creation of bot
         try:
-            self._bot = Bot(token=self._bot_token)
-            self._dispatcher = Dispatcher(bot=self._bot)
+            self._session = AiohttpSession()
+            bot_settings = {"session": self._session, "parse_mode": ParseMode.HTML}
+            # bot_settings = {"parse_mode": ParseMode.HTML}
+            self._bot = Bot(token=self._bot_token, **bot_settings)
+            storage = MemoryStorage()
+            self._dispatcher = Dispatcher(storage=storage)
             self._info = await self._bot.get_me()
             self.logger.debug(
                 f"🤖 Hello, I'm {self._info.first_name}.\nHave a nice Day!"
@@ -130,9 +139,9 @@ class Telegram(ProviderIM):
             ) from err
         # Parsing Mode:
         if self.parseMode == "html":
-            mode = types.ParseMode.HTML
+            mode = ParseMode.HTML
         else:
-            mode = types.ParseMode.MARKDOWN_V2
+            mode = ParseMode.MARKDOWN_V2
         if "chat_id" in kwargs:
             chat_id = self.get_chat(**kwargs)
         else:
@@ -148,16 +157,16 @@ class Telegram(ProviderIM):
             response = await self._bot.send_message(**args)
             # TODO: make the processing of response
             return response
-        except Unauthorized as err:
+        except TelegramUnauthorizedError as err:
             # remove update.message.chat_id from conversation list
             print(err)
-        except ChatNotFound as err:
+        except TelegramNotFound as err:
             # the chat_id of a group has changed, use e.new_chat_id instead
             print(err)
-        except BadRequest as err:
+        except TelegramBadRequest as err:
             # handle malformed requests - read more below!
             print(err)
-        except NetworkError as err:
+        except TelegramNetworkError as err:
             # handle slow connection problems
             print(err)
         except TelegramAPIError as err:
@@ -173,19 +182,21 @@ class Telegram(ProviderIM):
         # Migrate to aiofile
         if isinstance(photo, PurePath):
             # is a path, I need to open that image
-            img = Image.open(r"{}".format(photo))
-            bio = BytesIO()
-            bio.name = photo.name
-            img.save(bio, img.format)
-            bio.seek(0)
-            return bio
+            return FSInputFile(
+                photo, filename=photo.name
+            )
         elif isinstance(photo, str):
+            if photo.startswith("http"):
+                # its an URL
+                return URLInputFile(photo)
             # its an URL
-            return photo
+            return FSInputFile(photo)
         elif isinstance(photo, BytesIO):
             # its a binary version of photo
             photo.seek(0)
-            return photo
+            return BufferedInputFile(
+                photo, filename="photo.jpg"
+            )
         else:
             return None
 
@@ -197,16 +208,16 @@ class Telegram(ProviderIM):
                 response = await self._bot.send_photo(chat_id, photo=image, **kwargs)
                 # print(response) # TODO: make the processing of response
                 return response
-            except Unauthorized as err:
+            except TelegramUnauthorizedError as err:
                 # remove update.message.chat_id from conversation list
                 print(err)
-            except ChatNotFound as err:
+            except TelegramNotFound as err:
                 # the chat_id of a group has changed, use e.new_chat_id instead
                 print(err)
-            except BadRequest as err:
+            except TelegramBadRequest as err:
                 # handle malformed requests - read more below!
                 print(err)
-            except NetworkError as err:
+            except TelegramNetworkError as err:
                 # handle slow connection problems
                 print(err)
             except TelegramAPIError as err:
@@ -220,14 +231,25 @@ class Telegram(ProviderIM):
     async def get_document(self, doc: Union[str, PurePath, Any]) -> Any:
         if isinstance(doc, PurePath):  # Path to a File:
             if doc.exists():
-                async with aiofiles.open(doc, "rb") as f:
-                    content = await f.read()
-                return content
+                return FSInputFile(doc, filename=doc.name)
             else:
-                raise FileNotFoundError(f"Telegram Bot: file {doc} doesn't exists.")
+                raise FileNotFoundError(
+                    f"Telegram Bot: file {doc} doesn't exists."
+                )
+        elif isinstance(doc, str):
+            if doc.startswith("http"):
+                # its an URL
+                return URLInputFile(doc)
+            # its an URL
+            return FSInputFile(doc)
+        elif isinstance(doc, BytesIO):
+            # its a binary version of photo
+            doc.seek(0)
+            return BufferedInputFile(
+                doc, filename="document.txt"
+            )
         else:
-            # TODO: check if URL or get file_id
-            return doc
+            return FSInputFile(doc)
 
     async def send_document(self, document, **kwargs):
         chat_id = self.get_chat()
@@ -240,18 +262,16 @@ class Telegram(ProviderIM):
             )
             # print(response) # TODO: make the processing of response
             return response
-        except Unauthorized as err:
+        except TelegramUnauthorizedError as err:
             # remove update.message.chat_id from conversation list
             print(err)
-        except MessageError as err:
-            print(err)
-        except ChatNotFound as err:
+        except TelegramNotFound as err:
             # the chat_id of a group has changed, use e.new_chat_id instead
             print(err)
-        except BadRequest as err:
+        except TelegramBadRequest as err:
             # handle malformed requests - read more below!
             print(err)
-        except NetworkError as err:
+        except TelegramNetworkError as err:
             # handle slow connection problems
             print(err)
         except TelegramAPIError as err:
@@ -272,8 +292,11 @@ class Telegram(ProviderIM):
                 em = emoji.emojize(em)
             try:
                 sticker_set = await self._bot.get_sticker_set(name)
-                self.logger.debug(f"Set Found: {sticker_set!r}")
-                st = [x for x in sticker_set["stickers"] if x["emoji"] == em]
+                self.logger.debug(
+                    f"Sticker Set Found: {sticker_set!r}"
+                )
+                st = [x for x in sticker_set.stickers if x.emoji == em]
+                print('STICKER', st, type(st))
                 sticker = st[0].file_id
                 return sticker
             except Exception as err:
@@ -291,18 +314,16 @@ class Telegram(ProviderIM):
             response = await self._bot.send_sticker(chat_id, sticker=sticker, **kwargs)
             # print(response) # TODO: make the processing of response
             return response
-        except Unauthorized as err:
+        except TelegramUnauthorizedError as err:
             # remove update.message.chat_id from conversation list
             print(err)
-        except MessageError as err:
-            print(err)
-        except ChatNotFound as err:
+        except TelegramNotFound as err:
             # the chat_id of a group has changed, use e.new_chat_id instead
             print(err)
-        except BadRequest as err:
+        except TelegramBadRequest as err:
             # handle malformed requests - read more below!
             print(err)
-        except NetworkError as err:
+        except TelegramNetworkError as err:
             # handle slow connection problems
             print(err)
         except TelegramAPIError as err:
@@ -314,17 +335,34 @@ class Telegram(ProviderIM):
                 f"{err}"
             ) from err
 
+    def convert_to_mp4(self, video: Union[str, PurePath, Any], format: str = 'libx264') -> Any:
+        clip = VideoFileClip(str(video))
+        output_file = Path().joinpath(video.parent, video.stem + ".mp4")
+        clip.write_videofile(str(output_file), codec=format)
+        return output_file
+
     async def get_media(self, media: Union[str, PurePath, Any]) -> Any:
         if isinstance(media, PurePath):  # Path to a File:
             if media.exists():
-                async with aiofiles.open(media, "rb") as f:
-                    content = await f.read()
-                return content
+                if media.suffix == ".webm":
+                    # its a webm video, convert to mp4
+                    media = self.convert_to_mp4(media)
+                    return FSInputFile(media, filename=media.name)
+                return FSInputFile(media, filename=media.name)
             else:
-                raise FileNotFoundError(f"Telegram Bot: file {media} doesn't exists.")
+                raise FileNotFoundError(
+                    f"Telegram Bot: file {media} doesn't exists."
+                )
+        elif isinstance(media, str):
+            if media.startswith("http"):
+                # its an URL
+                return URLInputFile(media)
+            return FSInputFile(media)
+        elif isinstance(media, BytesIO):
+            media.seek(0)
+            return BufferedInputFile(media)
         else:
-            # TODO: check if URL or get file_id
-            return media
+            return FSInputFile(media)
 
     async def send_video(self, video: Union[str, Any], **kwargs):
         chat_id = self.get_chat()
@@ -333,18 +371,16 @@ class Telegram(ProviderIM):
             response = await self._bot.send_video(chat_id, video=media, **kwargs)
             # print(response) # TODO: make the processing of response
             return response
-        except Unauthorized as err:
+        except TelegramUnauthorizedError as err:
             # remove update.message.chat_id from conversation list
             print(err)
-        except MessageError as err:
-            print(err)
-        except ChatNotFound as err:
+        except TelegramNotFound as err:
             # the chat_id of a group has changed, use e.new_chat_id instead
             print(err)
-        except BadRequest as err:
+        except TelegramBadRequest as err:
             # handle malformed requests - read more below!
             print(err)
-        except NetworkError as err:
+        except TelegramNetworkError as err:
             # handle slow connection problems
             print(err)
         except TelegramAPIError as err:
@@ -363,18 +399,16 @@ class Telegram(ProviderIM):
             response = await self._bot.send_audio(chat_id, audio=sound, **kwargs)
             # print(response) # TODO: make the processing of response
             return response
-        except Unauthorized as err:
+        except TelegramUnauthorizedError as err:
             # remove update.message.chat_id from conversation list
             print(err)
-        except MessageError as err:
-            print(err)
-        except ChatNotFound as err:
+        except TelegramNotFound as err:
             # the chat_id of a group has changed, use e.new_chat_id instead
             print(err)
-        except BadRequest as err:
+        except TelegramBadRequest as err:
             # handle malformed requests - read more below!
             print(err)
-        except NetworkError as err:
+        except TelegramNetworkError as err:
             # handle slow connection problems
             print(err)
         except TelegramAPIError as err:

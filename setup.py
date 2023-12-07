@@ -104,16 +104,17 @@ setup(
         'python-datamodel>=0.3.12',
         'navconfig[default]>=1.5.0',
         'cloudpickle==3.0.0',
-        'emoji==2.8.0'
+        'emoji==2.8.0',
+        'moviepy==1.0.3'
     ],
     extras_require={
         "default": [
-            'aiogram==2.25.1',
+            'aiogram==3.2.0',
             'slack_bolt==1.18.0',
             'pillow==9.5.0'
         ],
         "telegram": [
-            'aiogram==2.25.1',
+            'aiogram==3.2.0',
             'pillow==9.5.0'
         ],
         "push": [
@@ -149,7 +150,7 @@ setup(
             'twilio==8.2.2',
             'slixmpp==1.8.3',
             "slack_bolt==1.18.0",
-            'aiogram==2.25.1',
+            'aiogram==3.2.0',
             'pillow==9.5.0'
         ]
     },
