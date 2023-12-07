@@ -148,7 +148,7 @@ setup(
             'pyshorteners==1.0.1',
             'tweepy==4.14.0',
             'twilio==8.2.2',
-            'slixmpp==1.8.3',
+            'slixmpp==1.8.4',
             "slack_bolt==1.18.0",
             'aiogram==3.2.0',
             'pillow==9.5.0'
