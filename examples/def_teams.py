@@ -103,90 +103,40 @@ message_data = {
       "content": json.dumps(
           {
             "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.2",
             "type": "AdaptiveCard",
-            "version": "1.5",
+            "originator": "GUID",
             "body": [
                 {
                     "type": "TextBlock",
-                    "size": "Medium",
-                    "weight": "Bolder",
-                    "text": " Navigator Login",
-                    "horizontalAlignment": "Center",
-                    "wrap": True,
-                    "style": "heading"
+                    "text": "Enter your message:",
+                    "wrap": True
                 },
                 {
                     "type": "Input.Text",
-                    "id": "UserVal",
-                    "label": "Username",
-                    "isRequired": True,
-                    "errorMessage": "Username is required"
-                },
-                {
-                    "type": "Input.Text",
-                    "id": "PassVal",
-                    "style": "Password",
-                    "label": "Password",
-                    "isRequired": True,
-                    "errorMessage": "Password is required"
+                    "id": "userMessage",
+                    "placeholder": "Type your message here...",
+                    "isMultiline": True
                 }
             ],
             "actions": [
                 {
-                    "type": "Action.Submit",
-                    "title": "Login",
-                    "data": {
-                        "id": "LoginVal"
-                    }
+                    "type": "Action.OpenUrl",
+                    "title": "Send",
+                    "url": "http://localhost:5000/test",
+                    "body": "{ \"message\": \"{{userMessage.value}}\" }",
+                    "headers": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
                 }
             ]
         }
       )
     }
   ]
-}
-
-
-message_data = {
-    "body": {
-        "contentType": "html",
-        "content": "<attachment id=\"4465B062-EE1C-4E0F-B944-3B7AF61EAF40\"></attachment>"
-    },
-    "attachments": [
-    {
-        "id": "4465B062-EE1C-4E0F-B944-3B7AF61EAF40",
-        "contentType": "application/vnd.microsoft.card.adaptive",
-        "content": json.dumps(
-            {
-                "contentType": "application/vnd.microsoft.card.hero",
-                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                "type": "AdaptiveCard",
-                "version": "1.6",
-                "content": {
-                    "title": "Seattle Center Monorail",
-                    "subtitle": "Seattle Center Monorail",
-                    "text": "The Seattle Center Monorail is an elevated train line between Seattle Center (near the Space Needle) and downtown Seattle. It was built for the 1962 World's Fair. Its original two trains, completed in 1961, are still in service.",
-                    "images": [
-                    {
-                        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Seattle_monorail01_2008-02-25.jpg/1024px-Seattle_monorail01_2008-02-25.jpg"
-                    }
-                    ],
-                        "buttons": [
-                        {
-                            "type": "openUrl",
-                            "title": "Official website",
-                            "value": "https://www.seattlemonorail.com"
-                        },
-                        {
-                            "type": "openUrl",
-                            "title": "Wikipeda page",
-                            "value": "https://en.wikipedia.org/wiki/Seattle_Center_Monorail"
-                        }
-                    ]
-                }
-            }
-        )
-    }]
 }
 
 response = requests.post(message_url, headers=headers, json=message_data)

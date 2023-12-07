@@ -55,7 +55,7 @@ ignore = 'E501,W503,E203'
 requires = [
     'setuptools==67.6.1',
     'setuptools-scm',
-    'Cython==0.29.33',
-    'wheel==0.40.0'
+    'Cython==3.0.6',
+    'wheel==0.42.0'
 ]
 build-backend = "setuptools.build_meta"

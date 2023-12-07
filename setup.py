@@ -93,19 +93,18 @@ setup(
     python_requires=">=3.9.16",
     zip_safe=False,
     setup_requires=[
-        'wheel==0.40.0',
+        'wheel==0.42.0',
     ],
     install_requires=[
-        'Cython==0.29.33',
-        'wheel==0.40.0',
+        'Cython==3.0.6',
+        'wheel==0.42.0',
         'asyncio==3.4.3',
         'uvloop==0.19.0',
         'aiosmtplib==2.0.1',
         'python-datamodel>=0.3.12',
-        'navconfig[default]>=1.3.5',
+        'navconfig[default]>=1.5.0',
         'cloudpickle==3.0.0',
-        'emoji==2.8.0',
-        'redis==4.5.5'
+        'emoji==2.8.0'
     ],
     extras_require={
         "default": [
@@ -121,9 +120,9 @@ setup(
             'onesignal-sdk==2.0.0',
         ],
         "boto3": [
-            "botocore==1.29.76",
-            "aiobotocore==2.5.0",
-            "aioboto3==11.2.0",
+            "botocore==1.31.64",
+            "aiobotocore==2.7.0",
+            "aioboto3==12.0.0",
         ],
         "google": [
             'gmail==0.6.3',
