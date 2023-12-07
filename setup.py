@@ -100,7 +100,7 @@ setup(
         'wheel==0.42.0',
         'asyncio==3.4.3',
         'uvloop==0.19.0',
-        'aiosmtplib==2.0.1',
+        'aiosmtplib==3.0.1',
         'python-datamodel>=0.3.12',
         'navconfig[default]>=1.5.0',
         'cloudpickle==3.0.0',
