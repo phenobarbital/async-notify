@@ -122,7 +122,7 @@ setup(
         ],
         "boto3": [
             "botocore==1.31.64",
-            "aiobotocore==2.7.0",
+            "aiobotocore==2.11.2",
             "aioboto3==12.0.0",
         ],
         "google": [
