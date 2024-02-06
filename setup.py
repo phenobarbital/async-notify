@@ -121,7 +121,7 @@ setup(
             'onesignal-sdk==2.0.0',
         ],
         "boto3": [
-            "botocore==1.31.64",
+            "botocore==1.34.36",
             "aiobotocore==2.7.0",
             "aioboto3==12.0.0",
         ],
