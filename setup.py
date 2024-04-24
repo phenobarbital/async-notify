@@ -94,15 +94,16 @@ setup(
     zip_safe=False,
     setup_requires=[
         'wheel==0.42.0',
+        'Cython==3.0.9',
     ],
     install_requires=[
-        'Cython==3.0.6',
         'wheel==0.42.0',
         'asyncio==3.4.3',
         'uvloop==0.19.0',
         'aiosmtplib==2.0.1',
         'python-datamodel>=0.3.12',
         'navconfig[default]>=1.5.0',
+        'jinja2==3.1.3',
         'cloudpickle==3.0.0',
         'emoji==2.8.0',
         'moviepy==1.0.3'
