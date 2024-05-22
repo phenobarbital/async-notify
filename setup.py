@@ -103,7 +103,7 @@ setup(
         'aiosmtplib==2.0.1',
         'python-datamodel>=0.3.12',
         'navconfig[default]>=1.5.0',
-        'jinja2==3.1.3',
+        'jinja2==3.1.4',
         'cloudpickle==3.0.0',
         'emoji==2.8.0',
         'moviepy==1.0.3'
