@@ -133,7 +133,7 @@ setup(
         ],
         "azure": [
             'pyo365==0.1.3',
-            "o365==2.0.27",
+            "o365==2.0.34",
             'msal==1.22.0',
             "Office365-REST-Python-Client==2.2.1",
         ],
@@ -142,7 +142,7 @@ setup(
             'google-auth>=2.6.0',
             'google-auth-httplib2>=0.1.0',
             'onesignal-sdk==2.0.0',
-            "o365==2.0.27",
+            "o365==2.0.34",
             "Office365-REST-Python-Client==2.2.1",
             'msal==1.22.0',
             'PySocks==1.7.1',
