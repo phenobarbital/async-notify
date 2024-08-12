@@ -100,31 +100,26 @@ setup(
         'wheel==0.42.0',
         'asyncio==3.4.3',
         'uvloop==0.19.0',
-        'aiosmtplib==2.0.1',
+        'aiosmtplib==3.0.2',
         'python-datamodel>=0.3.12',
         'navconfig[default]>=1.5.0',
-        'jinja2==3.1.4',
+        'jinja2>=3.1.4',
         'cloudpickle==3.0.0',
-        'emoji==2.8.0',
+        'emoji>=1.7.0,<2.9.0',
         'moviepy==1.0.3'
     ],
     extras_require={
         "default": [
-            'aiogram==3.2.0',
+            'aiogram>=3.7.0,<3.12.0',
             'slack_bolt==1.18.0',
             'pillow==9.5.0'
         ],
         "telegram": [
-            'aiogram==3.2.0',
+            'aiogram>=3.7.0,<3.12.0',
             'pillow==9.5.0'
         ],
         "push": [
             'onesignal-sdk==2.0.0',
-        ],
-        "boto3": [
-            "botocore==1.31.64",
-            "aiobotocore==2.7.0",
-            "aioboto3==12.0.0",
         ],
         "google": [
             'gmail==0.6.3',
@@ -134,7 +129,7 @@ setup(
         "azure": [
             'pyo365==0.1.3',
             "o365==2.0.34",
-            'msal==1.22.0',
+            'msal>=1.22.0,<1.30.1',
             "Office365-REST-Python-Client==2.2.1",
         ],
         "all": [
@@ -144,14 +139,13 @@ setup(
             'onesignal-sdk==2.0.0',
             "o365==2.0.34",
             "Office365-REST-Python-Client==2.2.1",
-            'msal==1.22.0',
+            'msal>=1.22.0,<1.30.1',
             'PySocks==1.7.1',
             'pyshorteners==1.0.1',
-            'tweepy==4.14.0',
             'twilio==8.2.2',
             'slixmpp==1.8.4',
             "slack_bolt==1.18.0",
-            'aiogram==3.2.0',
+            'aiogram>=3.7.0,<3.12.0',
             'pillow==9.5.0'
         ]
     },

@@ -4,9 +4,12 @@ venv:
 	python3.10 -m venv .venv
 	echo 'run `source .venv/bin/activate` to start develop Notify'
 
-develop:
+install:
 	pip install wheel==0.42.0
 	pip install -e .
+
+develop:
+	pip install -e .[all]
 	python -m pip install -Ur docs/requirements-dev.txt
 
 dev:
