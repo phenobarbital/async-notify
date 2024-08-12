@@ -8,6 +8,7 @@ from moviepy.editor import VideoFileClip
 # telegram
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 # from aiogram.dispatcher.webhook import SendMessage
 # Files
 from aiogram.types import FSInputFile, BufferedInputFile, URLInputFile
@@ -86,8 +87,14 @@ class Telegram(ProviderIM):
         # creation of bot
         try:
             self._session = AiohttpSession()
-            bot_settings = {"session": self._session, "parse_mode": ParseMode.HTML}
-            # bot_settings = {"parse_mode": ParseMode.HTML}
+            bot_settings = {
+                "session": self._session,
+                "default": DefaultBotProperties(
+                    parse_mode=ParseMode.HTML,
+                    disable_notification=True,
+                    allow_sending_without_reply=True
+                )
+            }
             self._bot = Bot(token=self._bot_token, **bot_settings)
             storage = MemoryStorage()
             self._dispatcher = Dispatcher(storage=storage)

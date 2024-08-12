@@ -10,7 +10,8 @@ from notify.conf import (
 async def send_teams_webhook():
     tm = Teams()
     channel = TeamsWebhook(
-        uri=MS_TEAMS_DEFAULT_WEBHOOK
+        # uri=MS_TEAMS_DEFAULT_WEBHOOK
+        uri="https://symbits.webhook.office.com/webhookb2/7a795c62-c523-4b6c-aafe-fe7cb7b03d7f@af176793-abc4-423e-8fab-dfc4e2bf8b9d/IncomingWebhook/b053af82707e47d58bb9e37f55fc2b01/4e2aa0ea-56b8-49fe-85cf-05e97d479ba6"
     )
     msg = TeamsCard(text='🛑⚠️✅  Mensaje de PRUEBAS enviado a Navigator Teams', summary='Card Summary')
     #  add a section:
@@ -86,6 +87,6 @@ async def send_teams_login():
     print('RESULT > ', result)
 
 if __name__ == "__main__":
-    # asyncio.run(send_teams_webhook())
-    asyncio.run(send_teams_api())
+    asyncio.run(send_teams_webhook())
+    # asyncio.run(send_teams_api())
     # asyncio.run(send_teams_login())
