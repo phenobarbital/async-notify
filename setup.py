@@ -84,6 +84,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Framework :: AsyncIO',
         'License :: OSI Approved :: BSD License',
     ],
@@ -93,16 +94,16 @@ setup(
     python_requires=">=3.9.16",
     zip_safe=False,
     setup_requires=[
-        'wheel==0.42.0',
-        'Cython==3.0.9',
+        'setuptools==74.0.0',
+        'Cython==3.0.11',
+        'wheel==0.44.0',
     ],
     install_requires=[
-        'wheel==0.42.0',
         'asyncio==3.4.3',
-        'uvloop==0.19.0',
-        'aiosmtplib==3.0.2',
+        'uvloop==0.20.0',
+        'aiosmtplib>=3.0.2',
         'python-datamodel>=0.3.12',
-        'navconfig[default]>=1.5.0',
+        'navconfig[default]>=1.7.0',
         'jinja2>=3.1.4',
         'cloudpickle==3.0.0',
         'emoji>=1.7.0,<2.9.0',
@@ -155,8 +156,10 @@ setup(
             'notify = notify.__main__:main'
         ]
     },
-    project_urls={  # Optional
+    project_urls={
         'Source': 'https://github.com/phenobarbital/async-notify',
+        'Tracker': 'https://github.com/phenobarbital/async-notify/issues',
+        'Documentation': 'https://github.com/phenobarbital/async-notify/',
         'Funding': 'https://paypal.me/phenobarbital',
         'Say Thanks!': 'https://saythanks.io/to/phenobarbital',
     },

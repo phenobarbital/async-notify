@@ -15,6 +15,7 @@ classifiers=[
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python",
   "Typing :: Typed",
   "Environment :: Web Environment",
@@ -53,9 +54,9 @@ ignore = 'E501,W503,E203'
 
 [build-system]
 requires = [
-    'setuptools==67.6.1',
+    'setuptools==74.0.0',
+    'Cython==3.0.11',
+    'wheel==0.44.0',
     'setuptools-scm',
-    'Cython==3.0.9',
-    'wheel==0.42.0'
 ]
 build-backend = "setuptools.build_meta"
