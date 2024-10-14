@@ -18,6 +18,7 @@ from notify.conf import (
 )
 
 logging.getLogger("aiobotocore").setLevel(logging.CRITICAL)
+logging.getLogger("botocore").setLevel(logging.INFO)
 
 
 class Ses(ProviderEmail):
@@ -87,20 +88,18 @@ class Ses(ProviderEmail):
                 "content": message,
                 **kwargs,
             }
-            msg = await self._template.render_async(**templateargs)
+            content = await self._template.render_async(**templateargs)
         else:
             try:
-                msg = kwargs["body"]
+                content = kwargs["body"]
             except KeyError:
-                msg = message
-
+                content = message
         email_msg = MIMEMultipart("alternative")
         email_msg["Subject"] = subject
         email_msg["From"] = self.sender_email
         email_msg["To"] = to.account.address
-        email_msg.attach(MIMEText(message, "plain"))
-        email_msg.attach(MIMEText(msg, "html"))
-
+        email_msg.attach(MIMEText(content, "plain"))
+        email_msg.attach(MIMEText(content, "html"))
         return email_msg
 
     async def _send_(
