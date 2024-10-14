@@ -108,7 +108,7 @@ setup(
         'cloudpickle==3.0.0',
         'emoji>=1.7.0,<2.9.0',
         'moviepy==1.0.3',
-        'aiobotocore[boto3]>=2.7.0'
+        'aiobotocore[boto3]==2.15.2'
     ],
     extras_require={
         "default": [
@@ -148,7 +148,8 @@ setup(
             'slixmpp==1.8.4',
             "slack_bolt==1.18.0",
             'aiogram>=3.7.0,<3.12.0',
-            'pillow==9.5.0'
+            'pillow==9.5.0',
+            'aiobotocore[boto3]==2.15.2'
         ]
     },
     ext_modules=cythonize(extensions),
