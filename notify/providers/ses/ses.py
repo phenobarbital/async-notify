@@ -4,6 +4,7 @@ import asyncio
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import aiobotocore
+from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
 from navconfig.logging import logging
 from notify.providers.mail import ProviderEmail
@@ -66,27 +67,15 @@ class Ses(ProviderEmail):
             )
 
     async def connect(self, **kwargs):
-        """Connect to Amazon SES using aiobotocore."""
-        self.session = aiobotocore.get_session()
-        try:
-            self.client = self.session.create_client(
-                "ses",
-                region_name=self.aws_region_name,
-                aws_secret_access_key=self.aws_secret_access_key,
-                aws_access_key_id=self.aws_access_key_id,
-            )
-            self.authenticate = True
-            return self.client
-        except Exception as e:
-            self.logger.error(f"Error during authentication: {e}")
-            raise NotifyAuthError(
-                f"Unable to authenticate with Amazon SES: {e}"
-            )
+        """Create a Session to Amazon SES using aiobotocore."""
+        self.session = get_session()
+        self.authenticate = True
 
     async def close(self):
         """Close the connection."""
-        if self.client:
-            await self.client.close()
+        self.client = None
+        self.session = None
+        self.authenticate = False
 
     async def _render_(self, to: Actor, message: str = None, subject: str = None, **kwargs):
         """Create the email message."""
@@ -114,12 +103,19 @@ class Ses(ProviderEmail):
 
         return email_msg
 
-    async def _send_(self, to: Actor, message: str, subject: str, **kwargs):
+    async def _send_(
+        self,
+        to: Actor,
+        message: str,
+        subject: str,
+        client: Optional[Callable] = None,
+        **kwargs
+    ):
         """Send the email message to the recipient."""
         if self.use_aws_template:
             # Use AWS SES templates to send the email
             try:
-                response = await self.client.send_templated_email(
+                response = await client.send_templated_email(
                     Source=self.sender_email,
                     Destination={
                         'ToAddresses': [to.account.address],
@@ -137,9 +133,8 @@ class Ses(ProviderEmail):
             except (TypeError, ValueError) as exc:
                 self.logger.error(exc)
                 return False
-
             try:
-                response = await self.client.send_raw_email(
+                response = await client.send_raw_email(
                     Source=self.sender_email,
                     Destinations=[to.account.address],
                     RawMessage={"Data": message.as_string()},
@@ -168,45 +163,66 @@ class Ses(ProviderEmail):
             **kwargs
         )
         results = []
-        recipients = [recipient] if not isinstance(recipient, list) else recipient
         if self.use_aws_template:
             # Use AWS SES templates to send the email
+            recipients = [recipient.account.address for recipient in recipient]
+            template_name = kwargs.pop('template_name', self.template_name)
+            template_data = kwargs.pop('template_data', {})
+            if not template_data:
+                template_data = {}
             try:
-                results = await self.client.send_templated_email(
-                    Source=self.sender_email,
-                    Destination={
-                        'ToAddresses': recipients,
-                    },
-                    Template=self.template_name,
-                    TemplateData=kwargs,
-                )
+                async with self.session.create_client(
+                    "ses",
+                    region_name=self.aws_region_name,
+                    aws_secret_access_key=self.aws_secret_access_key,
+                    aws_access_key_id=self.aws_access_key_id,
+                ) as client:
+                    results = await client.send_templated_email(
+                        Source=self.sender_email,
+                        Destination={
+                            'ToAddresses': recipients,
+                        },
+                        Template=template_name,
+                        TemplateData=template_data,
+                    )
             except ClientError as e:
                 self.logger.exception(e, stack_info=True)
                 raise RuntimeError(f"{e}") from e
         else:
             # Using basic Asyncio _send_ method
+            recipients = [recipient] if not isinstance(recipient, list) else recipient
             try:
                 loop = asyncio.get_running_loop()
             except RuntimeError:
                 loop = asyncio.get_event_loop()
             # asyncio:
-            tasks = [self._send_(to, message, subject=subject, **kwargs) for to in recipients]
-            # Using asyncio.as_completed to get results as they become available
-            for to, future in zip(recipients, asyncio.as_completed(tasks)):
-                result = None
-                try:
-                    result = await future
-                    results.append(result)
-                except Exception as e:
-                    self.logger.exception(
-                        f'Send for recipient {to} raised an exception: {e}',
-                        stack_info=True
-                    )
-                try:
-                    await self.__sent__(to, message, result, loop=loop, **kwargs)
-                except Exception as e:
-                    self.logger.exception(
-                        f'Send for recipient {to} raised an exception: {e}',
-                        stack_info=True
-                    )
+            async with self.session.create_client(
+                    "ses",
+                    region_name=self.aws_region_name,
+                    aws_secret_access_key=self.aws_secret_access_key,
+                    aws_access_key_id=self.aws_access_key_id,
+            ) as client:
+                tasks = [
+                    self._send_(
+                        to, message, subject=subject, client=client, **kwargs
+                    ) for to in recipients
+                ]
+                # Using asyncio.as_completed to get results as they become available
+                for to, future in zip(recipients, asyncio.as_completed(tasks)):
+                    result = None
+                    try:
+                        result = await future
+                        results.append(result)
+                    except Exception as e:
+                        self.logger.exception(
+                            f'Send for recipient {to} raised an exception: {e}',
+                            stack_info=True
+                        )
+                    try:
+                        await self.__sent__(to, message, result, loop=loop, **kwargs)
+                    except Exception as e:
+                        self.logger.exception(
+                            f'Send for recipient {to} raised an exception: {e}',
+                            stack_info=True
+                        )
         return results
