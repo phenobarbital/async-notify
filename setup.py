@@ -107,7 +107,8 @@ setup(
         'jinja2>=3.1.4',
         'cloudpickle==3.0.0',
         'emoji>=1.7.0,<2.9.0',
-        'moviepy==1.0.3'
+        'moviepy==1.0.3',
+        'aiobotocore[boto3]>=2.7.0'
     ],
     extras_require={
         "default": [

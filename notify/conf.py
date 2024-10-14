@@ -82,6 +82,11 @@ AWS_EMAIL_HOST = config.get(
 AWS_EMAIL_PORT = config.get("aws_email_port", fallback=587)
 AWS_EMAIL_ACCOUNT = config.get("aws_email_account")
 
+AWS_ACCESS_KEY_ID = config.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = config.get("AWS_SECRET_ACCESS_KEY")
+AWS_REGION_NAME = config.get("AWS_REGION_NAME")
+AWS_SENDER_EMAIL = config.get("AWS_SENDER_EMAIL")
+
 # OneSignail
 ONESIGNAL_PLAYER_ID = config.get("ONESIGNAL_PLAYER_ID")
 ONESIGNAL_OS_APP_ID = config.get("ONESIGNAL_OS_APP_ID")
