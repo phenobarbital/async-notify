@@ -25,16 +25,16 @@ async def main():
         tcp_port=8991
     ) as client:
         # Publish to Redis PUB/SUB
-        await client.publish(msg, channel=NOTIFY_CHANNEL)
+        # await client.publish(msg, channel=NOTIFY_CHANNEL)
 
         # Stream into Redis stream
-        await client.stream(msg, stream=NOTIFY_WORKER_STREAM)
+        # await client.stream(msg, stream=NOTIFY_WORKER_STREAM)
 
         # Stream but using Wrapper:
         await client.stream(msg, stream=NOTIFY_WORKER_STREAM, use_wrapper=True)
 
         # Send message via TCP
-        await client.send(msg)
+        # await client.send(msg)
 
 # Run the example
 if __name__ == "__main__":
