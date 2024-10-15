@@ -3,12 +3,10 @@ from collections.abc import Callable
 import asyncio
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import aiobotocore
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
 from navconfig.logging import logging
 from notify.providers.mail import ProviderEmail
-from notify.exceptions import NotifyAuthError
 from notify.models import Actor
 from notify.conf import (
     AWS_ACCESS_KEY_ID,
@@ -225,3 +223,44 @@ class Ses(ProviderEmail):
                             stack_info=True
                         )
         return results
+
+    async def create_template(self, template_name: str, subject_part: str, html_part: str, text_part: str):
+        """
+        Create a new SES email template using SES V2 API.
+
+        :param template_name: The name of the email template to create.
+        :param subject_part: The subject of the email template.
+        :param html_part: The HTML content of the email template.
+        :param text_part: The text content of the email template.
+        """
+        template = {
+            "Template": {
+                "TemplateName": template_name,
+                "SubjectPart": subject_part,
+                "HtmlPart": html_part,
+                "TextPart": text_part
+            }
+        }
+
+        try:
+            async with self.session.create_client(
+                "sesv2",  # Use the SES v2 API endpoint
+                region_name=self.aws_region_name,
+                aws_secret_access_key=self.aws_secret_access_key,
+                aws_access_key_id=self.aws_access_key_id,
+            ) as client:
+                response = await client.invoke_endpoint(
+                    "CreateEmailTemplate",
+                    Template=template
+                )
+                self.logger.debug(
+                    f"Template created successfully: {response}"
+                )
+                return response
+        except ClientError as exc:
+            self.logger.exception(
+                f"Error creating SES email template: {exc}"
+            )
+            raise RuntimeError(
+                f"Failed to create SES email template: {exc}"
+            ) from exc
