@@ -127,7 +127,12 @@ class ProviderBase(ABC):
         """
         if self._kwargs:
             try:
-                msg = message.format_map(SafeDict(**self._kwargs))
+                msg = message.format_map(
+                    SafeDict(
+                        recipient=recipient,
+                        **self._kwargs
+                    )
+                )
             except (AttributeError, ValueError):
                 msg = message
         else:
