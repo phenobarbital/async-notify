@@ -5,14 +5,37 @@ from notify.models import Actor
 from notify.utils import Msg
 
 
-user = {
+jesus = {
     "name": "Jesus Lara",
     "account": {
         "address": "jesuslarag@gmail.com",
         "number": "+34692817379"
     }
 }
-recipients = [Actor(**user)]
+carlos = {
+    "name": "Carlos Montes",
+    "account": {
+        "address": "cmontes@trocglobal.com",
+    }
+}
+javier = {
+    "name": "Javier Leon",
+    "account": {
+        "address": "jleon@trocglobal.com",
+    }
+}
+eduardo = {
+    "name": "Eduardo Santaella",
+    "account": {
+        "address": "esantaella@trocglobal.com",
+    }
+}
+
+recipients = [
+    Actor(**carlos),
+    Actor(**eduardo),
+    Actor(**javier)
+]
 
 Msg('=== Test EMAIL Using SES === ')
 
@@ -31,9 +54,9 @@ async def send_email():
     async with mail as m:
         await m.send(
             recipient=recipients,
-            subject='Epale, vente a jugar bolas criollas!',
-            event_name='Partido de bolas Criollas',
-            event_address='Bolodromo Caucagua',
+            subject='Este es un correo de pruebas de Polestar Pilates!',
+            event_name='Si ha recibido este email, el sistema de envío de correos funciona correctamente.',
+            event_address='Polestar Pilates',
             template='email_applied.html'
         )
 
