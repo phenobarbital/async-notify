@@ -26,7 +26,6 @@ async def main():
     ) as client:
         # Publish to Redis PUB/SUB
         await client.publish(msg, channel=NOTIFY_CHANNEL)
-
         # Stream into Redis stream
         await client.stream(msg, stream=NOTIFY_WORKER_STREAM)
 

@@ -252,6 +252,9 @@ class NotifyWorker:
                             )
                             try:
                                 result = await task()
+                                self.logger.debug(
+                                    f'Task Result {result!r}'
+                                )
                                 if isinstance(result, BaseException):
                                     raise result.__class__(str(result))
                                 self.logger.info(
