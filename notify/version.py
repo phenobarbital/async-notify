@@ -6,7 +6,7 @@ __description__ = (
     "simple but powerful asyncio-based library for sending messages and notifications."
 )
 
-__version__ = "1.3.3"
+__version__ = "1.3.4"
 __copyright__ = "Copyright (c) 2020-2024 Jesus Lara"
 __author__ = "Jesus Lara"
 __author_email__ = "jesuslara@phenobarbital.info"
