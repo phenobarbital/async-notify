@@ -112,12 +112,12 @@ setup(
     ],
     extras_require={
         "default": [
-            'aiogram>=3.7.0,<3.12.0',
+            'aiogram>=3.14.0',
             'slack_bolt==1.18.0',
             'pillow==9.5.0'
         ],
         "telegram": [
-            'aiogram>=3.7.0,<3.12.0',
+            'aiogram>=3.14.0',
             'pillow==9.5.0'
         ],
         "push": [
@@ -147,7 +147,7 @@ setup(
             'twilio==8.2.2',
             'slixmpp==1.8.4',
             "slack_bolt==1.18.0",
-            'aiogram>=3.7.0,<3.12.0',
+            'aiogram>=3.14.0',
             'pillow==9.5.0',
             'aiobotocore[boto3]==2.15.2'
         ]
