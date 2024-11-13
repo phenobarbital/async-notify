@@ -149,7 +149,8 @@ setup(
             "slack_bolt==1.18.0",
             'aiogram>=3.14.0',
             'pillow==9.5.0',
-            'aiobotocore[boto3]==2.15.2'
+            'aiobotocore[boto3]==2.15.2',
+            "qworker>=1.12.7"
         ]
     },
     ext_modules=cythonize(extensions),
