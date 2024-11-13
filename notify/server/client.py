@@ -5,7 +5,14 @@ import json
 import cloudpickle
 from redis import asyncio as aioredis
 from navconfig.logging import logging
-from notify.server import NotifyWrapper
+from qw.discovery import get_client_discovery
+from qw.conf import WORKER_LIST
+from .server import NotifyWrapper
+from ..conf import (
+    NOTIFY_REDIS,
+    NOTIFY_DEFAULT_PORT,
+    NOTIFY_USE_DISCOVERY
+)
 
 
 class NotifyClient:
@@ -36,14 +43,37 @@ class NotifyClient:
             tcp_host: The host for TCP connections.
             tcp_port: The port for TCP connections.
         """
-        self.redis_url = redis_url
+        self.logger = logging.getLogger('Notify.Client')
+        if not redis_url:
+            self.redis_url = NOTIFY_REDIS
+        else:
+            self.redis_url = redis_url
         self.redis_host = redis_host
         self.redis_port = redis_port
         self.redis_db = redis_db
-        self.tcp_host = tcp_host
-        self.tcp_port = tcp_port
+        # configure worker:
+        if NOTIFY_USE_DISCOVERY is True:
+            # get worker list from discovery:
+            _, worker_list = get_client_discovery()
+            if not worker_list:
+                self.logger.warning(
+                    'EMPTY WORKER LIST: Trying to connect to a default Worker'
+                )
+                # try to connect with the default worker
+                self.tcp_host = WORKER_LIST[0][0]
+                self.tcp_port = WORKER_LIST[0][1]
+            else:
+                workers = [tuple(a) for a in worker_list]
+                self.tcp_host = workers[0][0]
+                self.tcp_port = workers[0][1]
+        elif tcp_host and tcp_port:
+            # use manually
+            self.tcp_host = tcp_host
+            self.tcp_port = tcp_port
+        else:
+            self.tcp_host = WORKER_LIST[0][0]
+            self.tcp_port = NOTIFY_DEFAULT_PORT
         self.redis = None
-        self.logger = logging.getLogger('Notify.Client')
 
     def register_pickle_module(self, module: Any):
         cloudpickle.register_pickle_by_value(module)

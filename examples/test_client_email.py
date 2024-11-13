@@ -1,6 +1,6 @@
 import asyncio
 from notify.server import NotifyClient
-from notify.conf import NOTIFY_WORKER_STREAM
+from notify.conf import NOTIFY_WORKER_STREAM, NOTIFY_REDIS, NOTIFY_DEFAULT_PORT
 
 jesus = {
     "name": "Jesus Lara",
@@ -50,11 +50,7 @@ async def main():
         "template": 'email_applied.html'
     }
     # Create a NotifyClient instance
-    async with NotifyClient(
-        redis_url="redis://localhost:6379/5",
-        tcp_host="localhost",
-        tcp_port=8991
-    ) as client:
+    async with NotifyClient() as client:
         for recipient in recipients:
             msg['recipient'] = [recipient]
             # Stream but using Wrapper:

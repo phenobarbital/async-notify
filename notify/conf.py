@@ -17,6 +17,8 @@ NOTIFY_DB = config.getint('NOTIFY_DB', fallback=5)
 NOTIFY_REDIS = f"redis://{REDIS_HOST}:{REDIS_PORT}/{NOTIFY_DB}"
 NOTIFY_DEFAULT_HOST = config.get('NOTIFY_DEFAULT_HOST', fallback='0.0.0.0')
 NOTIFY_DEFAULT_PORT = config.get('NOTIFY_DEFAULT_PORT', fallback=8991)
+NOTIFY_USE_DISCOVERY = config.getboolean('NOTIFY_USE_DISCOVERY', fallback=False)
+
 NOTIFY_QUEUE_SIZE = config.getint('NOTIFY_QUEUE_SIZE', fallback=8)
 ## Queue Consumed Callback
 NOTIFY_QUEUE_CALLBACK = config.get(
