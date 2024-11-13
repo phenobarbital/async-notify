@@ -94,7 +94,7 @@ setup(
     python_requires=">=3.9.16",
     zip_safe=False,
     setup_requires=[
-        'setuptools==74.0.0',
+        'setuptools==75.5.0',
         'Cython==3.0.11',
         'wheel==0.44.0',
     ],
