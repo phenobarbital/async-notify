@@ -106,7 +106,7 @@ setup(
         'navconfig[default]>=1.7.0',
         'jinja2>=3.1.4',
         'cloudpickle>=3.1.0',
-        'emoji>=1.7.0,<2.9.0',
+        'emoji>=1.7.0,<2.15.0',
         'moviepy==1.0.3',
         'aiobotocore[boto3]==2.15.2'
     ],
