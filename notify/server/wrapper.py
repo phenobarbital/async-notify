@@ -40,25 +40,23 @@ class NotifyWrapper:
     def __init__(self, provider: str, *args, **kwargs):
         self._id = str(uuid.uuid4())
         self.recipients: list = []
-        if 'recipient' in kwargs:
-            recipients = kwargs['recipient']
-            del kwargs['recipient']
-            rcpt = []
-            for recipient in recipients:
-                if isinstance(recipient, dict):
-                    if 'chat_id' in recipient:
-                        rcpt.append(Chat(**recipient))
-                    elif 'team_id' in recipient:
-                        rcpt.append(TeamsChannel(**recipient))
-                    elif 'channel_id' in recipient:
-                        rcpt.append(Channel(**recipient))
-                    else:
-                        rcpt.append(Actor(**recipient))
-                elif isinstance(recipient, BaseModel):
-                    rcpt.append(recipient)
+        recipients = kwargs.pop('recipient', [])
+        rcpt = []
+        for recipient in recipients:
+            if isinstance(recipient, dict):
+                if 'chat_id' in recipient:
+                    rcpt.append(Chat(**recipient))
+                elif 'team_id' in recipient:
+                    rcpt.append(TeamsChannel(**recipient))
+                elif 'channel_id' in recipient:
+                    rcpt.append(Channel(**recipient))
                 else:
-                    print(f'Recipient {recipient} discarded.')
-            self.recipients = rcpt
+                    rcpt.append(Actor(**recipient))
+            elif isinstance(recipient, BaseModel):
+                rcpt.append(recipient)
+            else:
+                print(f'Recipient {recipient} discarded.')
+        self.recipients = rcpt
         self.loop = None
         # provider to be handled:
         self._provider = provider
@@ -70,7 +68,7 @@ class NotifyWrapper:
 
     async def call(self):
         try:
-            notify: coro = Notify(self._provider)
+            notify: coro = Notify(self._provider, **self.kwargs)
             async with notify as client:  # pylint: disable=E1701 # noqa
                 return await client.send(
                     recipient=self.recipients,
@@ -82,7 +80,7 @@ class NotifyWrapper:
 
     async def __call__(self):
         try:
-            notify: coro = Notify(self._provider)
+            notify: coro = Notify(self._provider, **self.kwargs)
             async with notify as client:  # pylint: disable=E1701 # noqa
                 return await client.send(
                     recipient=self.recipients,
