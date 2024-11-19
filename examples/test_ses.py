@@ -32,9 +32,9 @@ eduardo = {
 }
 
 recipients = [
-    Actor(**carlos),
-    Actor(**eduardo),
-    Actor(**javier)
+    Actor(**jesus),
+    # Actor(**eduardo),
+    # Actor(**javier)
 ]
 
 Msg('=== Test EMAIL Using SES === ')
@@ -43,7 +43,7 @@ credentials = {
     "aws_access_key_id": config.get('AWS_ACCESS_KEY_ID'),
     "aws_secret_access_key": config.get('AWS_SECRET_ACCESS_KEY'),
     "aws_region_name": config.get('AWS_REGION_NAME'),
-    "sender_email": config.get('AWS_SENDER_EMAIL')
+    "sender_email": "navigatoralerts@trocglobal.com" # config.get('AWS_SENDER_EMAIL')
 }
 
 async def send_email():
