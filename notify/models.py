@@ -3,7 +3,7 @@ import uuid
 from pathlib import Path
 from datetime import datetime
 from dataclasses import InitVar
-from typing import Any, Union, Optional
+from typing import Any, List, Union, Optional
 from email.parser import Parser
 from email.policy import default as policy_default
 from datamodel import BaseModel, Column, Field
@@ -51,7 +51,8 @@ class Actor(BaseModel):
 
     userid: uuid.UUID = Field(required=False, primary_key=True, default=auto_uuid)
     name: str
-    account: Union[Account, list[Account]]
+    account: Optional[Account]
+    accounts: Optional[list[Account]]
 
     def __str__(self) -> str:
         return f"<{self.name}: {self.userid}>"
@@ -190,6 +191,11 @@ class TeamsChannel(BaseModel):
     channel_id: str
     team_id: str
 
+class TeamsChat(BaseModel):
+    name: str
+    chat_id: str
+    team_id: str
+
 class TeamsWebhook(BaseModel):
     uri: str = Column(required=True)
 
@@ -260,8 +266,8 @@ class TeamsCard(BaseModel):
     sections: list[TeamsSection] = Column(required=False, default_factory=list)
     text: str = Column(required=False, default=None)
     title: str = Column(required=False, default=None)
-    body_objects: list[dict] = Column(required=False, default_factory=dict, repr=False)
-    actions: list[CardAction] = Column(required=False, default_factory=list, repr=False)
+    body_objects: Optional[List[dict]] = Column(required=False, default_factory=dict, repr=False)
+    actions: List[CardAction] = Column(required=False, default_factory=list, repr=False)
 
     def addAction(self, type: str, title: str, **kwargs):
         self.actions.append(
@@ -327,11 +333,9 @@ class TeamsCard(BaseModel):
                 "type": "Container",
                 "items": sections
             })
-            for section in self.sections:
-                sections.append(section.to_adaptative())
+            sections.extend(section.to_adaptative() for section in self.sections)
         if self.body_objects:
-            for b in self.body_objects:
-                body.append(b)
+            body.extend(iter(self.body_objects))
         if self.actions:
             actions = [action.to_dict() for action in self.actions]
             body.append({
