@@ -20,16 +20,17 @@ from msgraph.generated.models.aad_user_conversation_member import AadUserConvers
 from msgraph.generated.chats.chats_request_builder import ChatsRequestBuilder
 from kiota_abstractions.base_request_configuration import RequestConfiguration
 from navconfig.logging import logging
-from notify.models import (
+from datamodel.parsers.json import json_decoder, json_encoder
+from ...models import (
     Actor,
     TeamsWebhook,
     TeamsChannel,
     TeamsChat,
     TeamsCard
 )
-from notify.providers.base import ProviderIM, ProviderType
-from notify.exceptions import NotifyException
-from notify.conf import (
+from ...providers.base import ProviderIM, ProviderType
+from ...exceptions import NotifyException, MessageError
+from ...conf import (
     # MS Teams information:
     MS_TEAMS_TENANT_ID,
     MS_TEAMS_CLIENT_ID,
@@ -40,7 +41,7 @@ from notify.conf import (
     O365_USER,
     O365_PASSWORD
 )
-from notify.exceptions import MessageError
+
 
 # disable MSAL debug:
 logging.getLogger('msal').setLevel(logging.INFO)
@@ -128,8 +129,10 @@ class Teams(ProviderIM):
             ) from exc
         # using the token to create a Graph Client:
         self._graph = self.get_graph_client(client=self._client, scopes=scopes)
-        me = await self._graph.me.get()
-        self._owner_id = me.id
+        self._owner_id = None
+        if self.as_user:
+            me = await self._graph.me.get()
+            self._owner_id = me.id
 
     async def _render_(
         self,
@@ -202,7 +205,7 @@ class Teams(ProviderIM):
                 result = await self.send_message_to_channel(
                     team, channel, msg
                 )
-            if isinstance(to, TeamsChat):
+            elif isinstance(to, TeamsChat):
                 if chat := to.chat_id:
                     # using graph to send messages to a channel.
                     result = await self.send_message_to_chat(
@@ -212,10 +215,6 @@ class Teams(ProviderIM):
                     raise NotifyException(
                         "Invalid Recipient Object: Need an string or a TeamsChat Object"
                     )
-                # using graph to send messages to a channel.
-                result = await self.send_message_to_chat(
-                    chat, msg
-                )
             elif isinstance(to, Actor):
                 result = await self.send_direct_message(
                     to, msg
@@ -227,19 +226,70 @@ class Teams(ProviderIM):
 
         return result
 
-    async def send_message_to_channel(self, team_id: str, channel_id: str, message: dict):
-        headers = {
-            'Authorization': f'Bearer {self._token}',
-            'Content-Type': 'application/json'
-        }
-        message_url = f'https://graph.microsoft.com/v1.0/teams/{team_id}/channels/{channel_id}/messages'
-        async with aiohttp.ClientSession() as session:
-            async with session.post(message_url, headers=headers, json=message) as response:
-                if response.status not in [200, 201]:
-                    raise MessageError(
-                        f"Teams: Error sending Notification: {await response.text()}"
-                    )
-                return await response.json()
+    async def send_message_to_channel(
+        self,
+        team_id: str,
+        channel_id: str,
+        message: dict,
+        use_aiohttp: bool = False
+    ):
+        """
+        Send a message to a specific channel in a Microsoft Teams team.
+
+        This function sends a message to a specified channel using either aiohttp or the Microsoft Graph API.
+
+        Parameters:
+        team_id (str): The unique identifier of the team.
+        channel_id (str): The unique identifier of the channel within the team.
+        message (dict): The message content to be sent, formatted as a dictionary.
+        use_aiohttp (bool, optional): If True, use aiohttp for the request. If False, use Microsoft Graph API. Defaults to False.
+
+        Returns:
+        dict: The response from the API, typically containing details of the sent message.
+
+        Raises:
+        MessageError: If there's an error sending the notification (when using aiohttp).
+        """
+        if use_aiohttp:
+            headers = {
+                'Authorization': f'Bearer {self._token}',
+                'Content-Type': 'application/json'
+            }
+            message_url = f'https://graph.microsoft.com/v1.0/teams/{team_id}/channels/{channel_id}/messages'
+            async with aiohttp.ClientSession() as session:
+                async with session.post(message_url, headers=headers, json=message) as response:
+                    if response.status not in [200, 201]:
+                        raise MessageError(
+                            f"Teams: Error sending Notification: {await response.text()}"
+                        )
+                    return await response.json()
+        else:
+            body = message.get("body", {})
+            attachments_list = message.get("attachments", [])
+        request_body = ChatMessage(
+            subject=None,
+            body=ItemBody(
+                content_type=BodyType.Html,
+                content=body.get('content')
+            ),
+            attachments=[
+                ChatMessageAttachment(
+                    id=att.get("id"),
+                    content_type=att.get("contentType", "application/vnd.microsoft.card.adaptive"),
+                    content=att.get('content', ''),
+                    content_url=None,
+                    name=None,
+                    thumbnail_url=None,
+                )
+                for att in attachments_list
+            ]
+        )
+        # Send the message to Channel
+        print('TEAM > ', team_id)
+        print('Channel > ', channel_id)
+        return await self._graph.teams.by_team_id(
+            team_id
+        ).channels.by_channel_id(channel_id).messages.post(request_body)
 
     async def send_webhook(self, webhook_url: str, message: str):
         async with aiohttp.ClientSession() as session:
@@ -260,83 +310,6 @@ class Teams(ProviderIM):
         """
         body = message.get("body", {})
         attachments_list = message.get("attachments", [])
-        card_dict = {
-            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-            "type": "AdaptiveCard",
-            "version": "1.2",
-            "speak": "Your meeting about \"Adaptive Card design session\" is starting at 12:30 pmDo you want to snooze or do you want to send a late notification to the attendees?",
-            "body": [
-                {
-                    "type": "TextBlock",
-                    "text": "Summary",
-                    "size": "large",
-                    "weight": "bolder",
-                    "style": "heading",
-                    "wrap": True
-                },
-                {
-                    "type": "TextBlock",
-                    "text": "Conf Room 112/3377 (10)",
-                    "isSubtle": True,
-                    "wrap": True
-                },
-                {
-                    "type": "TextBlock",
-                    "text": "12:30 - 01:30",
-                    "isSubtle": True,
-                    "spacing": "none",
-                    "wrap": True
-                },
-                {
-                "type": "Input.ChoiceSet",
-                "id": "snooze",
-                "label": "Snooze for",
-                "value": "5",
-                "choices": [
-                    {
-                    "title": "5 minutes",
-                    "value": "5"
-                    },
-                    {
-                    "title": "10 minutes",
-                    "value": "10"
-                    },
-                    {
-                    "title": "15 minutes",
-                    "value": "15"
-                    },
-                    {
-                    "title": "30 minutes",
-                    "value": "30"
-                    },
-                    {
-                    "title": "1 hour",
-                    "value": "60"
-                    },
-                    {
-                    "title": "2 hours",
-                    "value": "120"
-                    }
-                ]
-                }
-            ],
-            "actions": [
-                {
-                    "type": "Action.Submit",
-                    "title": "Snooze",
-                    "data": {
-                        "x": "snooze"
-                    }
-                },
-                {
-                    "type": "Action.Submit",
-                    "title": "I'll be late",
-                    "data": {
-                        "x": "late"
-                    }
-                }
-            ]
-        }
         request_body = ChatMessage(
             subject=None,
             body=ItemBody(
@@ -347,7 +320,7 @@ class Teams(ProviderIM):
                 ChatMessageAttachment(
                     id=att.get("id"),
                     content_type=att.get("contentType", "application/vnd.microsoft.card.adaptive"),
-                    content=json.dumps(card_dict),
+                    content=att.get('content', ''),
                     content_url=None,
                     name=None,
                     thumbnail_url=None,
@@ -355,7 +328,6 @@ class Teams(ProviderIM):
                 for att in attachments_list
             ]
         )
-        print('BODY > ', request_body)
         return await self._graph.chats.by_chat_id(chat_id).messages.post(request_body)
 
     async def send_direct_message(self, recipient: Actor, message: Dict[str, Any]):
@@ -370,9 +342,7 @@ class Teams(ProviderIM):
         user_id = user.id
 
         # 2) Create new chat (or find existing)
-        chat_id = await self._get_chat(user_id)  # noqa
-        if not chat_id:
-            chat_id = await self._create_chat(self._owner_id, user_id)
+        chat_id = await self._get_chat(user_id) or await self._create_chat(self._owner_id, user_id)
 
         # 4) Send the message to chat
         return await self.send_message_to_chat(chat_id, message)
@@ -409,20 +379,6 @@ class Teams(ProviderIM):
         """
         Create a new chat with the specified user or return if it already exists.
         """
-        # chats = []
-        # chats = await self._graph.users.by_user_id(
-        #     self._owner_id
-        # ).chats.get()
-        # if not chats.value:
-        #     return None
-
-        # for chat in chats.value:
-        #     if not chat.members:
-        #         continue
-        #     member_ids = [m.user_id for m in chat.members]
-        #     # If the target user is in there, that is our existing chat
-        #     if user_id in member_ids:
-        #         return chat
         query_params = ChatsRequestBuilder.ChatsRequestBuilderGetQueryParameters(
             filter="chatType eq 'oneOnOne'",
             expand=["members"],
