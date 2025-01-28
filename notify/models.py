@@ -254,6 +254,7 @@ class CardAction(BaseModel):
     type: str = Field(required=False, default=None)
     title: str = Field(required=False, default=None)
     data: dict = Field(required=False, default_factory={})
+    url: str = Field(required=False, default=None)
 
 
 class TeamsCard(BaseModel):
@@ -273,9 +274,14 @@ class TeamsCard(BaseModel):
         return super().__post_init__()
 
     def addAction(self, type: str, title: str, **kwargs):
-        self.actions.append(
-            CardAction(type, title, data=kwargs)
-        )
+        action_data = {
+            "type": type,
+            "title": title,
+            "data": kwargs.get("data", {}),
+            "url": kwargs.get("url", "")
+        }
+
+        self.actions.append(CardAction(**action_data))
 
     def addSection(self, **kwargs):
         section = TeamsSection(**kwargs)
@@ -309,6 +315,7 @@ class TeamsCard(BaseModel):
 
     def to_adaptative(self) -> dict:
         body = []
+        actions = []
         if self.title:
             body.append({
                 "type": "TextBlock",
@@ -341,11 +348,11 @@ class TeamsCard(BaseModel):
             sections.extend(section.to_adaptative() for section in self.sections)
         if self.body_objects:
             body.extend(iter(self.body_objects))
+        
+        
+
         if self.actions:
             actions = [action.to_dict() for action in self.actions]
-            body.append({
-                "actions": actions
-            })
 
         return {
             "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -355,5 +362,6 @@ class TeamsCard(BaseModel):
             "metadata": {
                 "webUrl": "https://contoso.com/tab"
             },
-            "body": body
+            "body": body,
+            "actions": actions,
         }

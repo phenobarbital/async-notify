@@ -70,7 +70,7 @@ async def send_teams_login():
     )
     msg = TeamsCard(title='✅  Login Form using Teams API')
     msg.addAction(
-        type='Action.Submit', title="Login into NAV", id="LoginVal"
+        type='Action.Submit', title="Login into NAV", data={"id": "LoginVal"}
     )
     msg.addInput(
         id="UserVal", label='Username', is_required=True, errorMessage="Username is required"
@@ -150,6 +150,9 @@ async def send_direct_message():
         label='Password',
         style="Password"
     )
+    msg.addAction(
+        type='Action.Submit', title="Login into NAV", data={"id": "LoginVal"}
+    )
     async with tm as conn:
         result = await conn.send(
             recipient=recipient,
@@ -157,9 +160,41 @@ async def send_direct_message():
         )
     print('RESULT > ', result)
 
+async def send_direct_chat_with_url_action():
+    user = {
+        "name": "Jesus Lara",
+        "account": {
+            "address": "jlara@trocglobal.com"
+        }
+    }
+
+    try:
+        recipient = Actor(**user)
+    except Exception as e:
+        print(f"Error creating recipient: {e.payload}")
+        return
+
+    tm = Teams(as_user=True)
+    msg = TeamsCard(
+        summary="New Lead Notification",
+        text=f"📢 A new lead has been created for **My Store** store. Check the details below:",
+    )
+
+    # Add a link button to the lead details page
+    msg.addAction(
+        type="Action.OpenUrl",
+        title="View Lead Details",
+        url="https://www.trocglobal.com/my_store/lead_details", # fake url
+    )
+
+    async with tm as conn:
+        result = await conn.send(recipient=recipient, message=msg)
+    print("RESULT > ", result)
+
 if __name__ == "__main__":
     # asyncio.run(send_teams_webhook())
-    asyncio.run(send_teams_api())
+    # asyncio.run(send_teams_api())
     # asyncio.run(send_teams_login())
     # asyncio.run(send_message_chat())
-    # asyncio.run(send_direct_message())
+    asyncio.run(send_direct_message())
+    asyncio.run(send_direct_chat_with_url_action())
