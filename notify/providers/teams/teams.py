@@ -167,12 +167,16 @@ class Teams(ProviderIM):
             # is already a dictionary
             payload = message
         elif isinstance(message, str):
-            # is the text message
-            payload = {
-                "@type": "MessageCard",
-                "@context": "http://schema.org/extensions",
-                "text": message
-            }
+            if 'adaptive-card.json' in message:
+                # is a complete adaptive card.
+                payload = message
+            else:
+                # is the text message
+                payload = {
+                    "@type": "MessageCard",
+                    "@context": "http://schema.org/extensions",
+                    "text": message
+                }
         else:
             raise RuntimeError(
                 f"Invalid Message Type: {type(message)}"
@@ -308,8 +312,44 @@ class Teams(ProviderIM):
         """
         Generic method: send a message to an existing chat (group or one-on-one).
         """
+        if isinstance(message, str):
+            try:
+                message = json.loads(message)
+                if message.get("type") == "AdaptiveCard":
+                    # Generate a unique attachment id.
+                    attachment_id = str(uuid.uuid4())
+                    # Create the ChatMessage with the Adaptive Card as an attachment.
+                    request_body = ChatMessage(
+                        subject=None,
+                        body=ItemBody(
+                            content_type=BodyType.Html,
+                            # The body must include an <attachment> tag referencing the attachment's id.
+                            content=f'<attachment id="{attachment_id}"></attachment>'
+                        ),
+                        attachments=[
+                            ChatMessageAttachment(
+                                id=attachment_id,
+                                content_type="application/vnd.microsoft.card.adaptive",
+                                content=json.dumps(message),
+                                content_url=None,
+                                name=None,
+                                thumbnail_url=None,
+                            )
+                        ]
+                    )
+                    return await self._graph.chats.by_chat_id(chat_id).messages.post(request_body)
+                else:
+                    # If it's not an Adaptive Card JSON, also treat it as plain text.
+                    message = {"body": {"content": message}, "attachments": []}
+            except json.JSONDecodeError:
+                # Not valid JSON; treat as plain text.
+                message = {
+                    "body": {"content": message}, "attachments": []
+                }
         body = message.get("body", {})
         attachments_list = message.get("attachments", [])
+        print('BODY > ', body)
+        print('CONTENT > ', attachments_list)
         request_body = ChatMessage(
             subject=None,
             body=ItemBody(
