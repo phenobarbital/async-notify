@@ -1,9 +1,9 @@
 import os
 import uuid
+from typing import Any, List, Union, Optional, Literal
 from pathlib import Path
 from datetime import datetime
 from dataclasses import InitVar
-from typing import Any, List, Union, Optional
 from email.parser import Parser
 from email.policy import default as policy_default
 from datamodel import BaseModel, Column, Field
@@ -116,7 +116,12 @@ class BlockMessage(Message):
 
     sender: Union[Actor, list[Actor]] = Field(required=False)
     recipient: Union[Actor, list[Actor]] = Field(required=False)
-    content_type: CONTENT_TYPES = Field(default_factory=CONTENT_TYPES)
+    content_type: Literal[
+        "text/plain",
+        "text/html",
+        "multipart/alternative",
+        "application/json"
+    ] = Field(default_factory=CONTENT_TYPES)
     attachments: list[Attachment] = Field(default_factory=list)
     flags: list[str]
 
@@ -348,8 +353,6 @@ class TeamsCard(BaseModel):
             sections.extend(section.to_adaptative() for section in self.sections)
         if self.body_objects:
             body.extend(iter(self.body_objects))
-        
-        
 
         if self.actions:
             actions = [action.to_dict() for action in self.actions]

@@ -177,7 +177,7 @@ async def send_direct_chat_with_url_action():
     tm = Teams(as_user=True)
     msg = TeamsCard(
         summary="New Lead Notification",
-        text=f"📢 A new lead has been created for **My Store** store. Check the details below:",
+        text="📢 A new lead has been created for **My Store** store. Check the details below:",
     )
 
     # Add a link button to the lead details page
