@@ -159,7 +159,7 @@ async def send_direct_message():
 
 if __name__ == "__main__":
     # asyncio.run(send_teams_webhook())
-    asyncio.run(send_teams_api())
+    # asyncio.run(send_teams_api())
     # asyncio.run(send_teams_login())
     # asyncio.run(send_message_chat())
-    # asyncio.run(send_direct_message())
+    asyncio.run(send_direct_message())
