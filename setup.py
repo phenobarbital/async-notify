@@ -100,24 +100,24 @@ setup(
     ],
     install_requires=[
         'asyncio==3.4.3',
-        'uvloop==0.20.0',
+        'uvloop>=0.20.0',
         'aiosmtplib>=3.0.2',
         'python-datamodel>=0.3.12',
         'navconfig[default]>=1.7.0',
         'jinja2>=3.1.4',
-        'cloudpickle==3.0.0',
-        'emoji>=1.7.0,<2.9.0',
+        'cloudpickle>=3.1.0',
+        'emoji>=1.7.0,<2.15.0',
         'moviepy==1.0.3',
-        'aiobotocore[boto3]>=2.7.0'
+        'aiobotocore[boto3]==2.15.2'
     ],
     extras_require={
         "default": [
-            'aiogram>=3.7.0,<3.12.0',
+            'aiogram>=3.14.0',
             'slack_bolt==1.18.0',
             'pillow==9.5.0'
         ],
         "telegram": [
-            'aiogram>=3.7.0,<3.12.0',
+            'aiogram>=3.14.0',
             'pillow==9.5.0'
         ],
         "push": [
@@ -130,25 +130,33 @@ setup(
         ],
         "azure": [
             'pyo365==0.1.3',
-            "o365==2.0.34",
+            "o365==2.0.37",
             'msal>=1.22.0,<1.30.1',
-            "Office365-REST-Python-Client==2.2.1",
+            "Office365-REST-Python-Client==2.5.13",
+            "msgraph-core==1.1.6",
+            "azure-identity==1.19.0",
+            "msgraph-sdk==1.11.0",
         ],
         "all": [
             'gmail==0.6.3',
             'google-auth>=2.6.0',
             'google-auth-httplib2>=0.1.0',
             'onesignal-sdk==2.0.0',
-            "o365==2.0.34",
-            "Office365-REST-Python-Client==2.2.1",
+            "o365==2.0.37",
+            "Office365-REST-Python-Client==2.5.13",
             'msal>=1.22.0,<1.30.1',
             'PySocks==1.7.1',
             'pyshorteners==1.0.1',
             'twilio==8.2.2',
             'slixmpp==1.8.4',
             "slack_bolt==1.18.0",
-            'aiogram>=3.7.0,<3.12.0',
-            'pillow==9.5.0'
+            'aiogram>=3.14.0',
+            'pillow==9.5.0',
+            'aiobotocore[boto3]==2.15.2',
+            "qworker>=1.12.7",
+            "msgraph-core==1.1.6",
+            "azure-identity==1.19.0",
+            "msgraph-sdk==1.11.0",
         ]
     },
     ext_modules=cythonize(extensions),

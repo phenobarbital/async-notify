@@ -3,11 +3,10 @@ from collections.abc import Callable
 import asyncio
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import aiobotocore
+from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
 from navconfig.logging import logging
 from notify.providers.mail import ProviderEmail
-from notify.exceptions import NotifyAuthError
 from notify.models import Actor
 from notify.conf import (
     AWS_ACCESS_KEY_ID,
@@ -17,6 +16,7 @@ from notify.conf import (
 )
 
 logging.getLogger("aiobotocore").setLevel(logging.CRITICAL)
+logging.getLogger("botocore").setLevel(logging.INFO)
 
 
 class Ses(ProviderEmail):
@@ -66,27 +66,15 @@ class Ses(ProviderEmail):
             )
 
     async def connect(self, **kwargs):
-        """Connect to Amazon SES using aiobotocore."""
-        self.session = aiobotocore.get_session()
-        try:
-            self.client = self.session.create_client(
-                "ses",
-                region_name=self.aws_region_name,
-                aws_secret_access_key=self.aws_secret_access_key,
-                aws_access_key_id=self.aws_access_key_id,
-            )
-            self.authenticate = True
-            return self.client
-        except Exception as e:
-            self.logger.error(f"Error during authentication: {e}")
-            raise NotifyAuthError(
-                f"Unable to authenticate with Amazon SES: {e}"
-            )
+        """Create a Session to Amazon SES using aiobotocore."""
+        self.session = get_session()
+        self.authenticate = True
 
     async def close(self):
         """Close the connection."""
-        if self.client:
-            await self.client.close()
+        self.client = None
+        self.session = None
+        self.authenticate = False
 
     async def _render_(self, to: Actor, message: str = None, subject: str = None, **kwargs):
         """Create the email message."""
@@ -98,28 +86,33 @@ class Ses(ProviderEmail):
                 "content": message,
                 **kwargs,
             }
-            msg = await self._template.render_async(**templateargs)
+            content = await self._template.render_async(**templateargs)
         else:
             try:
-                msg = kwargs["body"]
+                content = kwargs["body"]
             except KeyError:
-                msg = message
-
+                content = message
         email_msg = MIMEMultipart("alternative")
         email_msg["Subject"] = subject
         email_msg["From"] = self.sender_email
         email_msg["To"] = to.account.address
-        email_msg.attach(MIMEText(message, "plain"))
-        email_msg.attach(MIMEText(msg, "html"))
-
+        email_msg.attach(MIMEText(content, "plain"))
+        email_msg.attach(MIMEText(content, "html"))
         return email_msg
 
-    async def _send_(self, to: Actor, message: str, subject: str, **kwargs):
+    async def _send_(
+        self,
+        to: Actor,
+        message: str,
+        subject: str,
+        client: Optional[Callable] = None,
+        **kwargs
+    ):
         """Send the email message to the recipient."""
         if self.use_aws_template:
             # Use AWS SES templates to send the email
             try:
-                response = await self.client.send_templated_email(
+                return await client.send_templated_email(
                     Source=self.sender_email,
                     Destination={
                         'ToAddresses': [to.account.address],
@@ -127,7 +120,6 @@ class Ses(ProviderEmail):
                     Template=self.template_name,
                     TemplateData=kwargs,
                 )
-                return response
             except ClientError as e:
                 self.logger.exception(e, stack_info=True)
                 raise RuntimeError(f"{e}") from e
@@ -137,14 +129,12 @@ class Ses(ProviderEmail):
             except (TypeError, ValueError) as exc:
                 self.logger.error(exc)
                 return False
-
             try:
-                response = await self.client.send_raw_email(
+                return await client.send_raw_email(
                     Source=self.sender_email,
                     Destinations=[to.account.address],
                     RawMessage={"Data": message.as_string()},
                 )
-                return response
             except ClientError as exc:
                 self.logger.exception(exc, stack_info=True)
                 raise RuntimeError(f"{exc}") from exc
@@ -168,45 +158,105 @@ class Ses(ProviderEmail):
             **kwargs
         )
         results = []
-        recipients = [recipient] if not isinstance(recipient, list) else recipient
         if self.use_aws_template:
             # Use AWS SES templates to send the email
+            recipients = [recipient.account.address for recipient in recipient]
+            template_name = kwargs.pop('template_name', self.template_name)
+            template_data = kwargs.pop('template_data', {}) or {}
             try:
-                results = await self.client.send_templated_email(
-                    Source=self.sender_email,
-                    Destination={
-                        'ToAddresses': recipients,
-                    },
-                    Template=self.template_name,
-                    TemplateData=kwargs,
-                )
+                async with self.session.create_client(
+                    "ses",
+                    region_name=self.aws_region_name,
+                    aws_secret_access_key=self.aws_secret_access_key,
+                    aws_access_key_id=self.aws_access_key_id,
+                ) as client:
+                    results = await client.send_templated_email(
+                        Source=self.sender_email,
+                        Destination={
+                            'ToAddresses': recipients,
+                        },
+                        Template=template_name,
+                        TemplateData=template_data,
+                    )
             except ClientError as e:
                 self.logger.exception(e, stack_info=True)
                 raise RuntimeError(f"{e}") from e
         else:
             # Using basic Asyncio _send_ method
+            recipients = recipient if isinstance(recipient, list) else [recipient]
             try:
                 loop = asyncio.get_running_loop()
             except RuntimeError:
                 loop = asyncio.get_event_loop()
             # asyncio:
-            tasks = [self._send_(to, message, subject=subject, **kwargs) for to in recipients]
-            # Using asyncio.as_completed to get results as they become available
-            for to, future in zip(recipients, asyncio.as_completed(tasks)):
-                result = None
-                try:
-                    result = await future
-                    results.append(result)
-                except Exception as e:
-                    self.logger.exception(
-                        f'Send for recipient {to} raised an exception: {e}',
-                        stack_info=True
-                    )
-                try:
-                    await self.__sent__(to, message, result, loop=loop, **kwargs)
-                except Exception as e:
-                    self.logger.exception(
-                        f'Send for recipient {to} raised an exception: {e}',
-                        stack_info=True
-                    )
+            async with self.session.create_client(
+                    "ses",
+                    region_name=self.aws_region_name,
+                    aws_secret_access_key=self.aws_secret_access_key,
+                    aws_access_key_id=self.aws_access_key_id,
+            ) as client:
+                tasks = [
+                    self._send_(
+                        to, message, subject=subject, client=client, **kwargs
+                    ) for to in recipients
+                ]
+                # Using asyncio.as_completed to get results as they become available
+                for to, future in zip(recipients, asyncio.as_completed(tasks)):
+                    result = None
+                    try:
+                        result = await future
+                        results.append(result)
+                    except Exception as e:
+                        self.logger.exception(
+                            f'Send for recipient {to} raised an exception: {e}',
+                            stack_info=True
+                        )
+                    try:
+                        await self.__sent__(to, message, result, loop=loop, **kwargs)
+                    except Exception as e:
+                        self.logger.exception(
+                            f'Send for recipient {to} raised an exception: {e}',
+                            stack_info=True
+                        )
         return results
+
+    async def create_template(self, template_name: str, subject_part: str, html_part: str, text_part: str):
+        """
+        Create a new SES email template using SES V2 API.
+
+        :param template_name: The name of the email template to create.
+        :param subject_part: The subject of the email template.
+        :param html_part: The HTML content of the email template.
+        :param text_part: The text content of the email template.
+        """
+        template = {
+            "Template": {
+                "TemplateName": template_name,
+                "SubjectPart": subject_part,
+                "HtmlPart": html_part,
+                "TextPart": text_part
+            }
+        }
+
+        try:
+            async with self.session.create_client(
+                "sesv2",  # Use the SES v2 API endpoint
+                region_name=self.aws_region_name,
+                aws_secret_access_key=self.aws_secret_access_key,
+                aws_access_key_id=self.aws_access_key_id,
+            ) as client:
+                response = await client.invoke_endpoint(
+                    "CreateEmailTemplate",
+                    Template=template
+                )
+                self.logger.debug(
+                    f"Template created successfully: {response}"
+                )
+                return response
+        except ClientError as exc:
+            self.logger.exception(
+                f"Error creating SES email template: {exc}"
+            )
+            raise RuntimeError(
+                f"Failed to create SES email template: {exc}"
+            ) from exc

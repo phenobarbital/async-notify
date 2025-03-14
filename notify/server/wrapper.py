@@ -6,9 +6,10 @@ Any other wrapper extends this.
 from typing import Any
 from collections.abc import Coroutine, Callable
 import uuid
+from datamodel import BaseModel
 from navconfig.logging import logging
 from notify import Notify
-from notify.models import Actor
+from notify.models import Actor, Chat, Channel, TeamsChannel
 
 
 coro = Callable[[int], Coroutine[Any, Any, str]]
@@ -37,51 +38,58 @@ class NotifyWrapper:
     _debug: bool = False
 
     def __init__(self, provider: str, *args, **kwargs):
-        self._id = uuid.uuid4()
+        self._id = str(uuid.uuid4())
         self.recipients: list = []
-        if 'recipient' in kwargs:
-            recipients = kwargs['recipient']
-            del kwargs['recipient']
-            rcpt = []
-            for recipient in recipients:
-                if isinstance(recipient, dict):
-                    rcpt.append(Actor(**recipient))
+        recipients = kwargs.pop('recipient', [])
+        rcpt = []
+        for recipient in recipients:
+            if isinstance(recipient, dict):
+                if 'chat_id' in recipient:
+                    rcpt.append(Chat(**recipient))
+                elif 'team_id' in recipient:
+                    rcpt.append(TeamsChannel(**recipient))
+                elif 'channel_id' in recipient:
+                    rcpt.append(Channel(**recipient))
                 else:
-                    rcpt.append(recipient)
-            self.recipients = rcpt
+                    rcpt.append(Actor(**recipient))
+            elif isinstance(recipient, BaseModel):
+                rcpt.append(recipient)
+            else:
+                print(f'Recipient {recipient} discarded.')
+        self.recipients = rcpt
         self.loop = None
-        # function to be handled:
-        try:
-            self.notify: coro = Notify(provider)
-        except Exception as exc:
-            logging.error(f'Unable to create a Notify Object: {exc}')
-            raise
+        # provider to be handled:
+        self._provider = provider
         self.args = args
         self.kwargs = kwargs
 
     def __repr__(self):
-        return f"<Message:{self.notify!r}>"
+        return f"<Notify:{self._provider!r}>"
 
     async def call(self):
         try:
-            return await self.notify.send(
-                recipient=self.recipients,
-                *self.args[1:], **self.kwargs
-            )
+            notify: coro = Notify(self._provider, **self.kwargs)
+            async with notify as client:  # pylint: disable=E1701 # noqa
+                return await client.send(
+                    recipient=self.recipients,
+                    *self.args[1:], **self.kwargs
+                )
         except Exception as exc:
             logging.error(f'Unable to Send: {exc}')
             raise
 
     async def __call__(self):
         try:
-            return await self.notify.send(
-                recipient=self.recipients,
-                *self.args, **self.kwargs
-            )
+            notify: coro = Notify(self._provider, **self.kwargs)
+            async with notify as client:  # pylint: disable=E1701 # noqa
+                return await client.send(
+                    recipient=self.recipients,
+                    *self.args, **self.kwargs
+                )
         except Exception as exc:
             logging.error(f'Unable to Send: {exc}')
             raise
 
     @property
-    def id(self):
+    def uid(self):
         return self._id

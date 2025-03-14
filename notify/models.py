@@ -1,9 +1,9 @@
 import os
 import uuid
+from typing import Any, List, Union, Optional, Literal
 from pathlib import Path
 from datetime import datetime
 from dataclasses import InitVar
-from typing import Any, Union, Optional
 from email.parser import Parser
 from email.policy import default as policy_default
 from datamodel import BaseModel, Column, Field
@@ -30,18 +30,15 @@ class Account(BaseModel):
     Attributes for using a Provider by an User (Actor)
     """
 
-    provider: str = Column(required=True, default="dummy")
-    enabled: bool = Column(required=True, default=True)
-    address: Union[str, list[str]] = Column(required=False, default_factory=list)
-    number: Union[str, list[str]] = Column(required=False, default_factory=list)
-    userid: str = Column(required=False, default="")
-    attributes: dict = Column(required=False, default_factory=dict)
+    provider: str = Field(required=True, default="dummy")
+    enabled: bool = Field(required=True, default=True)
+    address: Union[str, list[str]] = Field(required=False, default_factory=list)
+    number: Union[str, list[str]] = Field(required=False, default_factory=list)
+    userid: str = Field(required=False, default="")
+    attributes: dict = Field(required=False, default_factory=dict)
 
     def set_address(self, address: Union[str, list[str]]):
-        if isinstance(address, str):
-            self.address = [address]
-        else:
-            self.address = address
+        self.address = [address] if isinstance(address, str) else address
 
 
 class Actor(BaseModel):
@@ -51,7 +48,8 @@ class Actor(BaseModel):
 
     userid: uuid.UUID = Field(required=False, primary_key=True, default=auto_uuid)
     name: str
-    account: Union[Account, list[Account]]
+    account: Optional[Account]
+    accounts: Optional[list[Account]]
 
     def __str__(self) -> str:
         return f"<{self.name}: {self.userid}>"
@@ -66,8 +64,8 @@ class Chat(BaseModel):
     Basic configuration for chat (message-based) notifications
     """
 
-    chat_name: str = Column(required=False)
-    chat_id: str = Column(required=True, primary_key=True)
+    chat_name: str = Field(required=False)
+    chat_id: str = Field(required=True, primary_key=True)
 
 
 class Channel(BaseModel):
@@ -75,8 +73,8 @@ class Channel(BaseModel):
     Basic configuration for Channel (Group-based) notifications.
     """
 
-    channel_name: str = Column(required=False)
-    channel_id: str = Column(required=True, primary_key=True)
+    channel_name: str = Field(required=False)
+    channel_id: str = Field(required=True, primary_key=True)
 
 
 class Message(BaseModel):
@@ -88,10 +86,10 @@ class Message(BaseModel):
      *
     """
 
-    name: str = Column(required=True, default=auto_uuid)
-    body: Union[str, dict] = Column(default=None)
-    content: str = Column(required=False, default="")
-    sent: datetime = Column(required=False, default=now)
+    name: str = Field(required=True, default=auto_uuid)
+    body: Union[str, dict] = Field(default=None)
+    content: str = Field(required=False, default="")
+    sent: datetime = Field(required=False, default=now)
     template: Path
 
 
@@ -101,7 +99,7 @@ class Attachment(BaseModel):
     an Attachment is any document attached to a message.
     """
 
-    name: str = Column(required=True)
+    name: str = Field(required=True)
     content: Any = None
     content_type: str
     type: str
@@ -116,15 +114,20 @@ class BlockMessage(Message):
      *
     """
 
-    sender: Union[Actor, list[Actor]] = Column(required=False)
-    recipient: Union[Actor, list[Actor]] = Column(required=False)
-    content_type: CONTENT_TYPES = Column(default_factory=CONTENT_TYPES)
-    attachments: list[Attachment] = Column(default_factory=list)
+    sender: Union[Actor, list[Actor]] = Field(required=False)
+    recipient: Union[Actor, list[Actor]] = Field(required=False)
+    content_type: Literal[
+        "text/plain",
+        "text/html",
+        "multipart/alternative",
+        "application/json"
+    ] = Field(default_factory=CONTENT_TYPES)
+    attachments: list[Attachment] = Field(default_factory=list)
     flags: list[str]
 
 
 class MailAttachment(Attachment):
-    subject: str = Column(required=False)
+    subject: str = Field(required=False)
     filename: str
     content_disposition: str
     attachment: Any
@@ -138,8 +141,8 @@ class MailMessage(BlockMessage):
     """
 
     # TODO: add validation for path-like objects using pathlib
-    directory: str = Column(required=True)
-    content: str = Column(required=False)
+    directory: str = Field(required=True)
+    content: str = Field(required=False)
     attachments: list[MailAttachment]
     raw: InitVar = ""
 
@@ -190,25 +193,30 @@ class TeamsChannel(BaseModel):
     channel_id: str
     team_id: str
 
+class TeamsChat(BaseModel):
+    name: str
+    chat_id: str
+    team_id: str
+
 class TeamsWebhook(BaseModel):
-    uri: str = Column(required=True)
+    uri: str = Field(required=True)
 
 
 class TeamsTarget(BaseModel):
-    os: str = Column(default='default')
-    uri: str = Column(required=True)
+    os: str = Field(default='default')
+    uri: str = Field(required=True)
 
 class TeamsAction(BaseModel):
-    name: str = Column(required=False, default=None)
-    targets: list[TeamsTarget] = Column(default_factory=list)
+    name: str = Field(required=False, default=None)
+    targets: list[TeamsTarget] = Field(default_factory=list)
 
 class TeamsSection(BaseModel):
-    activityTitle: str = Column(required=False, default=None)
-    activitySubtitle: str = Column(required=False, default=None)
-    activityImage: str = Column(required=False, default=None)
-    facts: list[dict] = Column(required=False, default_factory=list)
-    text: str = Column(required=False, default=None)
-    potentialAction: list[TeamsAction] = Column(required=False, default=None, default_factory=list)
+    activityTitle: str = Field(required=False, default=None)
+    activitySubtitle: str = Field(required=False, default=None)
+    activityImage: str = Field(required=False, default=None)
+    facts: list[dict] = Field(required=False, default_factory=list)
+    text: str = Field(required=False, default=None)
+    potentialAction: list[TeamsAction] = Field(required=False, default=None, default_factory=list)
 
     def addFacts(self, facts: list):
         self.facts = facts
@@ -248,25 +256,37 @@ class TeamsSection(BaseModel):
         }
 
 class CardAction(BaseModel):
-    type: str = Column(required=False, default=None)
-    title: str = Column(required=False, default=None)
-    data: dict = Column(required=False, default_factory={})
+    type: str = Field(required=False, default=None)
+    title: str = Field(required=False, default=None)
+    data: dict = Field(required=False, default_factory={})
+    url: str = Field(required=False, default=None)
 
 
 class TeamsCard(BaseModel):
     card_id: uuid.UUID = Field(required=False, default=auto_uuid, repr=False)
     content_type: str = Field(required=False, default="application/vnd.microsoft.card.adaptive", repr=False)
     summary: str
-    sections: list[TeamsSection] = Column(required=False, default_factory=list)
-    text: str = Column(required=False, default=None)
-    title: str = Column(required=False, default=None)
-    body_objects: list[dict] = Column(required=False, default_factory=dict, repr=False)
-    actions: list[CardAction] = Column(required=False, default_factory=list, repr=False)
+    sections: list[TeamsSection] = Field(required=False, default_factory=list)
+    text: str = Field(required=False, default=None)
+    title: str = Field(required=False, default=None)
+    body_objects: List[dict] = Field(required=False, default_factory=list, repr=False)
+    actions: List[CardAction] = Field(required=False, default_factory=list, repr=False)
+    version: str = Field(required=False, default="1.5")
+
+    def __post_init__(self):
+        if self.version == "1.6":
+            self.version = "1.5"
+        return super().__post_init__()
 
     def addAction(self, type: str, title: str, **kwargs):
-        self.actions.append(
-            CardAction(type, title, data=kwargs)
-        )
+        action_data = {
+            "type": type,
+            "title": title,
+            "data": kwargs.get("data", {}),
+            "url": kwargs.get("url", "")
+        }
+
+        self.actions.append(CardAction(**action_data))
 
     def addSection(self, **kwargs):
         section = TeamsSection(**kwargs)
@@ -278,14 +298,16 @@ class TeamsCard(BaseModel):
             "type": "Input.Text",
             "id": id,
             "label": label,
-            "isRequired": is_required,
-            "errorMessage": errorMessage
+            "isRequired": is_required
         }
+        if errorMessage is not None:
+            element["errorMessage"] = errorMessage
         if style is not None:
             element["style"] = style
-        self.body_objects.append(
-            element
-        )
+        if element:
+            self.body_objects.append(
+                element
+            )
 
     def to_dict(self):
         data = super(TeamsCard, self).to_dict()
@@ -298,6 +320,7 @@ class TeamsCard(BaseModel):
 
     def to_adaptative(self) -> dict:
         body = []
+        actions = []
         if self.title:
             body.append({
                 "type": "TextBlock",
@@ -327,24 +350,21 @@ class TeamsCard(BaseModel):
                 "type": "Container",
                 "items": sections
             })
-            for section in self.sections:
-                sections.append(section.to_adaptative())
+            sections.extend(section.to_adaptative() for section in self.sections)
         if self.body_objects:
-            for b in self.body_objects:
-                body.append(b)
+            body.extend(iter(self.body_objects))
+
         if self.actions:
             actions = [action.to_dict() for action in self.actions]
-            body.append({
-                "actions": actions
-            })
 
         return {
             "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
             "type": "AdaptiveCard",
-            "version": "1.6",
+            "version": self.version,
             "contentType": "application/vnd.microsoft.card.adaptive",
             "metadata": {
                 "webUrl": "https://contoso.com/tab"
             },
-            "body": body
+            "body": body,
+            "actions": actions,
         }
