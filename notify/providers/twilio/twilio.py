@@ -1,7 +1,7 @@
 from typing import Union, Any
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
-from notify.providers.abstract import ProviderMessageBase, ProviderType
+from notify.providers.base import ProviderMessaging, ProviderType
 from notify.models import Actor
 from notify.exceptions import ProviderError
 from notify.conf import (
@@ -10,7 +10,7 @@ from notify.conf import (
     TWILIO_PHONE
 )
 
-class Twilio(ProviderMessageBase):
+class Twilio(ProviderMessaging):
     provider = "sms"
     provider_type = ProviderType.SMS
     level = ""
