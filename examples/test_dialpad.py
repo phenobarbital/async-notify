@@ -3,8 +3,6 @@ from notify.providers.dialpad import Dialpad
 from notify.models import Actor
 from notify.utils import Msg
 
-Msg('=== Send SMS with Dialpad === ')
-
 user1 = {
     "name": "Jesus Lara",
     "account": {
