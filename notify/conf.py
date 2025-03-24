@@ -114,6 +114,8 @@ TWITTER_TOKEN_SECRET = config.get("TWITTER_TOKEN_SECRET")
 TWITTER_CONSUMER_KEY = config.get("TWITTER_CONSUMER_KEY")
 TWITTER_CONSUMER_SECRET = config.get("TWITTER_CONSUMER_SECRET")
 
+DIALPAD_APIKEY = config.get("DIALPAD_APIKEY")
+DIALPAD_FROM_NUMBER = config.get("DIALPAD_FROM_NUMBER")
 
 try:
     from settings.settings import *  # pylint: disable=W0614,W0401
