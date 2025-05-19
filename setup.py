@@ -55,15 +55,15 @@ with open(version, 'r', encoding='utf-8') as meta:
                 v = node.value
                 if name.id == '__version__':
                     __version__ = v.s
-                if name.id == '__title__':
+                elif name.id == '__title__':
                     __title__ = v.s
-                if name.id == '__description__':
+                elif name.id == '__description__':
                     __description__ = v.s
-                if name.id == '__license__':
+                elif name.id == '__license__':
                     __license__ = v.s
-                if name.id == '__author__':
+                elif name.id == '__author__':
                     __author__ = v.s
-                if name.id == '__author_email__':
+                elif name.id == '__author_email__':
                     __author_email__ = v.s
 
 setup(
@@ -108,17 +108,16 @@ setup(
         'cloudpickle>=3.1.0',
         'emoji>=1.7.0,<2.15.0',
         'moviepy==1.0.3',
-        'aiobotocore[boto3]==2.15.2'
+        'aiobotocore[boto3]==2.15.2',
+        "pillow>=8.3.2"
     ],
     extras_require={
         "default": [
             'aiogram>=3.14.0',
             'slack_bolt==1.18.0',
-            'pillow==9.5.0'
         ],
         "telegram": [
             'aiogram>=3.14.0',
-            'pillow==9.5.0'
         ],
         "push": [
             'onesignal-sdk==2.0.0',
@@ -148,10 +147,9 @@ setup(
             'PySocks==1.7.1',
             'pyshorteners==1.0.1',
             'twilio==8.2.2',
-            'slixmpp==1.8.4',
+            'slixmpp==1.10.0',
             "slack_bolt==1.18.0",
             'aiogram>=3.14.0',
-            'pillow==9.5.0',
             'aiobotocore[boto3]==2.15.2',
             "qworker>=1.12.7",
             "msgraph-core==1.3.2",
