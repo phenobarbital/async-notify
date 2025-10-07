@@ -140,6 +140,7 @@ target/
 
 # pyenv python configuration file
 .python-version
+__pycache__
 
 # PyCharm
 .idea
@@ -151,3 +152,8 @@ examples/test_twilio.py
 o365_token.txt
 templates/.compiled
 .o365_token.txt
+
+
+# uv-related
+uv.lock
+notify/_version.py
