@@ -167,7 +167,7 @@ class Teams(ProviderIM):
             # is already a dictionary
             payload = message
         elif isinstance(message, str):
-            if 'adaptive-card.json' in message:
+            if '"type":"AdaptiveCard"' in message or '"$schema":"http://adaptivecards.io' in message:
                 # is a complete adaptive card.
                 payload = message
             else:

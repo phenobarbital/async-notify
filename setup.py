@@ -107,7 +107,7 @@ setup(
         'jinja2>=3.1.4',
         'cloudpickle>=3.1.0',
         'emoji>=1.7.0,<2.15.0',
-        'moviepy==1.0.3',
+        'moviepy==2.2.1',
         'aiobotocore[boto3]==2.15.2',
         "pillow>=8.3.2"
     ],
@@ -130,7 +130,7 @@ setup(
         "azure": [
             'pyo365==0.1.3',
             "o365==2.0.37",
-            'msal>=1.22.0,<1.30.1',
+            'msal>=1.22.0,<1.32.0',
             "Office365-REST-Python-Client==2.5.13",
             "msgraph-core==1.3.2",
             "azure-identity==1.20.0",

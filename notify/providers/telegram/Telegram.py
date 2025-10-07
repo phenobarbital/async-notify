@@ -1,10 +1,9 @@
-from io import BytesIO
-from pathlib import PurePath
 from typing import Union, Any
-from pathlib import Path
+from io import BytesIO
+from pathlib import Path, PurePath
 from PIL import Image
 import emoji
-from moviepy.editor import VideoFileClip
+from moviepy import VideoFileClip
 # telegram
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram import Bot, Dispatcher
