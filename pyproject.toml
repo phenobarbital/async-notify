@@ -24,13 +24,91 @@ classifiers=[
   "License :: OSI Approved :: BSD License",
 ]
 requires-python = ">=3.9.16"
-dynamic = ["version", "readme", "dependencies", "license", "urls", "optional-dependencies", "entry-points"]
+dynamic = ["version", "readme", "license", "urls", "entry-points"]
+
+dependencies = [
+  "uvloop>=0.20.0",
+  "aiosmtplib>=3.0.2",
+  "python-datamodel>=0.3.12",
+  "navconfig[default]>=1.7.0",
+  "jinja2>=3.1.4",
+  "cloudpickle>=3.1.0",
+  "emoji>=1.7.0,<2.15.0",
+  "moviepy==1.0.3",
+  "aiobotocore[boto3]==2.15.2",
+  "redis>=5.0.0,<6.0.0",
+  "aiohttp>=3.9.0,<4.0.0",
+  "qworker>=1.12.7",
+  "pillow>=8.3.2",
+]
+
+[project.optional-dependencies]
+default = [
+  "aiogram>=3.14.0",
+  "slack_bolt==1.18.0",
+]
+telegram = [
+  "aiogram>=3.14.0",
+]
+push = [
+  "onesignal-sdk==2.0.0",
+]
+google = [
+  "gmail==0.6.3",
+  "google-auth>=2.6.0",
+  "google-auth-httplib2>=0.1.0",
+]
+azure = [
+  "pyo365==0.1.3",
+  "o365==2.0.37",
+  "msal>=1.22.0,<1.31.0",
+  "Office365-REST-Python-Client==2.5.13",
+  "msgraph-core==1.3.2",
+  "azure-identity==1.20.0",
+  "msgraph-sdk==1.22.0",
+]
+all = [
+  "gmail==0.6.3",
+  "google-auth>=2.6.0",
+  "google-auth-httplib2>=0.1.0",
+  "onesignal-sdk==2.0.0",
+  "o365==2.0.37",
+  "Office365-REST-Python-Client==2.5.13",
+  "msal>=1.22.0,<1.31.0",
+  "PySocks==1.7.1",
+  "pyshorteners==1.0.1",
+  "twilio==8.2.2",
+  "slixmpp==1.10.0",
+  "slack_bolt==1.18.0",
+  "aiogram>=3.14.0",
+  "aiobotocore[boto3]==2.15.2",
+  "redis>=5.0.0,<6.0.0",
+  "aiohttp>=3.9.0,<4.0.0",
+  "qworker>=1.12.7",
+  "msgraph-core==1.3.2",
+  "azure-identity==1.20.0",
+  "msgraph-sdk==1.22.0",
+]
 
 
 [options]
 packages = "find:"
-install_requires = ["asyncdb", "navconfig"]
-python_requires = ">=3.9"
+install_requires = [
+  "uvloop>=0.20.0",
+  "aiosmtplib>=3.0.2",
+  "python-datamodel>=0.3.12",
+  "navconfig[default]>=1.7.0",
+  "jinja2>=3.1.4",
+  "cloudpickle>=3.1.0",
+  "emoji>=1.7.0,<2.15.0",
+  "moviepy==1.0.3",
+  "aiobotocore[boto3]==2.15.2",
+  "redis>=5.0.0,<6.0.0",
+  "aiohttp>=3.9.0,<4.0.0",
+  "qworker>=1.12.7",
+  "pillow>=8.3.2",
+]
+python_requires = ">=3.9.16"
 platforms = "manylinux_2_28_x86_64"
 
 

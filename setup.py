@@ -99,7 +99,6 @@ setup(
         'wheel==0.44.0',
     ],
     install_requires=[
-        'asyncio==3.4.3',
         'uvloop>=0.20.0',
         'aiosmtplib>=3.0.2',
         'python-datamodel>=0.3.12',
@@ -109,6 +108,9 @@ setup(
         'emoji>=1.7.0,<2.15.0',
         'moviepy==1.0.3',
         'aiobotocore[boto3]==2.15.2',
+        'redis>=5.0.0,<6.0.0',
+        'aiohttp>=3.9.0,<4.0.0',
+        'qworker>=1.12.7',
         "pillow>=8.3.2"
     ],
     extras_require={
@@ -130,7 +132,7 @@ setup(
         "azure": [
             'pyo365==0.1.3',
             "o365==2.0.37",
-            'msal>=1.22.0,<1.30.1',
+            'msal>=1.22.0,<1.31.0',
             "Office365-REST-Python-Client==2.5.13",
             "msgraph-core==1.3.2",
             "azure-identity==1.20.0",
@@ -143,7 +145,7 @@ setup(
             'onesignal-sdk==2.0.0',
             "o365==2.0.37",
             "Office365-REST-Python-Client==2.5.13",
-            'msal>=1.22.0,<1.30.1',
+            'msal>=1.22.0,<1.31.0',
             'PySocks==1.7.1',
             'pyshorteners==1.0.1',
             'twilio==8.2.2',
@@ -151,6 +153,8 @@ setup(
             "slack_bolt==1.18.0",
             'aiogram>=3.14.0',
             'aiobotocore[boto3]==2.15.2',
+            'redis>=5.0.0,<6.0.0',
+            'aiohttp>=3.9.0,<4.0.0',
             "qworker>=1.12.7",
             "msgraph-core==1.3.2",
             "azure-identity==1.20.0",
