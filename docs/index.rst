@@ -25,6 +25,49 @@ Welcome to async-notify's documentation!
    :parser: myst_parser.sphinx_
 
 
+Quick Start
+----------
+
+Installation
+~~~~~~~~~~
+
+.. code-block:: bash
+
+    pip install async-notify
+
+Basic Usage
+~~~~~~~~~
+
+.. code-block:: python
+
+    from notify import Notify
+
+    # Create a notification provider
+    email = Notify(
+        "email",
+        username="user@example.com",
+        password="secret"
+    )
+
+    # Send a notification
+    await email.send(
+        recipient=["user@example.com"],
+        subject="Hello",
+        message="Hello from async-notify!"
+    )
+
+Features
+-------
+
+- Multiple notification providers (email, SMS, chat, push)
+- Async/await interface
+- Template support
+- File attachments
+- Rich message formatting
+- Error handling and retries
+- Connection pooling
+- Server components for queuing and persistence
+
 License
 -------
 
@@ -34,9 +77,12 @@ This project is licensed under the terms of the BSD v3. and Apache 2 Dual licens
    :maxdepth: 2
    :caption: Contents:
 
-   api
-   examples
+   architecture
+   models
    providers
+   examples
+   server
+   api
    authors
 
 Indices and tables
@@ -45,5 +91,4 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`    
-
+* :ref:`search`
