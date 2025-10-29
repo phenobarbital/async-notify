@@ -312,44 +312,95 @@ class Teams(ProviderIM):
         """
         Generic method: send a message to an existing chat (group or one-on-one).
         """
-        if isinstance(message, str):
-            try:
-                message = json.loads(message)
-                if message.get("type") == "AdaptiveCard":
-                    # Generate a unique attachment id.
-                    attachment_id = str(uuid.uuid4())
-                    # Create the ChatMessage with the Adaptive Card as an attachment.
-                    request_body = ChatMessage(
-                        subject=None,
-                        body=ItemBody(
-                            content_type=BodyType.Html,
-                            # The body must include an <attachment> tag referencing the attachment's id.
-                            content=f'<attachment id="{attachment_id}"></attachment>'
-                        ),
-                        attachments=[
-                            ChatMessageAttachment(
-                                id=attachment_id,
-                                content_type="application/vnd.microsoft.card.adaptive",
-                                content=json.dumps(message),
-                                content_url=None,
-                                name=None,
-                                thumbnail_url=None,
-                            )
-                        ]
+        async def _post_attachment_card(
+            card_payload: Dict[str, Any],
+            content_type: str,
+        ):
+            attachment_id = str(uuid.uuid4())
+            request_body = ChatMessage(
+                subject=None,
+                body=ItemBody(
+                    content_type=BodyType.Html,
+                    content=f'<attachment id="{attachment_id}"></attachment>'
+                ),
+                attachments=[
+                    ChatMessageAttachment(
+                        id=attachment_id,
+                        content_type=content_type,
+                        content=json.dumps(card_payload),
+                        content_url=None,
+                        name=None,
+                        thumbnail_url=None,
                     )
-                    return await self._graph.chats.by_chat_id(chat_id).messages.post(request_body)
-                else:
-                    # If it's not an Adaptive Card JSON, also treat it as plain text.
-                    message = {"body": {"content": message}, "attachments": []}
+                ]
+            )
+            return await self._graph.chats.by_chat_id(chat_id).messages.post(request_body)
+
+        message_payload: Optional[Dict[str, Any]] = None
+        if isinstance(message, str):
+            parsed_message: Optional[Dict[str, Any]] = None
+            try:
+                parsed_message = json.loads(message)
             except json.JSONDecodeError:
-                # Not valid JSON; treat as plain text.
-                message = {
-                    "body": {"content": message}, "attachments": []
+                parsed_message = None
+
+            if isinstance(parsed_message, dict):
+                if parsed_message.get("type") == "AdaptiveCard":
+                    return await _post_attachment_card(
+                        parsed_message,
+                        "application/vnd.microsoft.card.adaptive"
+                    )
+
+                if parsed_message.get("@type") == "MessageCard":
+                    return await _post_attachment_card(
+                        parsed_message,
+                        "application/vnd.microsoft.teams.card.o365connector"
+                    )
+
+                adaptive_card = {
+                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                    "type": "AdaptiveCard",
+                    "version": "1.5",
+                    "body": parsed_message
                 }
-        body = message.get("body", {})
-        attachments_list = message.get("attachments", [])
-        print('BODY > ', body)
-        print('CONTENT > ', attachments_list)
+                if not adaptive_card["body"]:
+                    logging.warning(
+                        "Teams send_message_to_chat: empty Adaptive Card body; message not sent."
+                    )
+                    return
+
+                return await _post_attachment_card(
+                    adaptive_card,
+                    "application/vnd.microsoft.card.adaptive"
+                )
+
+            message_payload = {"body": {"content": message}, "attachments": []}
+        elif isinstance(message, dict):
+            if message.get("type") == "AdaptiveCard":
+                return await _post_attachment_card(
+                    message,
+                    "application/vnd.microsoft.card.adaptive"
+                )
+            if message.get("@type") == "MessageCard":
+                return await _post_attachment_card(
+                    message,
+                    "application/vnd.microsoft.teams.card.o365connector"
+                )
+            message_payload = message
+        else:
+            message_payload = {
+                "body": {"content": str(message)},
+                "attachments": []
+            }
+
+        body = message_payload.get("body", {}) if message_payload else {}
+        if not body or not body.get("content"):
+            logging.warning(
+                "Teams send_message_to_chat: empty message body; message not sent."
+            )
+            return
+
+        attachments_list = message_payload.get("attachments", []) if message_payload else []
         request_body = ChatMessage(
             subject=None,
             body=ItemBody(
