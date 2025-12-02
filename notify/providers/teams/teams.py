@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union, Any
+from typing import Dict, List, Optional, Union, Any
 import json
 import uuid
 import base64
@@ -184,7 +184,27 @@ class Teams(ProviderIM):
         # TODO: using Jinja Templates on Teams Cards.
         return payload
 
-    async def _send_(self, to: Actor, message: Union[str, Any], **kwargs) -> Any:
+    async def send_to_group(
+        self,
+        recipient: List[Actor],
+        message: Union[str, Any],
+        **kwargs
+    ) -> Any:
+        """send_to_group.
+        Send message to Microsoft Teams channel using an incoming webhook.
+        """
+        return await self._send_(
+            to=recipient,
+            message=message,
+            **kwargs
+    )
+
+    async def _send_(
+        self,
+        to: Union[Actor, List[Actor], TeamsChannel, TeamsChat, TeamsWebhook],
+        message: Union[str, Any],
+        **kwargs
+    ) -> Any:
         """_send_.
         Send message to Microsoft Teams channel using an incoming webhook.
         """
@@ -222,6 +242,10 @@ class Teams(ProviderIM):
             elif isinstance(to, Actor):
                 result = await self.send_direct_message(
                     to, msg
+                )
+            elif isinstance(to, list) and all(isinstance(r, Actor) for r in to):
+                result = await self.send_group_direct_message(
+                    to, msg, topic=kwargs.get('topic')
                 )
             else:
                 raise NotifyException(
@@ -466,6 +490,36 @@ class Teams(ProviderIM):
         result = await self._graph.chats.post(request_body)
         return result.id
 
+    async def _create_group_chat(
+        self,
+        member_ids: list[str],
+        topic: Optional[str] = None
+    ) -> str:
+        """
+        Create a group chat between the delegated account and N users.
+        member_ids should include self._owner_id as well.
+        """
+        members = [
+            AadUserConversationMember(
+                odata_type="#microsoft.graph.aadUserConversationMember",
+                roles=["owner"],
+                additional_data={
+                    # Mejor usar v1.0 en lugar de /beta
+                    "user@odata.bind": f"https://graph.microsoft.com/v1.0/users('{user_id}')"
+                },
+            )
+            for user_id in member_ids
+        ]
+
+        request_body = Chat(
+            chat_type=ChatType.Group,
+            topic=topic,
+            members=members,
+        )
+
+        result = await self._graph.chats.post(request_body)
+        return result.id
+
     async def _get_chat(self, user_id: str) -> str:
         """
         Create a new chat with the specified user or return if it already exists.
@@ -494,6 +548,45 @@ class Teams(ProviderIM):
                 return chat.id
         return None
 
+    async def _get_group_chat(
+        self,
+        member_ids: list[str],
+        restricted: bool = True
+    ) -> Optional[str]:
+        """
+        Find an existing group chat that contains *at least* all member_ids.
+        """
+
+        query_params = ChatsRequestBuilder.ChatsRequestBuilderGetQueryParameters(
+            filter="chatType eq 'group'",
+            expand=["members"],
+        )
+
+        request_configuration = RequestConfiguration(
+            query_parameters=query_params,
+        )
+
+        chats = await self._graph.chats.get(
+            request_configuration=request_configuration
+        )
+        if not chats.value:
+            return None
+
+        members_set = set(member_ids)
+        print('::: Members Set > ', members_set)
+
+        for chat in chats.value:
+            if not chat.members:
+                continue
+            chat_member_ids = {m.user_id for m in chat.members if m.user_id}
+            if restricted:
+                if chat_member_ids == members_set:
+                    return chat.id
+            else:
+                if members_set.issubset(chat_member_ids):
+                    return chat.id
+        return None
+
     async def get_teams_user(self, email: str) -> Dict[str, Any]:
         """
         Retrieve a user from Microsoft Graph by email, returns the user object (JSON).
@@ -519,3 +612,31 @@ class Teams(ProviderIM):
             self.logger.error(
                 f"Failed to retrieve user info for {email}: {e}"
             )
+
+    async def send_group_direct_message(
+        self,
+        recipients: list[Actor],
+        message: Dict[str, Any],
+        topic: Optional[str] = None
+    ):
+        """
+        Send a message to a group chat between the delegated account and 2+ users.
+        """
+
+        if not self._owner_id:
+            raise NotifyException(
+                "send_group_direct_message requires as_user=True so _owner_id is set."
+            )
+
+        # Resolve the user ids for all recipients
+        user_ids: list[str] = []
+        for recipient in recipients:
+            user = await self.get_teams_user(recipient.account.address)
+            user_ids.append(user.id)
+
+        # Todos los miembros = owner + usuarios
+        member_ids = [self._owner_id, *user_ids]
+        # Buscar chat existente o crear nuevo
+        chat_id = await self._get_group_chat(member_ids) or await self._create_group_chat(member_ids, topic=topic)
+        # Enviar mensaje usando tu lógica actual
+        return await self.send_message_to_chat(chat_id, message)
