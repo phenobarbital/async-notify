@@ -118,6 +118,12 @@ TWITTER_CONSUMER_SECRET = config.get("TWITTER_CONSUMER_SECRET")
 DIALPAD_APIKEY = config.get("DIALPAD_APIKEY")
 DIALPAD_FROM_NUMBER = config.get("DIALPAD_FROM_NUMBER")
 
+# Zoom Phone (SMS):
+ZOOM_ACCOUNT_ID = config.get("ZOOM_ACCOUNT_ID")
+ZOOM_CLIENT_ID = config.get("ZOOM_CLIENT_ID")
+ZOOM_CLIENT_SECRET = config.get("ZOOM_CLIENT_SECRET")
+ZOOM_SMS_DEFAULT_FROM = config.get("ZOOM_SMS_DEFAULT_FROM")
+
 try:
     from settings.settings import *  # pylint: disable=W0614,W0401
 except ImportError:
