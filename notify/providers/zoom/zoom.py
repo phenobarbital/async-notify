@@ -34,10 +34,11 @@ from notify.providers.base import ProviderMessaging, ProviderType
 from notify.models import Actor
 from notify.exceptions import ProviderError
 from notify.conf import (
-    ZOOM_ACCOUNT_ID,
-    ZOOM_CLIENT_ID,
-    ZOOM_CLIENT_SECRET,
+    ZOOM_SMS_ACCOUNT_ID,
+    ZOOM_SMS_CLIENT_ID,
+    ZOOM_SMS_CLIENT_SECRET,
     ZOOM_SMS_DEFAULT_FROM,
+    ZOOM_SMS_USER_ID,
 )
 
 
@@ -53,9 +54,9 @@ class Zoom(ProviderMessaging):
     Authenticates via Server-to-Server OAuth (account credentials grant).
 
     Args:
-        account_id: Zoom account ID. Defaults to ``ZOOM_ACCOUNT_ID``.
-        client_id: OAuth client ID. Defaults to ``ZOOM_CLIENT_ID``.
-        client_secret: OAuth client secret. Defaults to ``ZOOM_CLIENT_SECRET``.
+        account_id: Zoom account ID. Defaults to ``ZOOM_SMS_ACCOUNT_ID``.
+        client_id: OAuth client ID. Defaults to ``ZOOM_SMS_CLIENT_ID``.
+        client_secret: OAuth client secret. Defaults to ``ZOOM_SMS_CLIENT_SECRET``.
         from_number: Sender phone number in E.164 format.
             Must be an SMS-capable Zoom Phone number.
             Defaults to ``ZOOM_SMS_DEFAULT_FROM``.
@@ -83,10 +84,11 @@ class Zoom(ProviderMessaging):
         self._token: Optional[str] = None
         self._token_expiry: float = 0.0
         super(Zoom, self).__init__(**kwargs)
-        self.account_id = account_id or ZOOM_ACCOUNT_ID
-        self.client_id = client_id or ZOOM_CLIENT_ID
-        self.client_secret = client_secret or ZOOM_CLIENT_SECRET
+        self.account_id = account_id or ZOOM_SMS_ACCOUNT_ID
+        self.client_id = client_id or ZOOM_SMS_CLIENT_ID
+        self.client_secret = client_secret or ZOOM_SMS_CLIENT_SECRET
         self.from_number = from_number or ZOOM_SMS_DEFAULT_FROM
+        self.user_id = kwargs.get("user_id") or ZOOM_SMS_USER_ID
 
     async def connect(self, *args, **kwargs):
         """Establish connection: create HTTP session and fetch OAuth token.
@@ -97,8 +99,8 @@ class Zoom(ProviderMessaging):
         if not all([self.account_id, self.client_id, self.client_secret]):
             raise RuntimeError(
                 f"To send SMS via {self.__class__.__name__} you need to "
-                "configure ZOOM_ACCOUNT_ID, ZOOM_CLIENT_ID & "
-                "ZOOM_CLIENT_SECRET in environment variables or pass them "
+                "configure ZOOM_SMS_ACCOUNT_ID, ZOOM_SMS_CLIENT_ID & "
+                "ZOOM_SMS_CLIENT_SECRET in environment variables or pass them "
                 "as parameters."
             )
         if not self.from_number:
@@ -106,8 +108,9 @@ class Zoom(ProviderMessaging):
                 "Zoom SMS requires a sender phone number. "
                 "Set ZOOM_SMS_DEFAULT_FROM or pass from_number."
             )
-        self.session = aiohttp.ClientSession()
-        await self._refresh_token()
+        if not getattr(self, "session", None) or self.session.closed:
+            self.session = aiohttp.ClientSession()
+            await self._refresh_token()
 
     async def close(self):
         """Close the HTTP session."""
@@ -186,8 +189,14 @@ class Zoom(ProviderMessaging):
             ProviderError: If the API call fails.
         """
         try:
+            if not getattr(self, "session", None) or self.session.closed:
+                await self.connect()
+
             msg = await self._render_(to, message, **kwargs)
-            phone = to.account.get("phone") or to.account.get("number")
+            if isinstance(to.account, dict):
+                phone = to.account.get("phone") or to.account.get("number")
+            else:
+                phone = getattr(to.account, "phone", None) or getattr(to.account, "number", None)
             if not phone:
                 raise ProviderError(
                     f"Recipient {to.name} has no 'phone' or 'number' "
@@ -202,6 +211,8 @@ class Zoom(ProviderMessaging):
                 "to_members": [{"phone_number": phone}],
                 "message": msg[:500],  # Zoom limit
             }
+            if self.user_id:
+                payload["sender"]["user_id"] = self.user_id
 
             # Optional: continue existing session
             session_id = kwargs.get("session_id")
