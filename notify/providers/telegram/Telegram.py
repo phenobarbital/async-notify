@@ -1,9 +1,7 @@
 from typing import Union, Any
 from io import BytesIO
 from pathlib import Path, PurePath
-from PIL import Image
 import emoji
-from moviepy import VideoFileClip
 # telegram
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram import Bot, Dispatcher
@@ -20,7 +18,6 @@ from aiogram.exceptions import (
 )
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.enums import ParseMode
-import aiofiles
 # from aiogram.utils.emoji import emojize
 # from aiogram.utils.markdown import bold, code, italic, text
 # TODO: web-hooks
@@ -342,6 +339,13 @@ class Telegram(ProviderIM):
             ) from err
 
     def convert_to_mp4(self, video: Union[str, PurePath, Any], format: str = 'libx264') -> Any:
+        try:
+            from moviepy import VideoFileClip
+        except ImportError:
+            raise ImportError(
+                "moviepy is required to convert videos to mp4. "
+                "Install it with `pip install async-notify[telegram]` or `pip install moviepy==2.2.1`"
+            )
         clip = VideoFileClip(str(video))
         output_file = Path().joinpath(video.parent, video.stem + ".mp4")
         clip.write_videofile(str(output_file), codec=format)
