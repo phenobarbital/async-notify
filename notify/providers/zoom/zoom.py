@@ -251,6 +251,14 @@ class Zoom(ProviderMessaging):
                             f"({retry_resp.status}): {retry_body}"
                         )
                 else:
+                    error_code = body.get('code') if isinstance(body, dict) else None
+                    if error_code == 7037:
+                        # Recipient has opted out at the Zoom/carrier level.
+                        # Log a warning and skip gracefully — do not raise.
+                        self.logger.warning(
+                            f"Zoom SMS: {phone} is opted-out (code 7037), skipping recipient"
+                        )
+                        return {"opted_out": True, "phone": phone, "code": 7037}
                     raise ProviderError(
                         f"Zoom SMS API error ({resp.status}): {body}"
                     )
