@@ -1,4 +1,5 @@
 import asyncio
+import os
 from aiohttp import web
 from botbuilder.core import BotFrameworkAdapter, BotFrameworkAdapterSettings
 from botbuilder.schema import Activity, ActivityTypes, Attachment
@@ -46,8 +47,8 @@ class SimpleBot:
         )
 
 # Adapter settings
-APP_ID = "09b01e47-6e19-4f7e-9f72-4683c5e0a83e"
-APP_PASSWORD = "09b01e47-6e19-4f7e-9f72-4683c5e0a83e"
+APP_ID = os.getenv("BOT_APP_ID", "")
+APP_PASSWORD = os.getenv("BOT_APP_PASSWORD", "")
 SETTINGS = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD)
 ADAPTER = BotFrameworkAdapter(SETTINGS)
 
