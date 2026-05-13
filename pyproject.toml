@@ -13,7 +13,7 @@ dynamic = ["version"]
 description = "Asyncio-based Library for sending notifications (messages) to users."
 readme = "README.md"
 license = "BSD-3-Clause"
-requires-python = ">=3.9.16"
+requires-python = ">=3.10"
 authors = [{ name = "Jesus Lara Gimenez", email = "jesuslarag@gmail.com" }]
 keywords = ["asyncio", "notification", "telegram", "slack", "email"]
 classifiers = [
@@ -22,7 +22,6 @@ classifiers = [
   "Intended Audience :: System Administrators",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -35,7 +34,7 @@ classifiers = [
 # Core runtime deps (lifted from your previous setup.py)
 dependencies = [
   "uvloop>=0.20.0",
-  "aiosmtplib>=3.0.2",
+  "aiosmtplib>=5.0",
   "python-datamodel>=0.3.12",
   "navconfig[default]>=1.7.0",
   "jinja2>=3.1.4",
