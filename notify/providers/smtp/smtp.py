@@ -1,22 +1,12 @@
 ## for abstract email provider:
-import os
 import ssl
-import asyncio
-from typing import Union, Any
 from collections.abc import Callable
-from email import encoders
-# from email.message import EmailMessage
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
-from email.utils import formatdate
 import smtplib
 from notify.models import Actor
 from notify.exceptions import ProviderError
 # abstract class
 from notify.providers.base import ProviderBase, ProviderType
-from notify.providers.message import ThreadMessage
+from notify.providers import _mime_utils as _mu
 from notify.conf import (
     EMAIL_SMTP_USERNAME,
     EMAIL_SMTP_PASSWORD,
@@ -151,49 +141,42 @@ class SMTP(ProviderBase):
         else:
             return False
 
-    def _prepare_message(
-        self, to_address: Actor, message: Union[str, Any], content: Any
-    ):  # pylint: disable=W0613
-        """prepare_message."""
-        if isinstance(content, dict):
-            html = content["html"]
-            text = content["text"]
-        else:
-            text = content
-            html = None
-        if html:
-            message.add_header("Content-Type", "text/html")
-            # message.add_header('Content-Type: multipart/mixed')
-            # message.add_header('Content-Transfer-Encoding: base64')
-            message.attach(MIMEText(html, "html"))
-            # message.set_payload(html)
-        else:
-            message.add_header("Content-Type", "text/plain")
-            message.attach(MIMEText(text, "plain"))
-        return message
-
     def _render_(
         self, to: Actor = None, message: str = None, subject: str = None, **kwargs
     ):
-        """
-        _render_.
+        """Build a UTF-8-safe multipart/alternative message (sync variant).
 
-        Returns the parseable version of Email.
+        Delegates envelope construction and part attachment to
+        :mod:`_mime_utils`.  This method is synchronous (uses
+        ``self._template.render(...)`` not ``render_async``).
+
+        Args:
+            to: Recipient Actor (or list of addresses).
+            message: Plain-text body content.
+            subject: Email subject line.
+            **kwargs: Additional template arguments.
+
+        Returns:
+            A :class:`email.mime.multipart.MIMEMultipart` ready for transport.
         """
-        # TODO: add attachments
-        msg = MIMEMultipart("alternative")
-        msg["From"] = self.actor
-        if isinstance(to, list):
-            # TODO: iterate over actors
-            msg["To"] = ", ".join(to)
-        else:
-            msg["To"] = to.account.address
-        msg["Subject"] = subject
-        msg["Date"] = formatdate(localtime=True)
-        # msg["sender"] = self.actor
-        msg.preamble = subject
+        sender = getattr(self, "actor", None) or self.username
+        recipient = (
+            to.account.address if not isinstance(to, list)
+            else ", ".join(to)
+        )
+        msg = _mu.build_alternative_message(
+            sender=sender,
+            to=recipient,
+            subject=subject,
+        )
+        # NOTE: smtp.py historically did NOT set msg["sender"] (it was
+        # commented out at the original line ~193). Intentional asymmetry
+        # with mail.py — preserved per spec §7 Risk #1.
+        msg.preamble = subject or ""
+
         if message:
-            msg.attach(MIMEText(message, "plain"))
+            _mu.attach_text_part(msg, message, "plain")
+
         if self._template:
             self._templateargs = {
                 "recipient": to,
@@ -205,23 +188,28 @@ class SMTP(ProviderBase):
             content = self._template.render(**self._templateargs)
         else:
             content = message
-        msg.add_header("Content-Type", "text/html")
-        msg.attach(MIMEText(content, "html"))
+        _mu.attach_text_part(msg, content or "", "html")
         return msg
 
     def add_attachment(self, message, filename, mimetype="octect-stream"):
-        content = None
-        with open(filename, "rb") as fp:
-            content = fp.read()
-        if mimetype in ("image/png"):
-            part = MIMEImage(content)
-        else:
-            part = MIMEBase("application", "octect-stream")
-            part.set_payload(content)
-            encoders.encode_base64(part)
-        file = os.path.basename(filename)
-        part.add_header("Content-Disposition", "attachment", filename=str(file))
-        message.attach(part)
+        """Attach a file to *message* with RFC 2231 filename encoding.
+
+        The ``mimetype`` parameter is accepted for backwards-compatibility.
+        The historically misspelled default ``"octect-stream"`` is treated as
+        unknown and resolved via ``mimetypes.guess_type``.
+
+        Args:
+            message: The :class:`email.mime.multipart.MIMEMultipart` envelope.
+            filename: Filesystem path to the file to attach.
+            mimetype: Optional MIME type string.  The misspelled legacy
+                default ``"octect-stream"`` is treated as absent.
+        """
+        resolved = (
+            None
+            if mimetype in ("octect-stream", "application/octet-stream")
+            else mimetype
+        )
+        _mu.attach_file(message, filename, resolved)
 
     def _send_(
         self, to: Actor, message: str, subject: str, **kwargs
