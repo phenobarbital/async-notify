@@ -32,7 +32,7 @@
       "feature_id": "FEAT-001",
       "feature": "NAV-8390-email-utf8",
       "spec": "sdd/specs/NAV-8390-email-utf8.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "S",
       "depends_on": [
@@ -42,8 +42,8 @@
       "parallelism_notes": "Touches only mail.py; in principle could run in parallel with TASK-003 (smtp.py) and TASK-004 (ses.py) in separate worktrees once TASK-001 lands. Hotfix uses one worktree, so sequential here.",
       "assigned_to": null,
       "started_at": "2026-05-13T16:11:19+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-002-retrofit-mail-py.md"
+      "completed_at": "2026-05-13T16:17:24+00:00",
+      "file": "sdd/tasks/completed/TASK-002-retrofit-mail-py.md"
     },
     {
       "id": "TASK-003",

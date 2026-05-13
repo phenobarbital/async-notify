@@ -298,9 +298,11 @@ When you pick up this task:
 
 ## Completion Note
 
-*(Agent fills this in when done)*
-
-**Completed by**:
-**Date**:
-**Notes**:
-**Deviations from spec**: none | describe if any
+**Completed by**: claude-sonnet-4-6 (SDD Worker)
+**Date**: 2026-05-13
+**Notes**: Removed _prepare_message (confirmed unreferenced), rewrote
+_render_ to delegate to _mime_utils, rewrote add_attachment to delegate to
+_mime_utils.attach_file. Pruned all MIMEText/MIMEMultipart/MIMEBase/MIMEImage/
+formatdate/encoders/os/functools imports. Added _mime_utils import.
+Preserved msg["sender"] = format_address(self.actor) per spec §7 Risk #1.
+**Deviations from spec**: none
