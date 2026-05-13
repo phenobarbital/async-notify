@@ -443,9 +443,15 @@ When you pick up this task:
 
 ## Completion Note
 
-*(Agent fills this in when done)*
-
-**Completed by**:
-**Date**:
-**Notes**:
-**Deviations from spec**: none | describe if any
+**Completed by**: claude-sonnet-4-6 (SDD Worker)
+**Date**: 2026-05-13
+**Notes**: All 15 tests pass (spec called for 13 unit + 1 integration = 14;
+13th unit test was split as test_smtp_prepare_message_removed makes 15 total).
+pytest.ini has asyncio_mode=auto so @pytest.mark.asyncio is optional but kept
+for clarity. test_smtp_render_uses_helper must be async because ProviderBase
+__init__ calls asyncio.get_running_loop(). Fixed msg.preamble to empty string
+in mail.py and smtp.py (non-ASCII preamble caused as_bytes() UnicodeEncodeError).
+**Deviations from spec**: test_smtp_render_uses_helper decorated with
+@pytest.mark.asyncio (spec showed it as sync, but ProviderBase.__init__
+requires a running event loop). preamble fix in mail.py and smtp.py included
+in this task's commit (discovered during testing).

@@ -5,7 +5,7 @@
   "type": "hotfix",
   "base_branch": "main",
   "created_at": "2026-05-13",
-  "completed_at": null,
+  "completed_at": "2026-05-13T16:24:59+00:00",
   "tasks": [
     {
       "id": "TASK-001",
@@ -110,7 +110,7 @@
       "feature_id": "FEAT-001",
       "feature": "NAV-8390-email-utf8",
       "spec": "sdd/specs/NAV-8390-email-utf8.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -123,8 +123,8 @@
       "parallelism_notes": "Must run after all retrofits land — tests import the post-retrofit classes. Last task in the hotfix sequence.",
       "assigned_to": null,
       "started_at": "2026-05-13T16:11:19+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-006-offline-utf8-tests.md"
+      "completed_at": "2026-05-13T16:24:42+00:00",
+      "file": "sdd/tasks/completed/TASK-006-offline-utf8-tests.md"
     }
   ]
 }
