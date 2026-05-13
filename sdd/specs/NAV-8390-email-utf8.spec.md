@@ -10,7 +10,7 @@ base_branch: main
 **Feature ID**: FEAT-001
 **Date**: 2026-05-13
 **Author**: Jesus Lara
-**Status**: draft
+**Status**: approved
 **Target version**: 1.5.6 (hotfix)
 **Jira**: NAV-8390 — *error con emails en UTF-8 en notify*
 
@@ -571,7 +571,7 @@ No new runtime dependencies. No new dev dependencies.
       (line 153, if present) also be deleted symmetrically with the
       `mail.py` one? Same `grep` check applies. — *Owner: implementer*
 - [ ] **New (release-facing)**: Bump `notify/version.py` to `1.5.6` as part
-      of this hotfix, or leave to release tooling? — *Owner: Jesus Lara*
+      of this hotfix, or leave to release tooling? — *Owner: Jesus Lara*: bump version.
 
 ---
 
