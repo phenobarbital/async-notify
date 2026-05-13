@@ -92,6 +92,27 @@ all = [
   "msgraph-sdk==1.22.0",
   "moviepy==2.2.1",
 ]
+dev = [
+  "aiounittest>=1.4.2",
+  "black>=24.10.0",
+  "build>=1.2.2",
+  "coverage[toml]>=7.6.0",
+  "flit>=3.10.1",
+  "hypothesis>=6.122.0",
+  "ipython>=8.18.1",
+  "mypy>=1.13.0",
+  "pylint>=3.3.0",
+  "pyperf>=2.8.0",
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=6.0.0",
+  "pytest-cython>=0.3.1",
+  "pytest-xdist>=3.6.1",
+  "pytest-assume>=2.4.3",
+  "sphinx>=7.4.0",
+  "tox>=4.23.0",
+  "twine>=6.0.0",
+]
 
 [project.scripts]
 notify = "notify.__main__:main"

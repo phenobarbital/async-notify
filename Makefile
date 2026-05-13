@@ -50,11 +50,11 @@ develop:
 
 # Alternative: install without lock file (faster for development)
 develop-fast:
-	uv pip install -e .[all]
+	uv pip install -e .[all,dev]
 
-# Setup development environment from requirements file (if you still have one)
+# Install development tooling (dev extra in pyproject.toml)
 setup:
-	uv pip install -r requirements/requirements-dev.txt
+	uv pip install -e .[dev]
 
 # Install in development mode using flit (if you want to keep flit)
 dev:
