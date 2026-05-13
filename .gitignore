@@ -157,3 +157,9 @@ templates/.compiled
 # uv-related
 uv.lock
 notify/_version.py
+
+# Claude Code / SDD local artifacts
+.claude/worktrees/
+.claude/settings.local.json
+sdd/tasks/active/
+artifacts/

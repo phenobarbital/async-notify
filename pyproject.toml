@@ -128,13 +128,18 @@ Funding = "https://paypal.me/phenobarbital"
 [tool.setuptools.dynamic]
 version = { attr = "notify.version.__version__" }
 
-# Package discovery
+# Package discovery — wheel scope is restricted to notify/* only.
+# `include` is the primary safeguard (mirrors ai-parrot's `where=["src"]
+# include=["parrot*"]` pattern for the flat layout); `exclude` is defense
+# in depth so a future stray top-level dir cannot leak into the wheel.
 [tool.setuptools.packages.find]
+include = ["notify*"]
 exclude = [
   "env*", "etc*", "bin*", "contrib*", "docs*", "documents*", "tests*",
   "examples*", "libraries*", "db*", "cache*", ".jupyter*", "locale*",
   "lab*", "notebooks*", "resources*", "static*", "templates*", "settings*",
-  "videos*"
+  "videos*",
+  "sdd*", ".claude*", "claude*", "agents*", "artifacts*",
 ]
 
 [tool.setuptools.package-data]
