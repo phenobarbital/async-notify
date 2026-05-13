@@ -52,7 +52,7 @@
       "feature_id": "FEAT-001",
       "feature": "NAV-8390-email-utf8",
       "spec": "sdd/specs/NAV-8390-email-utf8.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "S",
       "depends_on": [
@@ -62,8 +62,8 @@
       "parallelism_notes": "Touches only smtp/smtp.py; file-disjoint with TASK-002 and TASK-004. Sequential in the single hotfix worktree.",
       "assigned_to": null,
       "started_at": "2026-05-13T16:11:19+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-003-retrofit-smtp-py.md"
+      "completed_at": "2026-05-13T16:18:45+00:00",
+      "file": "sdd/tasks/completed/TASK-003-retrofit-smtp-py.md"
     },
     {
       "id": "TASK-004",
