@@ -1,7 +1,6 @@
 [build-system]
 requires = [
     "setuptools>=67.6.1",
-    "setuptools_scm[toml]>=6.0",
     "Cython==3.0.11",
     "wheel>=0.44.0"
 ]
@@ -13,6 +12,7 @@ dynamic = ["version"]
 description = "Asyncio-based Library for sending notifications (messages) to users."
 readme = "README.md"
 license = "BSD-3-Clause"
+license-files = ["LICENSE*"]
 requires-python = ">=3.10"
 authors = [{ name = "Jesus Lara Gimenez", email = "jesuslarag@gmail.com" }]
 keywords = ["asyncio", "notification", "telegram", "slack", "email"]
@@ -124,13 +124,7 @@ Documentation = "https://github.com/phenobarbital/async-notify/"
 Funding = "https://paypal.me/phenobarbital"
 "Say Thanks!" = "https://saythanks.io/to/phenobarbital"
 
-[tool.setuptools]
-license-files = ["LICENSE*"]
-
-# Versioning like ai-parrot: generate a _version.py AND keep current pattern reading notify.version.__version__
-[tool.setuptools_scm]
-write_to = "notify/_version.py"
-
+# Versioning like ai-parrot: dynamic version read from notify/version.py
 [tool.setuptools.dynamic]
 version = { attr = "notify.version.__version__" }
 
