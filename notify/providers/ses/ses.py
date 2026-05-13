@@ -1,12 +1,11 @@
 from typing import Optional, Union, Any
 from collections.abc import Callable
 import asyncio
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
 from navconfig.logging import logging
 from notify.providers.mail import ProviderEmail
+from notify.providers import _mime_utils as _mu
 from notify.models import Actor
 from notify.conf import (
     AWS_ACCESS_KEY_ID,
@@ -77,7 +76,23 @@ class Ses(ProviderEmail):
         self.authenticate = False
 
     async def _render_(self, to: Actor, message: str = None, subject: str = None, **kwargs):
-        """Create the email message."""
+        """Create a UTF-8-safe email message for AWS SES.
+
+        Delegates envelope and body construction to :mod:`_mime_utils`.
+        Template rendering is performed here (async) before the helper
+        (which is sync) assembles the MIME parts.
+
+        Args:
+            to: Recipient Actor.  Only ``to.account.address`` is read.
+            message: Plain-text body content.
+            subject: Email subject line.
+            **kwargs: Extra keyword arguments; ``body`` is tried as a
+                fallback body when no template is configured.
+
+        Returns:
+            A :class:`email.mime.multipart.MIMEMultipart` ready for
+            serialisation and delivery via SES ``send_raw_email``.
+        """
         if self._template:
             templateargs = {
                 "recipient": to,
@@ -92,13 +107,14 @@ class Ses(ProviderEmail):
                 content = kwargs["body"]
             except KeyError:
                 content = message
-        email_msg = MIMEMultipart("alternative")
-        email_msg["Subject"] = subject
-        email_msg["From"] = self.sender_email
-        email_msg["To"] = to.account.address
-        email_msg.attach(MIMEText(content, "plain"))
-        email_msg.attach(MIMEText(content, "html"))
-        return email_msg
+        msg = _mu.build_alternative_message(
+            sender=self.sender_email,
+            to=to.account.address,
+            subject=subject,
+        )
+        _mu.attach_text_part(msg, content or "", "plain")
+        _mu.attach_text_part(msg, content or "", "html")
+        return msg
 
     async def _send_(
         self,
