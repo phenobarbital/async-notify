@@ -75,6 +75,16 @@ MIME construction, replicated identically in `notify/providers/smtp/smtp.py`.
 - **Public API**: prefer no breaking changes to `ProviderEmail.send(...)` /
   `_render_(...)` / `add_attachment(...)` signatures. Internal-only fix.
 - **No new runtime dependencies** — stdlib `email.*` is enough.
+- **`aiosmtplib` floor bump (bundled)**: raise `aiosmtplib>=3.0.2` →
+  `aiosmtplib>=5.0` in `pyproject.toml` and regenerate `uv.lock`. The lock
+  already resolves to `aiosmtplib==5.1.0` against the existing loose floor, so
+  this is a "lock in what we already test against" change, not a real upgrade.
+  Our usage surface (`SMTP(hostname=, port=, start_tls=, tls_context=, …)`,
+  `SMTP.send_message(msg)`, `aiosmtplib.errors.SMTP*Error`,
+  `aiosmtplib.SMTPRecipientsRefused`) is unchanged from 3.x → 5.x; the only
+  removed kwarg in the window (`loop=`) is already commented out at
+  `mail.py:73`. 5.x also has improved `SMTPUTF8` / `8BITMIME` negotiation,
+  which complements the MIME-side fix.
 
 ---
 
@@ -322,6 +332,8 @@ No changes to the calling code are required — the fix is internal.
   `add_attachment` rewritten as thin wrappers over the new helper.
 - `provider-smtp` (`notify/providers/smtp/smtp.py`): same retrofit on the sync
   path.
+- `dependency-floor-aiosmtplib`: raise `aiosmtplib` lower bound to `>=5.0` (or
+  `>=5.1` — see open questions); regenerate `uv.lock`.
 
 ---
 
@@ -337,9 +349,12 @@ No changes to the calling code are required — the fix is internal.
 | `notify/providers/gmail/gmail.py` | unaffected | Overrides `_render_`, uses `gmail.Message`. |
 | `notify/providers/outlook/outlook.py` | unaffected | Overrides `_render_`, uses Microsoft Graph JSON. |
 | `tests/test_email_utf8.py` | adds | Offline pytest covering subject, body, addresses, attachment filename. |
+| `pyproject.toml` | modifies | `aiosmtplib>=3.0.2` → `aiosmtplib>=5.0` (one-line bump). |
+| `uv.lock` | modifies | Regenerated via `uv lock`; resolver already lands on 5.1.0. |
 
-No new runtime dependencies. No `pyproject.toml` change. No config or
-deployment change.
+No new runtime dependencies. No config or deployment change. The `aiosmtplib`
+floor bump locks in the version the test suite already runs against and is the
+only `pyproject.toml` edit in this work.
 
 ---
 
@@ -491,3 +506,7 @@ import mimetypes
   emails) into a single `parse_actor() -> (name, addr)` helper inside
   `_mime_utils`, or keep `actor` as opaque-string and only wrap addresses we
   already know are structured? — *Owner: implementer*
+- [ ] `aiosmtplib` floor: pin `>=5.0` (permissive — allows future 5.x patch
+  resolution on consumers) or `>=5.1` (matches what we lock and test against
+  exactly)? `>=5.0` is the default unless we hit a 5.0 regression worth
+  excluding. — *Owner: Jesus Lara*
