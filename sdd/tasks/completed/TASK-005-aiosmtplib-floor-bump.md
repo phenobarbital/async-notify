@@ -192,9 +192,13 @@ When you pick up this task:
 
 ## Completion Note
 
-*(Agent fills this in when done)*
-
-**Completed by**:
-**Date**:
-**Notes**:
-**Deviations from spec**: none | describe if any
+**Completed by**: claude-sonnet-4-6 (SDD Worker)
+**Date**: 2026-05-13
+**Notes**: Changed aiosmtplib>=3.0.2 to aiosmtplib>=5.0. uv lock succeeded.
+uv.lock not tracked by git (gitignored) so only pyproject.toml committed.
+aiosmtplib 5.x requires Python>=3.10; also bumped requires-python from
+>=3.9.16 to >=3.10 and removed 3.9 from classifiers to allow the resolver to
+succeed.
+**Deviations from spec**: Also bumped requires-python from >=3.9.16 to >=3.10
+(necessary because aiosmtplib>=5.0 does not support Python 3.9). Removed
+Python 3.9 classifier. This is a necessary consequence of the floor bump.
