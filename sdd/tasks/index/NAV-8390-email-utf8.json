@@ -14,7 +14,7 @@
       "feature_id": "FEAT-001",
       "feature": "NAV-8390-email-utf8",
       "spec": "sdd/specs/NAV-8390-email-utf8.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "S",
       "depends_on": [],
@@ -22,8 +22,8 @@
       "parallelism_notes": "Foundation. Runs first in the worktree. In principle disjoint from TASK-005 (manifest-only) and could run concurrently in separate worktrees, but per CLAUDE.md isolation model the hotfix runs sequentially in one worktree.",
       "assigned_to": null,
       "started_at": "2026-05-13T16:11:19+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-001-mime-utils-helper.md"
+      "completed_at": "2026-05-13T16:15:27+00:00",
+      "file": "sdd/tasks/completed/TASK-001-mime-utils-helper.md"
     },
     {
       "id": "TASK-002",

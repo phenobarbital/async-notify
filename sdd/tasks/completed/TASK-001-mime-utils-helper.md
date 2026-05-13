@@ -302,9 +302,15 @@ When you pick up this task:
 
 ## Completion Note
 
-*(Agent fills this in when done)*
-
-**Completed by**:
-**Date**:
-**Notes**:
-**Deviations from spec**: none | describe if any
+**Completed by**: claude-sonnet-4-6 (SDD Worker)
+**Date**: 2026-05-13
+**Notes**: Implemented all 5 functions per spec §2 Helper API. Removed
+`email_policy` import (unused after decision to not pass
+`policy=email.policy.SMTPUTF8` to MIMEMultipart constructor). Python 3.11
+EmailPolicy rejects Header objects via its header-factory, breaking RFC 2047
+Subject encoding. Used default compat32 policy so `Header(subject, 'utf-8')`
+assignment works and produces RFC 2047 encoded-word output.
+**Deviations from spec**: `policy=email.policy.SMTPUTF8` NOT passed to
+MIMEMultipart constructor (Python 3.11 incompatibility with Header objects).
+Default compat32 policy used; RFC 2047 encoding via Header() provides the
+required ASCII safety for non-SMTPUTF8 servers (spec §7 Risk #3).
