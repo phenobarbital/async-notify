@@ -133,7 +133,10 @@ class ProviderEmail(ProviderBase, ABC):
         # mail.py historically sets a 'sender' header (smtp.py omits it —
         # intentional asymmetry per spec §7 Risk #1).
         msg["sender"] = _mu.format_address(self.actor)
-        msg.preamble = subject or ""
+        # preamble is a fallback text for non-MIME-capable clients; must be
+        # ASCII. Set to empty string so as_bytes() serialises cleanly even
+        # when subject contains non-ASCII characters.
+        msg.preamble = ""
 
         if message:
             _mu.attach_text_part(msg, message, "plain")

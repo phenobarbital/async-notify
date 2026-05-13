@@ -172,7 +172,8 @@ class SMTP(ProviderBase):
         # NOTE: smtp.py historically did NOT set msg["sender"] (it was
         # commented out at the original line ~193). Intentional asymmetry
         # with mail.py — preserved per spec §7 Risk #1.
-        msg.preamble = subject or ""
+        # preamble must be ASCII (fallback for non-MIME clients); empty is safe.
+        msg.preamble = ""
 
         if message:
             _mu.attach_text_part(msg, message, "plain")
