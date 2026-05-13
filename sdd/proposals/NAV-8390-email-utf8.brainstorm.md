@@ -1,10 +1,9 @@
 ---
 # FEAT-145 flow-type fields.
-# Bug-only fix touching production email path. Could be reasonably argued either
-# way (feature/dev vs hotfix/main). Defaulting to feature/dev — flip to
-# hotfix/main if Ops wants this on the next patch release of async-notify.
-type: feature
-base_branch: dev
+# Resolved during Q&A (see §Open Questions): ship as a hotfix off main for
+# the 1.5.6 patch release. No new features bundled.
+type: hotfix
+base_branch: main
 jira: NAV-8390
 jira_summary: "error con emails en UTF-8 en notify"
 jira_type: Bug
@@ -491,22 +490,22 @@ import mimetypes
 
 ## Open Questions
 
-- [ ] Should `notify/providers/mail.py:_prepare_message` (lines 112–131) be
+- [x] Should `notify/providers/mail.py:_prepare_message` (lines 112–131) be
   deleted as part of this fix? It appears unreferenced — `send()` calls
   `_prepare_` (from `ProviderBase`), not `_prepare_message`. Confirm via grep
-  before removing. — *Owner: implementer*
-- [ ] Do we want `notify/providers/ses/` (separate SES provider, if present)
+  before removing. — *Owner: implementer*: remove if not used.
+- [x] Do we want `notify/providers/ses/` (separate SES provider, if present)
   audited for the same pattern in the same PR, or kept as a follow-up?
-  (`tests/test_ses.py` exists; the provider lives elsewhere.) — *Owner: Jesus Lara*
-- [ ] Should the fix ship via a `1.5.6` patch release or wait for the next
+  (`tests/test_ses.py` exists; the provider lives elsewhere.) — *Owner: Jesus Lara*: yes, audited.
+- [x] Should the fix ship via a `1.5.6` patch release or wait for the next
   feature batch? Affects whether `type:` flips to `hotfix` and `base_branch:` to
-  `main`. — *Owner: Jesus Lara*
-- [ ] Display-name encoding: should we centralize parsing of the `actor`
+  `main`. — *Owner: Jesus Lara*: patch release as hotfix, no new features, from main
+- [x] Display-name encoding: should we centralize parsing of the `actor`
   attribute (currently a string like `"Name <addr@host>"` mixed with bare
   emails) into a single `parse_actor() -> (name, addr)` helper inside
   `_mime_utils`, or keep `actor` as opaque-string and only wrap addresses we
-  already know are structured? — *Owner: implementer*
-- [ ] `aiosmtplib` floor: pin `>=5.0` (permissive — allows future 5.x patch
+  already know are structured? — *Owner: implementer*: I'm agree.
+- [x] `aiosmtplib` floor: pin `>=5.0` (permissive — allows future 5.x patch
   resolution on consumers) or `>=5.1` (matches what we lock and test against
   exactly)? `>=5.0` is the default unless we hit a 5.0 regression worth
-  excluding. — *Owner: Jesus Lara*
+  excluding. — *Owner: Jesus Lara*: pin permissive.
