@@ -167,6 +167,8 @@ class Ses(ProviderEmail):
 
         Send Email Messages using Amazon SES Templates.
         """
+        if self.session is None:
+            await self.connect()
         # template (or message) for preparation
         message = await self._prepare_(
             recipient=recipient,
