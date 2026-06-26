@@ -1,8 +1,7 @@
 [build-system]
 requires = [
     "setuptools>=67.6.1",
-    "setuptools_scm[toml]>=6.0",
-    "Cython==3.0.11",
+    "Cython>=3.1.2",
     "wheel>=0.44.0"
 ]
 build-backend = "setuptools.build_meta"
@@ -13,7 +12,8 @@ dynamic = ["version"]
 description = "Asyncio-based Library for sending notifications (messages) to users."
 readme = "README.md"
 license = "BSD-3-Clause"
-requires-python = ">=3.9.16"
+license-files = ["LICENSE*"]
+requires-python = ">=3.11"
 authors = [{ name = "Jesus Lara Gimenez", email = "jesuslarag@gmail.com" }]
 keywords = ["asyncio", "notification", "telegram", "slack", "email"]
 classifiers = [
@@ -22,10 +22,10 @@ classifiers = [
   "Intended Audience :: System Administrators",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Typing :: Typed",
   "Environment :: Web Environment",
   "Framework :: AsyncIO",
@@ -35,9 +35,9 @@ classifiers = [
 # Core runtime deps (lifted from your previous setup.py)
 dependencies = [
   "uvloop>=0.20.0",
-  "aiosmtplib>=3.0.2",
+  "aiosmtplib>=5.0",
   "python-datamodel>=0.3.12",
-  "navconfig[default]>=1.7.0",
+  "navconfig[default]>=2.2.0",
   "jinja2>=3.1.4",
   "cloudpickle>=3.1.0",
   "emoji>=1.7.0,<2.15.0",
@@ -65,10 +65,10 @@ google = [
 azure = [
   "pyo365==0.1.3",
   "o365==2.0.37",
-  "msal>=1.22.0,<1.32.0",
+  "msal>=1.32.0",
   "Office365-REST-Python-Client==2.5.13",
   "msgraph-core==1.3.2",
-  "azure-identity==1.20.0",
+  "azure-identity>=1.23.0",
   "msgraph-sdk==1.22.0",
 ]
 all = [
@@ -78,7 +78,7 @@ all = [
   "onesignal-sdk==2.0.0",
   "o365==2.0.37",
   "Office365-REST-Python-Client==2.5.13",
-  "msal>=1.22.0,<=1.32.0",
+  "msal>=1.32.0",
   "PySocks==1.7.1",
   "pyshorteners==1.0.1",
   "twilio==8.2.2",
@@ -88,7 +88,7 @@ all = [
   "aiobotocore[boto3]==2.15.2",
   "qworker>=1.12.7",
   "msgraph-core==1.3.2",
-  "azure-identity==1.20.0",
+  "azure-identity>=1.23.0",
   "msgraph-sdk==1.22.0",
   "moviepy==2.2.1",
 ]
@@ -125,23 +125,22 @@ Documentation = "https://github.com/phenobarbital/async-notify/"
 Funding = "https://paypal.me/phenobarbital"
 "Say Thanks!" = "https://saythanks.io/to/phenobarbital"
 
-[tool.setuptools]
-license-files = ["LICENSE*"]
-
-# Versioning like ai-parrot: generate a _version.py AND keep current pattern reading notify.version.__version__
-[tool.setuptools_scm]
-write_to = "notify/_version.py"
-
+# Versioning like ai-parrot: dynamic version read from notify/version.py
 [tool.setuptools.dynamic]
 version = { attr = "notify.version.__version__" }
 
-# Package discovery
+# Package discovery — wheel scope is restricted to notify/* only.
+# `include` is the primary safeguard (mirrors ai-parrot's `where=["src"]
+# include=["parrot*"]` pattern for the flat layout); `exclude` is defense
+# in depth so a future stray top-level dir cannot leak into the wheel.
 [tool.setuptools.packages.find]
+include = ["notify*"]
 exclude = [
   "env*", "etc*", "bin*", "contrib*", "docs*", "documents*", "tests*",
   "examples*", "libraries*", "db*", "cache*", ".jupyter*", "locale*",
   "lab*", "notebooks*", "resources*", "static*", "templates*", "settings*",
-  "videos*"
+  "videos*",
+  "sdd*", ".claude*", "claude*", "agents*", "artifacts*",
 ]
 
 [tool.setuptools.package-data]
