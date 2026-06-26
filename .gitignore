@@ -8,6 +8,9 @@ __pycache__
 # C extensions
 *.so
 *.pyc
+# Cython-generated C sources (regenerated from .pyx at build time)
+notify/exceptions.c
+notify/types/typedefs.c
 # External Extensions
 dist/*
 build/*
