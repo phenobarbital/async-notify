@@ -9,6 +9,7 @@ from azure.identity.aio import (
 )
 from azure.identity import UsernamePasswordCredential
 from msgraph import GraphServiceClient
+from ._msgraph_patch import patch_graph_host_os_header
 from msgraph.generated.models.chat import Chat
 from msgraph.generated.models.chat_type import ChatType
 from msgraph.generated.models.chat_message import ChatMessage
@@ -50,6 +51,10 @@ logging.getLogger('azure').setLevel(logging.WARNING)
 logging.getLogger('hpack').setLevel(logging.INFO)
 # disable aiohttp debug:
 logging.getLogger('aiohttp').setLevel(logging.INFO)
+
+# Sanitise the msgraph-core HostOs telemetry header so trailing-space kernel
+# versions don't trigger h11 "Illegal header value" on Graph API requests.
+patch_graph_host_os_header()
 
 
 class Teams(ProviderIM):
