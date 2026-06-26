@@ -21,7 +21,7 @@ jobs:
           CIBW_SKIP: "*-musllinux*"
           CIBW_ARCHS_LINUX: x86_64
           CIBW_BUILD_FRONTEND: build
-          CIBW_BEFORE_ALL_LINUX: "yum install -y libmemcached-devel openssl-devel zlib-devel || apt-get update && apt-get install -y libmemcached-dev libssl-dev zlib1g-dev"
+          CIBW_BEFORE_ALL_LINUX: "yum install -y libmemcached-devel openssl-devel zlib-devel"
           CIBW_TEST_SKIP: "*"
         with:
           output-dir: dist
