@@ -130,7 +130,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -141,8 +141,8 @@
       "parallelism_notes": "Exercises the lazy singleton from TASK-010 and the ProviderBase seam. Ordered after TASK-012 because both create test modules that manipulate notify imports; running them from one worktree avoids sys.modules interference between suites.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-013-integration-tests-lazy-env.md"
+      "completed_at": "2026-08-06T16:42:41+00:00",
+      "file": "sdd/tasks/completed/TASK-013-integration-tests-lazy-env.md"
     }
   ]
 }
