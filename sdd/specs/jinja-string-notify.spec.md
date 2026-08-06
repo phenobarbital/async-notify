@@ -79,15 +79,20 @@ Telegram, Slack, Teams, Twilio — with no per-provider edits at all.
   either interpretation when the heuristic cannot decide.
 - **G7** — Works unchanged through the Notify Server path, since
   `NotifyWrapper` already forwards arbitrary kwargs to `send()`.
+- **G8** — `notify/models.py::Message.template` widens from `Path` to
+  `Union[Path, str]` so the model can carry inline source as well as a
+  filename, keeping it consistent with the new `send()` semantics
+  (§9 Q5, resolved by the author at approval time).
 
 ### Non-Goals (explicitly out of scope)
 
 - **A separate `template_string=` keyword.** Overloading `template=` was chosen
   deliberately over a second keyword (§9 Q1). `template_string` must NOT be
   introduced.
-- **Changing `Message.template: Path`** (`notify/models.py:93`). The
-  `datamodel` model keeps its `Path` type; this spec changes the `send()`
-  keyword path only. Widening the model is a separate conversation.
+- **Wiring `Message` / `BlockMessage` / `MailMessage` into the send path.**
+  G8 widens the `template` *field type* only. Those models have **no consumers
+  inside `notify/`** (verified — see §6), and this spec does not change that.
+  `send()` keeps taking `template=` as a plain keyword.
 - **Fixing OneSignal.** `Onesignal.send()` (`notify/providers/onesignal/onesignal.py:93`)
   overrides `send()` without ever calling `_prepare_`, so templates — file *or*
   string — do not work there today and will not after this feature. Documented
@@ -214,7 +219,7 @@ caller
 | `notify/providers/onesignal/onesignal.py::Onesignal.send` | **unchanged (still unsupported)** | Never calls `_prepare_`; see §7 R7. |
 | `notify/server/wrapper.py::NotifyWrapper` | **unchanged** | Already forwards `**self.kwargs` into `send()` (`wrapper.py:70-78`); string templates traverse the Redis path with no change. |
 | `notify/notify.py::TemplateEnv` | **unchanged** | Still the process-wide singleton; now also owns the string cache. |
-| `notify/models.py::Message.template` | **unchanged** | Stays `Path`; explicitly a non-goal. |
+| `notify/models.py::Message.template` | **widens** | `Path` → `Union[Path, str]` (G8). Inherited by `BlockMessage` and `MailMessage`. No consumers inside `notify/` — see §6. |
 
 ### Data Models
 
@@ -356,19 +361,29 @@ await Notify("telegram").send(
   No other method in the file changes.
 - **Depends on**: Module 1.
 
-### Module 3: Test suite
+### Module 3: Widen `Message.template`
+- **Path**: `notify/models.py`
+- **Responsibility**: Change `template: Path` (`notify/models.py:93`) to
+  `template: Union[Path, str]`, so `Message` (and its subclasses
+  `BlockMessage`, `MailMessage`) can carry inline Jinja source. `Union` is
+  already imported at `notify/models.py:3`; `Path` at `:4`. No other line in
+  the file changes.
+- **Depends on**: nothing. Shares no file with any other module in this spec.
+
+### Module 4: Test suite
 - **Path**: `tests/test_jinja_string_templates.py`
 - **Responsibility**: The offline suite in §4. Includes a concrete
   `ProviderBase` subclass fixture that records what `_prepare_` produced, so the
   provider-agnostic claim (G2) is actually asserted rather than assumed.
-- **Depends on**: Modules 1–2.
+- **Depends on**: Modules 1–3.
 
-### Module 4: Documentation
-- **Path**: `docs/api.rst`, `docs/providers.rst`, `README.md`
+### Module 5: Documentation + version bump
+- **Path**: `docs/api.rst`, `docs/providers.rst`, `README.md`, `notify/version.py`
 - **Responsibility**: Document the overloaded `template=` argument, the
   detection rules, `template_is_source=`, the cache and its `string_cache_size`
-  knob, and the §7 R10 security note about untrusted template source.
-- **Depends on**: Modules 1–2.
+  knob, the widened `Message.template`, and the §7 R10 security note about
+  untrusted template source. Bump `__version__` to `1.6.0`.
+- **Depends on**: Modules 1–3.
 
 ---
 
@@ -409,6 +424,9 @@ directories are built with `tmp_path`.
 | `test_prepare_force_source_false` | 2 | `template="{{ x }}", template_is_source=False` routes to `get_template()` and raises `FileNotFoundError`. |
 | `test_prepare_missing_file_still_raises_filenotfound` | 2 | A filename-shaped value that does not exist keeps raising `FileNotFoundError`. |
 | `test_prepare_source_syntax_error_propagates` | 2 | Bad source surfaces the `ValueError` from Module 1 rather than a `FileNotFoundError`. |
+| `test_message_template_accepts_path` | 3 | `Message(name="x", template=Path("a.html"))` still constructs — regression guard for the widening. |
+| `test_message_template_accepts_str` | 3 | `Message(name="x", template="{{ who }}")` constructs and round-trips the string unchanged (not coerced to `Path`). |
+| `test_blockmessage_inherits_widened_template` | 3 | `BlockMessage` accepts a `str` template, proving the widening is inherited. |
 
 ### Integration Tests
 
@@ -486,10 +504,10 @@ def dummy_provider(parser, monkeypatch):
 - [ ] Cache mutation is guarded by a lock (the parser is a process-wide singleton reachable from `blocking='executor'` and thread-based providers)
 - [ ] Malformed source raises `ValueError` carrying `"Notify:"` and the offending line number — never `FileNotFoundError`, never a bare `jinja2.TemplateSyntaxError`
 - [ ] `from_string()` rejects empty/blank/non-`str` input with `ValueError`
-- [ ] **No provider file under `notify/providers/*/` is modified** — the diff touches only `notify/templates.py`, `notify/providers/base.py`, `tests/`, `docs/` and `README.md`
+- [ ] **No provider file under `notify/providers/*/` is modified** — the diff touches only `notify/templates.py`, `notify/providers/base.py`, `notify/models.py`, `notify/version.py`, `tests/`, `docs/` and `README.md`
 - [ ] `_prepare_` remains the single definition in the package (no provider override introduced)
-- [ ] `notify/models.py::Message.template` is unchanged
-- [ ] `docs/` and `README.md` document the overloaded `template=`, the detection rules, `template_is_source=`, `string_cache_size` and the §7 R10 security note
+- [ ] `notify/models.py::Message.template` is `Union[Path, str]` and accepts both a `Path` and a `str`; `BlockMessage` inherits the widening; no other line of `notify/models.py` changes
+- [ ] `docs/` and `README.md` document the overloaded `template=`, the detection rules, `template_is_source=`, `string_cache_size`, the widened `Message.template` and the §7 R10 security note
 - [ ] `notify/version.py` is bumped to `1.6.0`
 - [ ] No breaking changes to the existing public API
 - [ ] Google-style docstrings with strict type hints on every new/changed function and method
@@ -629,9 +647,33 @@ class NotifyWrapper:
 
 ```python
 # notify/models.py
+from typing import Any, List, Union, Optional, Literal      # line 3  ← Union already imported
+from pathlib import Path                                    # line 4  ← Path already imported
+from datamodel import BaseModel, Column, Field              # line 9
+
 class Message(BaseModel):                                   # line 80
-    template: Path                                          # line 93  ← UNCHANGED (non-goal)
+    name: str = Field(required=True, default=auto_uuid)     # line 89
+    body: Union[str, dict] = Field(default=None)            # line 90
+    content: str = Field(required=False, default="")        # line 91
+    sent: datetime = Field(required=False, default=now)     # line 92
+    template: Path                                          # line 93  ← WIDENED to Union[Path, str] (G8)
+
+class BlockMessage(Message): ...                            # line 108 — inherits `template`
+class MailMessage(BlockMessage): ...                        # line 137 — inherits `template`
 ```
+
+**`notify.models.Message` has NO consumers inside `notify/`.** Verified via
+`grep -rn "Message" notify/ --include=*.py`: the only two `Message(` call sites
+in the package import the name from **third-party** libraries, not from
+`notify.models` —
+
+| File | Line | Import source |
+|---|---|---|
+| `notify/providers/office365/office365.py` | 13 | `from O365 import (…, Message, …)` |
+| `notify/providers/gmail/gmail.py` | 10 | `from gmail import GMail as GMailWorker, Message` |
+
+This is why widening the field type is contained: nothing inside the package
+constructs or reads `notify.models.Message.template`.
 
 ### Consumers of the rendering path (all UNCHANGED by this spec)
 
@@ -714,7 +756,7 @@ Verified via `grep -rn '    async def send(' notify/`:
   (`template="Hello world"`) is indistinguishable from a filename and will be
   resolved on disk, raising `FileNotFoundError`. This is the known cost of
   overloading `template=` instead of adding a second keyword (§9 Q1).
-  *Mitigation*: `template_is_source=True`; documented prominently in Module 4.
+  *Mitigation*: `template_is_source=True`; documented prominently in Module 5.
   Note that such a template has no variables, so the realistic blast radius is
   small — but the failure mode must be documented, not hidden.
 - **R2 — Heuristic false positive would be a breaking change.** If the rules
@@ -773,7 +815,7 @@ Verified via `grep -rn '    async def send(' notify/`:
   loops, registered globals and filters — and emits unescaped output. Template
   **source** must come from trusted operators (config, DB rows written by
   staff), never from end-user input; end-user data belongs in the **params**,
-  which are just variables. This must be stated explicitly in the Module 4 docs,
+  which are just variables. This must be stated explicitly in the Module 5 docs,
   next to the feature's own usage example.
 - **R11 — Pre-existing: sync render inside a running event loop.** With
   `enable_async=True`, `jinja2.Template.render()` runs `loop.run_until_complete`,
@@ -795,9 +837,21 @@ stdlib. No `pyproject.toml` change is required.
 ## 8. Worktree Strategy
 
 - **Default isolation unit**: `per-spec`.
-- All four modules run **sequentially in one worktree**. Module 2 cannot be
-  written before Module 1's `from_string()` exists, Module 3 exercises both, and
-  Module 4 documents the final signatures. There is no parallelism to win here.
+- All five modules run **sequentially in one worktree**. Module 2 cannot be
+  written before Module 1's `from_string()` exists, Module 4 exercises both, and
+  Module 5 documents the final signatures.
+- Modules 3 (`notify/models.py`) and 5 (`docs/`, `README.md`, `version.py`)
+  share no file with any other module and are therefore marked
+  `parallel: true` in the task index — they *could* run in separate worktrees.
+  Given the feature is five small tasks, running them sequentially in the one
+  per-spec worktree remains the recommended path; the flag records the
+  file-level independence, not an instruction to fan out.
+- **Module 3 is independently droppable.** It implements §9 Q5 (widening
+  `Message.template`). If that decision is reversed, delete its task and its
+  three tests; no other task references `notify/models.py`.
+- Module 5 bumps `notify/version.py` to `1.6.0`. **FEAT-002 bumps the same
+  file to the same value**, so expect a trivial both-added conflict there on
+  whichever branch merges second.
 - **Cross-feature dependencies**: none *declared* — this spec is deliberately
   independent of FEAT-002 (§9 Q2). But both features edit `notify/templates.py`,
   so the two worktrees will conflict textually on merge. Whichever lands second
@@ -847,9 +901,17 @@ Remaining for implementation time:
 - [ ] Decide whether a provider-level default (`Notify("smtp", template_is_source=True)`
   honoured by `_prepare_`) is worth a follow-up spec. Deliberately **not**
   implemented here; see §7 R9 — *Owner: Jesus Lara*
-- [x] Decide whether `notify/models.py::Message.template` should later widen from
-  `Path` to `Union[Path, str]` so the model can carry inline source too —
-  *Owner: Jesus Lara*: Yes
+- [x] **(Q5)** Decide whether `notify/models.py::Message.template` should widen
+  from `Path` to `Union[Path, str]` so the model can carry inline source too —
+  *Owner: Jesus Lara*: **Yes**.
+  *Routed into*: §1 G8 (new goal, replacing the former non-goal), §2
+  Integration Points, §3 Module 3, §4 (three model tests), §5, §6 (models
+  contract + the "no consumers" evidence table), §8.
+  *Assumption recorded*: the question asked whether the model should widen
+  "later"; it is being implemented **inside FEAT-003** rather than deferred to
+  a follow-up spec, because it is a one-line type change with no consumers in
+  the package. It is isolated in its own task so it can be dropped from this
+  feature without touching any other task if that reading is wrong.
 
 ---
 

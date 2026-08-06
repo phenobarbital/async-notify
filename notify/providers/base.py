@@ -16,6 +16,7 @@ from notify.exceptions import (
     ProviderError
 )
 from notify.models import Actor
+from notify.templates import is_template_source
 from .message import ThreadMessage
 
 
@@ -117,13 +118,25 @@ class ProviderBase(ABC):
         self,
         recipient: Actor = None,
         message: Union[str, Any] = None,
-        template: str = None,
+        template: Optional[str] = None,
+        template_is_source: Optional[bool] = None,
         **kwargs,
     ):  # pylint: disable=W0613
         """
         _prepare.
 
         Prepare a Message for Sending.
+
+        Args:
+            recipient: Target Actor (used for ``format_map`` interpolation).
+            message: Raw message body.
+            template: Either a template **filename** resolved through
+                ``TEMPLATE_DIR``, or raw Jinja2 **source text**. The two are
+                discriminated by :func:`notify.templates.is_template_source`
+                unless *template_is_source* forces the choice.
+            template_is_source: ``None`` (default) auto-detects; ``True``
+                forces *template* to be compiled as source; ``False`` forces
+                filesystem resolution, i.e. exact 1.5.7 semantics.
         """
         if self._kwargs:
             try:
@@ -138,8 +151,16 @@ class ProviderBase(ABC):
         else:
             msg = message
         if template:
-            # Getting Template from Template Parser.
-            self._template = self._tpl.get_template(template)
+            if template_is_source is None:
+                use_source = is_template_source(template)
+            else:
+                use_source = bool(template_is_source)
+            if use_source:
+                # Compiling caller-supplied Jinja2 source.
+                self._template = self._tpl.from_string(template)
+            else:
+                # Getting Template from Template Parser.
+                self._template = self._tpl.get_template(template)
         else:
             self._template = None
         return msg
