@@ -32,7 +32,7 @@
       "feature_id": "FEAT-003",
       "feature": "jinja-string-notify",
       "spec": "sdd/specs/jinja-string-notify.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "S",
       "depends_on": [
@@ -42,8 +42,8 @@
       "parallelism_notes": "Imports is_template_source and calls from_string, both introduced by TASK-014 — cannot compile before it. Edits notify/providers/base.py, which no other task in this feature touches, but the import dependency forces sequencing.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:46:27+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-015-prepare-dispatch.md"
+      "completed_at": "2026-08-06T15:55:30+00:00",
+      "file": "sdd/tasks/completed/TASK-015-prepare-dispatch.md"
     },
     {
       "id": "TASK-016",

@@ -355,10 +355,30 @@ When you pick up this task:
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Added `from notify.templates import is_template_source` at module
+level in `notify/providers/base.py` and replaced the `if template:` block
+(lines 140-144) with the three-way dispatch from spec §2/§3 Module 2. Added
+`template_is_source: Optional[bool] = None` immediately after `template`
+and before `**kwargs`, widened `template` to `Optional[str]`, kept the
+`# pylint: disable=W0613` comment, and extended the docstring to
+Google-style covering both new args. `message.format_map(SafeDict(...))`
+block untouched. Verified by hand (no `pytest-asyncio` harness available
+standalone, so exercised via a `Dummy(ProviderBase)` fixture identical to
+the task's Test Specification, run through `asyncio.run`): source bypasses
+`get_template` (patched to raise if called), filename routes through
+`get_template` unchanged, `None`/`""` template → `self._template is None`,
+`template_is_source=True` forces source compilation, `template_is_source=False`
+forces filesystem lookup and raises `FileNotFoundError`, a missing-file
+filename still raises `FileNotFoundError`, and malformed source surfaces
+TASK-014's `ValueError` (never `FileNotFoundError`). `git diff --name-only`
+confirms only `notify/providers/base.py` changed; `grep -rn "def _prepare_" notify/`
+still returns exactly one hit. `ruff check notify/providers/base.py`: only
+the pre-existing `I001` (import sort) and `F401` (unused `ProviderError`)
+findings remain, both confirmed present on baseline `dev` before this
+change — left untouched, out of scope. Full suite `pytest tests/ -v`: 59
+passed, 2 failed, 3 errors — identical to baseline `dev` (pre-existing,
+unrelated AWS region / event-loop fixture issues).
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**: What was implemented, any deviations from scope, issues encountered.
-
-**Deviations from spec**: none | describe if any
+**Deviations from spec**: none.
