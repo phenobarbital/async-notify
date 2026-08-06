@@ -171,3 +171,6 @@ ai_fluency_report.html
 # sessions must see in-flight task files (see CLAUDE.md, "SDD Auto-Commit Rule").
 # parrot LLM-wiki state (local retrieval plane)
 .parrot/
+# navconfig scaffolds an empty plugins/{agents,tools} tree at BASE_DIR on
+# import; it is not part of async-notify and must not be tracked.
+plugins/
