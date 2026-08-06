@@ -10,7 +10,7 @@ base_branch: dev
 **Feature ID**: FEAT-003
 **Date**: 2026-08-06
 **Author**: Jesus Lara
-**Status**: draft
+**Status**: approved
 **Target version**: 1.6.0
 
 ---
@@ -847,9 +847,9 @@ Remaining for implementation time:
 - [ ] Decide whether a provider-level default (`Notify("smtp", template_is_source=True)`
   honoured by `_prepare_`) is worth a follow-up spec. Deliberately **not**
   implemented here; see §7 R9 — *Owner: Jesus Lara*
-- [ ] Decide whether `notify/models.py::Message.template` should later widen from
+- [x] Decide whether `notify/models.py::Message.template` should later widen from
   `Path` to `Union[Path, str]` so the model can carry inline source too —
-  *Owner: Jesus Lara*
+  *Owner: Jesus Lara*: Yes
 
 ---
 
