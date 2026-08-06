@@ -169,3 +169,5 @@ artifacts/
 ai_fluency_report.html
 # NOTE: sdd/tasks/active/ is intentionally TRACKED — worktrees and other
 # sessions must see in-flight task files (see CLAUDE.md, "SDD Auto-Commit Rule").
+# parrot LLM-wiki state (local retrieval plane)
+.parrot/
