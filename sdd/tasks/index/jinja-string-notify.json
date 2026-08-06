@@ -70,7 +70,7 @@
       "feature_id": "FEAT-003",
       "feature": "jinja-string-notify",
       "spec": "sdd/specs/jinja-string-notify.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -82,8 +82,8 @@
       "parallelism_notes": "Exercises the full surface produced by TASK-014, TASK-015 and TASK-016 — every one must be complete first. Creates tests/test_jinja_string_templates.py and touches nothing under notify/.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:46:27+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-017-offline-test-suite.md"
+      "completed_at": "2026-08-06T16:27:30+00:00",
+      "file": "sdd/tasks/completed/TASK-017-offline-test-suite.md"
     },
     {
       "id": "TASK-018",
