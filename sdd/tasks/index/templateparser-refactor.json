@@ -14,7 +14,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [],
@@ -22,8 +22,8 @@
       "parallelism_notes": "Foundation task. Rewrites the TemplateParser constructor and environment in notify/templates.py; TASK-008 and TASK-009 edit the same file, and TASK-010 depends on the tolerant-directory behaviour introduced here. Must run first.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-007-jinjaconfig-and-environment.md"
+      "completed_at": "2026-08-06T15:47:07+00:00",
+      "file": "sdd/tasks/completed/TASK-007-jinjaconfig-and-environment.md"
     },
     {
       "id": "TASK-008",

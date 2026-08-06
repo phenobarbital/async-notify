@@ -266,10 +266,20 @@ Use `.venv/bin/python` directly — `.venv/bin/activate` carries a stale
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Implemented `JinjaConfig` dataclass, rewrote `TemplateParser.__init__`
+per spec §2, layered `ChoiceLoader(DictLoader + FileSystemLoader)`, tolerant
+optional-extension loading, opt-in `FileSystemBytecodeCache`, removed the
+unconditional `compile_templates()` call, degraded missing directories to a
+warning (with `strict_directory=True` opt-out), and kept `jinja_config` as a
+deprecated dict alias. Verified manually: memory-only mode, missing-dir
+warning/strict paths, legacy dict `config=` merge, `JinjaConfig` instance not
+mutated across two parsers, `TEMPLATE_DEBUG` extension not leaking across
+instances, whitespace/autoescape defaults unchanged, no `.compiled` artifact
+written. `ruff check notify/templates.py` is clean. Full `pytest tests/ -v`
+run: 59 passed, 2 failed + 3 errors — all pre-existing on `dev` baseline
+(AWS SES mock region format, Outlook event-loop fixture issue), unrelated to
+this change and reproduced identically before this task's edits.
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**:
-
-**Deviations from spec**: none | describe if any
+**Deviations from spec**: none
