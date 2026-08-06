@@ -1,6 +1,7 @@
 import importlib
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
+from dataclasses import fields as dataclass_fields
 from pathlib import Path
 from typing import Any
 
@@ -137,6 +138,14 @@ class TemplateParser:
         self.filters = filters
 
         # --- Resolve JinjaConfig (dataclass instance, dict, or defaults) ---
+        # Legacy dict callers may pass arbitrary jinja2.Environment kwargs
+        # (e.g. variable_start_string=) that are not JinjaConfig fields.
+        # Pre-refactor (templates.py:33-36) these were shallow-merged and
+        # splatted straight into Environment(**self.config) — preserve that
+        # by routing anything outside JinjaConfig's field set straight
+        # through to the Environment() call at the end of __init__, instead
+        # of rejecting it.
+        extra_env_kwargs: dict[str, Any] = {}
         if isinstance(config, JinjaConfig):
             # Never mutate a caller-supplied JinjaConfig (spec §7 R7):
             # deep-copy its mutable fields before touching anything.
@@ -156,8 +165,11 @@ class TemplateParser:
         elif isinstance(config, dict):
             # Legacy behaviour (templates.py:33-36 pre-refactor): shallow
             # merge over the defaults.
+            known_fields = {f.name for f in dataclass_fields(JinjaConfig)}
+            known_overrides = {k: v for k, v in config.items() if k in known_fields}
+            extra_env_kwargs = {k: v for k, v in config.items() if k not in known_fields}
             base = JinjaConfig()
-            merged = {**base.__dict__, **config}
+            merged = {**base.__dict__, **known_overrides}
             cfg = JinjaConfig(**merged)
         else:
             cfg = JinjaConfig()
@@ -241,6 +253,7 @@ class TemplateParser:
             "trim_blocks": cfg.trim_blocks,
             "lstrip_blocks": cfg.lstrip_blocks,
             "keep_trailing_newline": cfg.keep_trailing_newline,
+            **extra_env_kwargs,
         }
         # initialize the environment
         try:
@@ -362,6 +375,11 @@ class TemplateParser:
             FileSystemLoader([str(d) for d in self._fs_dirs]),
         ])
         self.env.loader = self._choice_loader
+        # A name already resolved (and cached) from an earlier directory
+        # must not keep winning over a template newly reachable through
+        # this one — same cache-invalidation rationale as add_templates().
+        if self.env.cache is not None:
+            self.env.cache.clear()
 
     def add_templates(self, templates: Mapping[str, str]) -> None:
         """Register or override in-memory templates.
@@ -373,6 +391,13 @@ class TemplateParser:
             templates: Mapping of template name to template source.
         """
         self._dict_loader.mapping.update(templates)
+        # jinja2.Environment.get_template() consults its own template
+        # cache before the loader chain. Without invalidating it, a name
+        # already rendered from the filesystem keeps winning over an
+        # in-memory override registered afterwards — clear it so the
+        # shadowing guarantee above actually holds for already-cached names.
+        if self.env.cache is not None:
+            self.env.cache.clear()
 
     def add_filters(self, filters: Mapping[str, Callable]) -> None:
         """Bulk-register custom template filters.

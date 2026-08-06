@@ -82,6 +82,22 @@ def test_config_dict_legacy_merge(template_dir: Path):
     assert p.environment.is_async is False
 
 
+def test_config_dict_accepts_arbitrary_environment_kwargs(template_dir: Path):
+    """Legacy ``config=`` dict keys outside ``JinjaConfig``'s fields still
+    reach ``jinja2.Environment`` directly (spec §2 backward-compat contract).
+
+    Regression guard: pre-refactor, ``config={...}`` was shallow-merged and
+    splatted straight into ``Environment(**self.config)``, so any
+    ``Environment`` kwarg worked (e.g. ``variable_start_string=``). Routing
+    the dict exclusively through ``JinjaConfig(**merged)`` would reject any
+    key that isn't a declared ``JinjaConfig`` field.
+    """
+    p = TemplateParser(
+        directory=template_dir, config={"variable_start_string": "[["}
+    )
+    assert p.environment.variable_start_string == "[["
+
+
 def test_config_instance_not_mutated(template_dir: Path):
     """A shared ``JinjaConfig`` must not accumulate directories (spec §7 R7)."""
     cfg = JinjaConfig()
@@ -184,6 +200,22 @@ def test_add_templates_in_memory(parser: TemplateParser):
 
 def test_in_memory_shadows_filesystem(parser: TemplateParser):
     """An in-memory template with the same name takes precedence over the on-disk one."""
+    parser.add_templates({"hello.html": "OVERRIDDEN"})
+    assert parser.render("hello.html") == "OVERRIDDEN"
+
+
+def test_in_memory_shadows_already_cached_filesystem_template(parser: TemplateParser):
+    """An override registered AFTER the on-disk template was already
+    rendered once still shadows it (spec §2 point 2 / goal G2).
+
+    Regression guard: ``jinja2.Environment.get_template()`` consults its
+    own template cache before the loader chain. Without invalidating that
+    cache in ``add_templates()``, a name already rendered from disk kept
+    winning over a same-named in-memory override registered afterwards —
+    exactly the "DB-backed per-tenant override applied after the app has
+    warmed up" scenario spec §1 motivates.
+    """
+    assert parser.render("hello.html", {"name": "Ada"}) == "Hello Ada!"
     parser.add_templates({"hello.html": "OVERRIDDEN"})
     assert parser.render("hello.html") == "OVERRIDDEN"
 
