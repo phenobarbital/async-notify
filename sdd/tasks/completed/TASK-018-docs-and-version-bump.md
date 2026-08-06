@@ -288,10 +288,60 @@ When you pick up this task:
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Verified doc file split first (`ls docs/`): `api.rst`,
+`architecture.rst`, `authors.rst`, `examples.rst`, `index.rst`,
+`models.rst`, `providers.rst`, `server.rst`, plus Sphinx machinery — no
+`docs/templates.rst`, matching the contract's "Does NOT Exist" list.
+Added a new `` `templates` `` subsection to `docs/api.rst` (previously
+just stub headers with no content) documenting `is_template_source()`,
+`TemplateParser.from_string(source, *, cache=True)`,
+`clear_string_cache()`, and the `string_cache_size` kwarg with its default
+of 128. Added a new "Template Support" section to `docs/providers.rst`
+(placed right after "Common Features", which already lists "Template
+support" as a shared capability) documenting the overloaded `template=`,
+the exact detection rules, all three `template_is_source=` states, the §7
+R1 `FileNotFoundError` caveat, the three canonical usage examples from
+spec §2 (used verbatim), the §7 R10 security note placed immediately
+adjacent to the inline-source example with the SAFE/UNSAFE contrast, and
+a note that OneSignal has no template support (never calls `_prepare_`).
+Added a "### Templates ###" section to `README.md` with the same three
+call shapes and a condensed security note. Bumped `notify/version.py`
+`__version__` from `"1.5.7"` to `"1.6.0"` — the only line changed
+(`git diff --stat` confirms 1 insertion / 1 deletion).
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**: What was implemented, any deviations from scope, issues encountered.
+Verified acceptance criteria: `grep -rn "template_string" docs/ README.md`
+and `grep -rn "render_string"` both empty; `{{ content }}` is not
+documented as generally available anywhere; `git diff --name-only` shows
+exactly `README.md`, `docs/api.rst`, `docs/providers.rst`,
+`notify/version.py`. Executed the `docs/api.rst` code example directly
+(`TemplateParser(directory=TEMPLATE_DIR, string_cache_size=256)`,
+`is_template_source()` on both a filename and source string,
+`from_string()` + `render_async()`) — all assertions passed. The
+`docs/providers.rst` / `README.md` usage examples use `Notify("smtp")` /
+`Notify("telegram")` illustratively (matching the pre-existing convention
+of every other example in `providers.rst`, e.g. `aws`, `slack`, `teams` —
+none of those are literally runnable without real credentials/network
+either); the underlying three-way dispatch and security-relevant
+behaviour those examples describe were already executed and verified
+end-to-end by TASK-015's manual checks and TASK-017's full offline test
+suite (45 tests, `tests/test_jinja_string_templates.py`). Full suite
+`pytest tests/ -v`: 102 passed, 2 xfailed, 2 failed, 3 errors — identical
+pre-existing baseline failures (confirmed against `dev`), zero new
+failures.
 
-**Deviations from spec**: none | describe if any
+**Deviations from spec**: `cd docs && make html` was not run as literally
+specified; instead ran `python -m sphinx -b html . /tmp/notify_docs_build`
+directly (Sphinx *is* installed, contrary to the task's "skip and note if
+Sphinx is not installed" fallback condition). The build fails with
+`ExtensionError: No puede importar la extensión myst_parser (exception:
+No module named 'myst_parser')`. Verified this is pre-existing and
+unrelated to this task: `docs/conf.py` requires `myst_parser` in its
+`extensions` list on baseline `dev` as well (`git show
+dev:docs/conf.py | grep myst_parser`), and `myst_parser` is not listed in
+`pyproject.toml` at all — a pre-existing docs-tooling gap, not something
+this one-line-version-bump-plus-docs task should fix by adding a new
+dependency. Flagging for the spec owner / a follow-up: either add
+`myst_parser` to `pyproject.toml`'s doc extras, or drop it from
+`docs/conf.py`'s `extensions` if it is unused.

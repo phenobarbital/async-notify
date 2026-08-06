@@ -5,7 +5,7 @@
   "type": "feature",
   "base_branch": "dev",
   "created_at": "2026-08-06T15:41:11+00:00",
-  "completed_at": null,
+  "completed_at": "2026-08-06T16:34:36+00:00",
   "tasks": [
     {
       "id": "TASK-014",
@@ -92,7 +92,7 @@
       "feature_id": "FEAT-003",
       "feature": "jinja-string-notify",
       "spec": "sdd/specs/jinja-string-notify.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "S",
       "depends_on": [
@@ -104,8 +104,8 @@
       "parallelism_notes": "Touches only docs/, README.md and the single __version__ line in notify/version.py — no file overlap with TASK-017, so the two could run concurrently in separate worktrees once TASK-014/015/016 land. Depends on those three because it documents what was actually built, not what was specified. Note: FEAT-002 TASK-011 bumps notify/version.py to the same 1.6.0, so expect a trivial both-changed conflict on whichever branch merges second.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:46:27+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-018-docs-and-version-bump.md"
+      "completed_at": "2026-08-06T16:34:36+00:00",
+      "file": "sdd/tasks/completed/TASK-018-docs-and-version-bump.md"
     }
   ]
 }
