@@ -34,9 +34,9 @@
 
 | File | Action | Description |
 |---|---|---|
-| `parrot/path/to/new_file.py` | CREATE | Main implementation |
+| `notify/path/to/new_file.py` | CREATE | Main implementation |
 | `tests/unit/test_new_file.py` | CREATE | Unit tests |
-| `parrot/path/to/existing.py` | MODIFY | Add import / register component |
+| `notify/path/to/existing.py` | MODIFY | Add import / register component |
 
 ---
 
@@ -50,14 +50,14 @@
 ### Verified Imports
 <!-- Exact import statements. Use these VERBATIM — do not guess alternatives. -->
 ```python
-from parrot.module import ClassName  # verified: parrot/module/__init__.py:NN
+from notify.module import ClassName  # verified: notify/module/__init__.py:NN
 ```
 
 ### Existing Signatures to Use
 <!-- Classes/methods this task extends, calls, or integrates with.
      Include the file path and line number for each. -->
 ```python
-# parrot/path/to/file.py:NN
+# notify/path/to/file.py:NN
 class ExistingClass(BaseClass):
     attribute: Type  # line NN
     async def method(self, param: Type) -> ReturnType:  # line NN
@@ -65,7 +65,7 @@ class ExistingClass(BaseClass):
 
 ### Does NOT Exist
 <!-- Things the agent might assume exist but DO NOT. Prevents hallucination. -->
-- ~~`parrot.module.NonExistentThing`~~ — does not exist
+- ~~`notify.module.NonExistentThing`~~ — does not exist
 - ~~`ClassName.phantom_attribute`~~ — not a real attribute
 
 ---
@@ -77,7 +77,7 @@ class ExistingClass(BaseClass):
 ### Pattern to Follow
 ```python
 # Reference implementation pattern from existing code
-# e.g. copy this structure from parrot/loaders/base.py
+# e.g. copy this structure from notify/providers/base.py
 class ExistingPattern(AbstractBase):
     async def method(self) -> Result:
         ...
@@ -90,8 +90,8 @@ class ExistingPattern(AbstractBase):
 - Add `self.logger` calls at key points
 
 ### References in Codebase
-- `parrot/path/reference1.py` — pattern to follow
-- `parrot/path/reference2.py` — integration point
+- `notify/path/reference1.py` — pattern to follow
+- `notify/path/reference2.py` — integration point
 
 ---
 
@@ -99,8 +99,8 @@ class ExistingPattern(AbstractBase):
 
 - [ ] Implementation complete per scope
 - [ ] All tests pass: `pytest <test_path> -v`
-- [ ] No linting errors: `ruff check parrot/<path>`
-- [ ] Imports work: `from parrot.<module> import <Component>`
+- [ ] No linting errors: `ruff check notify/<path>`
+- [ ] Imports work: `from notify.<module> import <Component>`
 - [ ] Criterion N
 
 ---
@@ -113,7 +113,7 @@ class ExistingPattern(AbstractBase):
 ```python
 # tests/unit/test_<module>.py
 import pytest
-from parrot.<module> import <Component>
+from notify.<module> import <Component>
 
 
 @pytest.fixture

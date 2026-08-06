@@ -45,12 +45,12 @@ ComponentA ──→ ComponentB ──→ ComponentC
 ```
 
 ### Integration Points
-<!-- How does this feature integrate with existing AI-Parrot components? -->
+<!-- How does this feature integrate with existing async-notify components? -->
 
 | Existing Component | Integration Type | Notes |
 |---|---|---|
-| `AbstractClient` | extends | ... |
-| `AgentCrew` | uses | ... |
+| `ProviderBase` | extends | ... |
+| `Notify` | uses | ... |
 
 ### Data Models
 ```python
@@ -75,12 +75,12 @@ class NewComponent:
 > These directly map to Task Artifacts in Phase 2.
 
 ### Module 1: <Name>
-- **Path**: `parrot/path/to/module.py`
+- **Path**: `notify/path/to/module.py`
 - **Responsibility**: What this module does
 - **Depends on**: existing module or Module N from this spec
 
 ### Module 2: <Name>
-- **Path**: `parrot/path/to/module2.py`
+- **Path**: `notify/path/to/module2.py`
 - **Responsibility**: ...
 - **Depends on**: Module 1
 
@@ -132,14 +132,14 @@ def sample_config():
 ### Verified Imports
 <!-- Exact import statements confirmed to work. Agents MUST use these verbatim. -->
 ```python
-from parrot.module import ClassName  # verified: parrot/module/__init__.py:NN
+from notify.module import ClassName  # verified: notify/module/__init__.py:NN
 ```
 
 ### Existing Class Signatures
 <!-- Exact signatures of classes/methods that tasks will extend or call.
      Include attribute types and method signatures with line numbers. -->
 ```python
-# parrot/path/to/file.py
+# notify/path/to/file.py
 class ExistingClass(BaseClass):
     attribute: Type  # line NN
     async def method(self, param: Type) -> ReturnType:  # line NN
@@ -154,7 +154,7 @@ class ExistingClass(BaseClass):
 ### Does NOT Exist (Anti-Hallucination)
 <!-- Things that look plausible but DO NOT exist in the codebase.
      Prevents agents from inventing imports or attributes. -->
-- ~~`parrot.module.NonExistentThing`~~ — does not exist
+- ~~`notify.module.NonExistentThing`~~ — does not exist
 - ~~`ClassName.phantom_method()`~~ — not a real method
 
 ---
@@ -163,7 +163,7 @@ class ExistingClass(BaseClass):
 
 
 ### Patterns to Follow
-- Use `AbstractBase` pattern from `parrot/base/`
+- Use `AbstractBase` pattern from `notify/base/`
 - Follow async-first design throughout
 - Pydantic models for all structured data
 - Comprehensive logging with `self.logger`

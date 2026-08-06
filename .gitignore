@@ -164,5 +164,8 @@ notify/_version.py
 # Claude Code / SDD local artifacts
 .claude/worktrees/
 .claude/settings.local.json
-sdd/tasks/active/
 artifacts/
+.autopilot/
+ai_fluency_report.html
+# NOTE: sdd/tasks/active/ is intentionally TRACKED — worktrees and other
+# sessions must see in-flight task files (see CLAUDE.md, "SDD Auto-Commit Rule").

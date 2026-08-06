@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "$id": "https://ai-parrot.local/sdd/research_plan.schema.json",
+  "$id": "https://async-notify.local/sdd/research_plan.schema.json",
   "title": "SDDResearchPlan",
   "description": "Output of Phase 1 (research planner). Lists ordered queries that the executor will run against the codebase. Persisted at sdd/state/<FEAT-ID>/research_plan.json.",
   "type": "object",
