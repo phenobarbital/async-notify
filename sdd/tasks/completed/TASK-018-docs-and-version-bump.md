@@ -345,3 +345,16 @@ this one-line-version-bump-plus-docs task should fix by adding a new
 dependency. Flagging for the spec owner / a follow-up: either add
 `myst_parser` to `pyproject.toml`'s doc extras, or drop it from
 `docs/conf.py`'s `extensions` if it is unused.
+
+**Post-review addendum (2026-08-06)**: the mandatory adversarial
+code-review agent correctly flagged that the initial pass documented
+everything *except* the widened `notify.models.Message.template` field
+(acceptance criterion explicitly requires docs to cover it) — a silently
+missed criterion rather than a disclosed trade-off. Fixed in a follow-up
+commit by adding a `` `notify.models.Message.template` `` entry to
+`docs/api.rst`'s `` `templates` `` section (the file was already in this
+task's scope, so no new file was touched), stating the `Union[Path, str]`
+widening, that `Message` has no consumers inside `notify/`, and the known
+`python-datamodel` coercion caveat (a `str` is currently coerced to
+`PosixPath`, matching TASK-016/017's documented finding) so the docs don't
+overclaim what the field does today.
