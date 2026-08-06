@@ -52,7 +52,7 @@
       "feature_id": "FEAT-003",
       "feature": "jinja-string-notify",
       "spec": "sdd/specs/jinja-string-notify.spec.md",
-      "status": "in-progress",
+      "status": "done-with-issues",
       "priority": "medium",
       "effort": "S",
       "depends_on": [],
@@ -60,8 +60,8 @@
       "parallelism_notes": "Genuinely independent: a one-line annotation change in notify/models.py, which no other task in this feature reads or writes, with no import dependency on TASK-014. Could run in its own worktree. Also independently droppable — it implements spec §9 Q5, and deleting it plus its three tests affects nothing else.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:46:27+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-016-widen-message-template.md"
+      "completed_at": "2026-08-06T16:06:55+00:00",
+      "file": "sdd/tasks/completed/TASK-016-widen-message-template.md"
     },
     {
       "id": "TASK-017",

@@ -251,10 +251,46 @@ When you pick up this task:
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: One-line change at `notify/models.py:93`: `template: Path` →
+`template: Union[Path, str]`. No import added (both already present). `git
+diff --stat notify/models.py` confirms exactly 1 insertion / 1 deletion.
+`from notify.models import Message, BlockMessage, MailMessage` still
+imports cleanly. `ruff check notify/models.py` shows the same 19
+pre-existing findings as baseline `dev` (verified via `git show
+dev:notify/models.py` + ruff) — none attributable to this change, left
+untouched. Full suite `pytest tests/ -v`: 59 passed, 2 failed, 3 errors —
+identical to baseline.
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**: What was implemented, any deviations from scope, issues encountered.
+**Deviations from spec**: two findings surfaced during verification, both
+anticipated by the task's own risk note ("If python-datamodel turns out to
+coerce Union members eagerly, report it... rather than working around it
+with a validator"):
 
-**Deviations from spec**: none | describe if any
+1. **`python-datamodel` eagerly coerces the `Union[Path, str]` field.**
+   `Message(name="x", template="{{ who }}").template` comes back as
+   `PosixPath('{{ who }}')`, not `str` — `python-datamodel` tries `Path`
+   first (declaration order) and `Path(str)` never raises, so the `str`
+   member of the `Union` is never actually reachable for a value that
+   doesn't already look like a `Path` failure case. Per the task's explicit
+   instruction, no validator/coercion workaround was added — the field
+   annotation is exactly `Union[Path, str]` as specified. Since spec §1
+   Non-Goals + §6 confirm `notify.models.Message` has **no consumers
+   inside `notify/`**, this does not affect `send()`'s actual dispatch
+   (TASK-015 reads the raw `template=` keyword argument directly, never
+   `Message.template`). Flagging for the spec owner: the acceptance
+   criterion "`Message(name="x", template="{{ who }}")` constructs, and
+   `.template == "{{ who }}"` as a `str`" does not hold as-is; the
+   construction succeeds but the value is coerced to `Path`.
+2. **`BlockMessage(...)` fails to construct at all, unrelated to this
+   task.** `BlockMessage.content_type: Literal[...] = Field(default_factory=CONTENT_TYPES)`
+   passes the *list* `CONTENT_TYPES` as `default_factory` instead of a
+   callable returning it, so any `BlockMessage(...)` call raises
+   `TypeError: 'list' object is not callable`. Verified this reproduces
+   identically on baseline `dev` before this task's change (confirmed via
+   `git stash` / direct import test against `dev`'s `notify/models.py`) —
+   pre-existing bug, out of scope for this one-line task, not fixed here.
+   This blocks the acceptance criterion
+   "`BlockMessage(name="x", template="{{ who }}")` constructs — the
+   widening is inherited" independent of anything this task changed.
