@@ -287,16 +287,20 @@ class TemplateParser:
         return self.env
 
     def add_filter(self, func: Callable, name: str | None = None) -> None:
-        """add_filter.
-        Register a custom function as Template Filter.
+        """Register a single callable as a Jinja2 template filter.
+
+        Args:
+            func: The callable to register.
+            name: Filter name. Defaults to ``func.__name__``.
+
+        Raises:
+            TypeError: If ``func`` is not callable.
         """
-        if name is not None:
-            filter_name = name
-        elif callable(func):
-            filter_name = name.__name__
-        else:
-            raise TypeError(f"Template Filter must be a callable function: {func!r}")
-        self.env.filters[filter_name] = func
+        if not callable(func):
+            raise TypeError(
+                f"Notify: Template Filter must be a callable function: {func!r}"
+            )
+        self.add_filters({name or func.__name__: func})
 
     def render(self, filename: str, params: dict | None = None) -> str:
         if not params:
@@ -328,7 +332,7 @@ class TemplateParser:
             ) from ex
         except Exception as err:
             raise RuntimeError(
-                f"NAV: Error rendering: {filename}, error: {err}"
+                f"Notify: Error rendering: {filename}, error: {err}"
             ) from err
 
     def add_template_dir(self, path: PathLike) -> None:
