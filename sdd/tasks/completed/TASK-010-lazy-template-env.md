@@ -245,10 +245,25 @@ Use `.venv/bin/python` directly — `.venv/bin/activate` is stale.
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Deleted `TemplateEnv = None` and the `if __name__ ==
+"notify.notify":` eager-construction block. Added a module-private
+`_TEMPLATE_ENV` memoisation slot plus PEP 562 `__getattr__`/`__dir__`.
+`__getattr__` builds and memoises the `TemplateParser` on first access to
+`TemplateEnv`, logging a warning (not raising) when `TEMPLATE_DIR` is
+missing — the parser then runs in memory-only mode courtesy of TASK-007.
+`notify/providers/base.py` was left untouched, as required; verified via
+`git diff --stat` showing zero changes there. No thread-safety lock was
+added around the memoisation — double construction on a race is harmless
+(last writer wins, both are equivalent parsers), per the task's own
+guidance. Verified manually: `import notify.notify` constructs zero
+`TemplateParser` instances (patched-counter check), `TemplateEnv` accesses
+are memoised (`is` identity across two accesses), unknown attributes raise
+`AttributeError`, `"TemplateEnv" in dir(notify.notify)` is `True`, and
+`import notify` succeeds with a nonexistent `TEMPLATE_DIR` (warning
+logged, memory-only mode confirmed via `.path is None`). `ruff check
+notify/notify.py` clean. Full `pytest tests/ -v`: 59 passed, 2 failed + 3
+errors, identical to the pre-existing `dev` baseline.
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**:
-
-**Deviations from spec**: none | describe if any
+**Deviations from spec**: none

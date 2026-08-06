@@ -1,13 +1,19 @@
 import importlib
+
 from navconfig.logging import logger
-from .providers.base import ProviderBase
-from .exceptions import ProviderError, NotifyException
+
 from .conf import TEMPLATE_DIR
+from .exceptions import NotifyException, ProviderError
+from .providers.base import ProviderBase
 from .templates import TemplateParser
 
-
 PROVIDERS = {}
-TemplateEnv = None
+
+# Module-private memoisation slot for the lazy TemplateEnv singleton
+# (PEP 562 __getattr__ below). Deliberately NOT named "TemplateEnv" —
+# __getattr__ only fires for names absent from the module namespace.
+_TEMPLATE_ENV: TemplateParser | None = None
+
 
 class Notify:
     """Notify
@@ -80,8 +86,36 @@ def LoadProvider(provider: str):
             ) from exc
 
 
-if __name__ == "notify.notify":
-    # loading template parser:
-    TemplateEnv = TemplateParser(
-        directory=TEMPLATE_DIR
-    )
+def __getattr__(name: str):
+    """PEP 562 module-level attribute hook.
+
+    Builds the shared :class:`TemplateParser` on first access to
+    ``TemplateEnv`` and memoises it, so importing :mod:`notify` never
+    touches the filesystem.
+
+    Args:
+        name: The attribute being accessed on this module.
+
+    Returns:
+        The memoised :class:`TemplateParser` instance when ``name`` is
+        ``"TemplateEnv"``.
+
+    Raises:
+        AttributeError: For any other undefined module attribute.
+    """
+    if name == "TemplateEnv":
+        global _TEMPLATE_ENV
+        if _TEMPLATE_ENV is None:
+            if not TEMPLATE_DIR.exists():
+                logger.warning(
+                    "Notify: template directory %s does not exist; "
+                    "TemplateEnv starts in memory-only mode.", TEMPLATE_DIR
+                )
+            _TEMPLATE_ENV = TemplateParser(directory=TEMPLATE_DIR)
+        return _TEMPLATE_ENV
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    """Include the lazily-built ``TemplateEnv`` in module introspection."""
+    return sorted([*globals().keys(), "TemplateEnv"])

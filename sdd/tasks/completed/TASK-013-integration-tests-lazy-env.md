@@ -245,12 +245,62 @@ Use `.venv/bin/python` directly — `.venv/bin/activate` is stale.
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Created `tests/test_templates_integration.py` with all four
+integration tests from spec §4. Two sharp edges surfaced and were fixed
+without touching production code:
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**:
+1. **Parent-package attribute aliasing.** Restoring
+   `sys.modules["notify.notify"]` after a forced reimport is NOT enough:
+   `import notify.notify as nn` resolves through the parent `notify`
+   package's `.notify` attribute (rebound by the import machinery on every
+   reimport), not purely through `sys.modules`. Verified this concretely
+   with a standalone repro before fixing. Added `_restore_notify_notify()`
+   which repoints both `sys.modules["notify.notify"]` AND
+   `notify.notify` (the package attribute) at the original module, so
+   later tests in the same session — regardless of run order — keep
+   observing one consistent, already-memoised `TemplateEnv` singleton.
+   Verified robustness by running the file standalone, in forced reverse
+   order, first before the full suite, and last after the full suite, and
+   under `pytest -n auto` (xdist) — all four orderings pass identically.
 
-**Test placement decision**:
+2. **Ambient global event-loop fragility (pre-existing, unrelated to this
+   feature).** `ProviderBase.__init__` falls back to the deprecated
+   `asyncio.get_event_loop()` when no loop is already running
+   (`base.py:54-57`). `tests/test_outlook1.py` (pre-existing, already
+   erroring on the `dev` baseline) leaves the global event loop in a
+   broken state for whatever test runs next in the same session, which
+   made `test_provider_base_get_template_still_works` flaky depending on
+   file order — a suite-level issue, not a defect in this feature. Fixed
+   by making that one test `async def` + `@pytest.mark.asyncio` (matching
+   the house style in `tests/test_email_utf8.py`), which keeps
+   `ProviderBase.__init__` on the primary, reliable
+   `asyncio.get_running_loop()` path. The hermetic swap-in `TemplateParser`
+   used for the final render assertion is built with
+   `config={"enable_async": False}`, so the render itself does not trip
+   the separate, pre-existing, explicitly out-of-scope sync-render-inside-
+   a-running-loop hazard (spec §7 R4) now that the test runs inside a
+   loop.
 
-**Deviations from spec**: none | describe if any
+`tests/test_templates_integration.py -v`: 4 passed, in every ordering
+tested. Full `pytest tests/ -v`: 94 passed (59 pre-existing + 31 from
+TASK-012 + 4 new), 2 failed + 3 errors — identical pre-existing `dev`-
+baseline failures (AWS SES mock region, Outlook event-loop fixture), no
+new regressions, confirmed both with the natural file order and with this
+file placed first. `ruff check tests/test_templates_integration.py`
+clean. `git diff --stat notify/providers/base.py` shows zero changes — the
+file was read for contract verification only, never edited. No network
+I/O.
+
+**Test placement decision**: `tests/test_templates_integration.py`
+(separate file, per the task's own suggestion) rather than appending to
+`tests/test_templates.py` — the reload/monkeypatch machinery and the
+`ProviderBase` test double are a different concern from TASK-012's
+isolated `TemplateParser` unit tests, and keeping them apart makes the
+"module reloading is the sharp edge" tests easy to run/skip independently.
+
+**Deviations from spec**: none in test coverage. The two fixes above are
+test-implementation robustness fixes (module-reload restoration,
+avoiding two independently pre-existing/out-of-scope environment
+hazards), not changes to what is being tested or to any production code.

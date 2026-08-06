@@ -245,12 +245,57 @@ Use `.venv/bin/python` directly — `.venv/bin/activate` is stale.
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Created `tests/test_templates.py` implementing all 30 unit
+tests from spec §4, plus one extra (`test_compile_directory_noop_
+without_directories`) covering the documented "no-op with no
+directories" behaviour from TASK-008's acceptance criteria that wasn't
+given its own named row in the spec table. Corrected a stale Codebase
+Contract assumption before writing tests: the contract claimed no
+`asyncio_mode` was set, but a root-level `pytest.ini` (which takes
+precedence over `[tool.pytest.ini_options]` in `pyproject.toml` — pytest
+uses exactly one ini source) sets `asyncio_mode = auto`, confirmed via
+`pytest`'s own `configfile:` banner ("ignoring pytest config in
+pyproject.toml!"). Async tests are therefore plain `async def` without
+needing an explicit `@pytest.mark.asyncio` marker.
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**:
+Ran into spec §7 R4 (pre-existing, explicitly out of scope) directly:
+with `enable_async=True`, Jinja2's synchronous `render()`/`render_string()`
+drive the async code path via an internal `asyncio.run()`, which raises
+`RuntimeError: asyncio.run() cannot be called from a running event loop`
+if called from inside an already-running loop (i.e. from inside an
+`async def` pytest-asyncio test). `test_render_async_backward_compat` and
+`test_render_string_sync_and_async` originally mixed sync + async calls
+inside `async def` tests and hit this exactly. Fixed by keeping both as
+plain synchronous test functions that drive the async variant explicitly
+via `asyncio.run()` — never nesting event loops — rather than touching
+production code to "fix" R4, which is explicitly out of scope per the
+spec. `test_error_prefix_is_notify` calls only the async path and was
+unaffected.
 
-**Bugs exposed (raised against which task)**:
+Manually verified the regression premise for
+`test_add_filter_without_name_uses_func_name`: reproduced the exact
+pre-TASK-009 `add_filter` body (`name.__name__` bug) via a monkeypatched
+bound method and confirmed it raises `AttributeError: 'NoneType' object
+has no attribute '__name__'` — i.e. this test would fail against the
+unfixed code and passes against the current (TASK-009-fixed)
+implementation.
 
-**Deviations from spec**: none | describe if any
+`tests/test_templates.py -v`: 31 passed. Full `pytest tests/ -v`: 90
+passed (59 pre-existing + 31 new), 2 failed + 3 errors — identical
+pre-existing `dev`-baseline failures (AWS SES mock region, Outlook
+event-loop fixture), no new regressions. `ruff check
+tests/test_templates.py` clean. No network I/O; every directory is
+created under `tmp_path`.
+
+**Bugs exposed (raised against which task)**: none — no genuine
+production bug was found; TASK-007/008/009 all held up under test.
+
+**Deviations from spec**: (1) one extra test beyond the 30 listed
+(`test_compile_directory_noop_without_directories`), covering an
+already-specified acceptance criterion. (2) `test_render_async_backward_
+compat` and `test_render_string_sync_and_async` are plain `def` tests
+rather than `async def`, to avoid triggering the pre-existing, explicitly
+out-of-scope R4 nested-event-loop hazard — behaviour under test is
+unchanged, only the test's own execution context.
