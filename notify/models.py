@@ -90,7 +90,7 @@ class Message(BaseModel):
     body: Union[str, dict] = Field(default=None)
     content: str = Field(required=False, default="")
     sent: datetime = Field(required=False, default=now)
-    template: Path
+    template: Union[Path, str]
 
 
 class Attachment(BaseModel):
