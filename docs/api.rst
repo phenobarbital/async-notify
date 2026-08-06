@@ -68,3 +68,18 @@ Example::
     template = parser.from_string("Hi {{ name }}")
     await template.render_async(name="Ada")    # "Hi Ada"
 
+``notify.models.Message.template``
+    As of ``1.6.0``, ``Message.template`` (inherited by ``BlockMessage`` and
+    ``MailMessage``) is typed ``Union[Path, str]`` instead of ``Path``, so the
+    model can carry either a template filename or inline Jinja2 source,
+    matching the widened ``send(template=...)`` semantics above.
+    ``notify.models.Message`` has no consumers inside ``notify/`` itself —
+    ``send()`` reads the ``template=`` keyword argument directly, never
+    ``Message.template`` — so this widening only matters to code that
+    constructs a ``Message`` directly. **Known caveat**: the underlying
+    ``python-datamodel`` library resolves ``Union`` members in declaration
+    order and tries ``Path`` first; since ``Path(some_str)`` never raises, a
+    plain ``str`` assigned to ``template`` is currently coerced to
+    ``PosixPath`` rather than round-tripping as ``str``. This is a
+    ``python-datamodel`` behaviour, not something ``Message`` opts out of.
+
