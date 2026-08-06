@@ -110,7 +110,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -120,8 +120,8 @@
       "parallelism_notes": "Covers the full post-refactor TemplateParser surface, so it needs TASK-007, TASK-008 and TASK-009 complete (TASK-009 depends transitively on both). Creates tests/test_templates.py, which does not exist today.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-012-unit-tests-templateparser.md"
+      "completed_at": "2026-08-06T16:25:56+00:00",
+      "file": "sdd/tasks/completed/TASK-012-unit-tests-templateparser.md"
     },
     {
       "id": "TASK-013",
