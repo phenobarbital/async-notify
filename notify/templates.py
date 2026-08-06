@@ -185,6 +185,10 @@ class TemplateParser:
             dirs = [d for d in dirs if d.exists()]
 
         self.path = dirs[0] if dirs else None
+        # Filesystem directories backing the loader, kept so
+        # add_template_dir() can extend the FileSystemLoader at runtime
+        # without losing previously registered directories.
+        self._fs_dirs: list[Path] = dirs
 
         ### legacy TEMPLATE_DEBUG handling — per-instance list, no shared leak.
         template_debug = nav_config.getboolean(
@@ -326,3 +330,128 @@ class TemplateParser:
             raise RuntimeError(
                 f"NAV: Error rendering: {filename}, error: {err}"
             ) from err
+
+    def add_template_dir(self, path: PathLike) -> None:
+        """Add a filesystem directory to the search path at runtime.
+
+        Rebuilds the internal ``ChoiceLoader``, carrying the existing
+        in-memory template mapping across so templates registered via
+        :meth:`add_templates` are not lost (spec §7 R6).
+
+        Args:
+            path: Directory to add. Must exist and be a directory.
+
+        Raises:
+            ValueError: If the path does not exist or is not a directory.
+        """
+        p = Path(path).resolve()
+        if not p.exists() or not p.is_dir():
+            raise ValueError(f"Notify: template directory invalid: {p}")
+        self._fs_dirs.append(p)
+        if self.path is None:
+            self.path = p
+        # Rebuild the chain — carry the EXISTING in-memory mapping across.
+        mapping = self._dict_loader.mapping
+        self._dict_loader = DictLoader(mapping)
+        self._choice_loader = ChoiceLoader([
+            self._dict_loader,
+            FileSystemLoader([str(d) for d in self._fs_dirs]),
+        ])
+        self.env.loader = self._choice_loader
+
+    def add_templates(self, templates: Mapping[str, str]) -> None:
+        """Register or override in-memory templates.
+
+        In-memory templates shadow filesystem templates of the same name,
+        since the ``DictLoader`` is searched first in the ``ChoiceLoader``.
+
+        Args:
+            templates: Mapping of template name to template source.
+        """
+        self._dict_loader.mapping.update(templates)
+
+    def add_filters(self, filters: Mapping[str, Callable]) -> None:
+        """Bulk-register custom template filters.
+
+        Args:
+            filters: Mapping of filter name to callable.
+        """
+        self.env.filters.update(filters)
+
+    def add_globals(self, globals_: Mapping[str, Any]) -> None:
+        """Register global variables/functions visible to every template.
+
+        Args:
+            globals_: Mapping of global name to value or callable.
+        """
+        self.env.globals.update(globals_)
+
+    def render_string(self, source: str, params: dict | None = None) -> str:
+        """Render ad-hoc template source synchronously.
+
+        Mirrors :meth:`render`, but takes raw template source instead of a
+        filename — stays synchronous, unlike ai-parrot's async-only
+        ``render_string`` (spec §1 Non-Goals).
+
+        Args:
+            source: Raw Jinja2 template source.
+            params: Template rendering context.
+
+        Returns:
+            The rendered string.
+        """
+        if not params:
+            params = {}
+        try:
+            template = self.env.from_string(source)
+            return template.render(**params)
+        except TemplateError as ex:
+            raise ValueError(
+                f"Template parsing error rendering inline source: {ex}"
+            ) from ex
+        except Exception as err:
+            raise RuntimeError(
+                f"Notify: Error rendering inline source: {err}"
+            ) from err
+
+    async def render_string_async(self, source: str, params: dict | None = None) -> str:
+        """Render ad-hoc template source asynchronously.
+
+        Args:
+            source: Raw Jinja2 template source.
+            params: Template rendering context.
+
+        Returns:
+            The rendered string.
+        """
+        if not params:
+            params = {}
+        try:
+            template = self.env.from_string(source)
+            return await template.render_async(**params)
+        except TemplateError as ex:
+            raise ValueError(
+                f"Template parsing error rendering inline source: {ex}"
+            ) from ex
+        except Exception as err:
+            raise RuntimeError(
+                f"Notify: Error rendering inline source: {err}"
+            ) from err
+
+    def compile_directory(self, target: PathLike, *, zip: str | None = "deflated") -> None:
+        """Explicitly compile templates to bytecode.
+
+        Replaces the unconditional ``compile_templates()`` call removed
+        from ``__init__`` (spec §7 R3) with an opt-in, explicit call. No-op
+        when there are no filesystem directories to compile.
+
+        Args:
+            target: Destination directory (or zip file) for compiled
+                templates, passed straight to
+                ``jinja2.Environment.compile_templates``.
+            zip: Compression mode forwarded to
+                ``jinja2.Environment.compile_templates``.
+        """
+        if not self._fs_dirs:
+            return
+        self.env.compile_templates(target=str(target), zip=zip)
