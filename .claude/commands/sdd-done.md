@@ -1,5 +1,5 @@
 ---
-model: haiku
+model: haiku-4-5
 description: Verify that a feature's tasks were implemented, push the branch, optionally resolve the linked Jira ticket, and clean up the worktree.
 ---
 
@@ -10,19 +10,22 @@ pushed, and clean up the worktree. Optionally transitions the linked Jira ticket
 "Done" / "Resolved".
 
 **This command runs on the spec's `base_branch`** — read from the spec's
-YAML frontmatter (FEAT-145). For `type: feature` that is `dev` (default);
-for `type: hotfix` that is `main`. NOT inside a worktree. It looks INTO the
-worktree to verify work, but modifies state only on `base_branch`.
+YAML frontmatter (FEAT-145). For `type: feature` that is `dev` (default)
+or a parent feature branch; for `type: hotfix` that is `main`.
+NOT inside a worktree. It looks INTO the worktree to verify work, but
+modifies state only on `base_branch`.
 
 ## Usage
 ```
 /sdd-done FEAT-014
 /sdd-done videoreel-visual-changes
 /sdd-done FEAT-014 --dry-run           # show what would change, don't change anything
+/sdd-done FEAT-014 --merge             # direct merge into base_branch (old behavior)
 /sdd-done FEAT-014 --force             # mark done even if some checks fail
 /sdd-done FEAT-014 --resolve-jira      # also transition the Jira ticket to Done
-/sdd-done FEAT-014 --sync-dev          # for hotfixes: after the user merges the PR
-                                       # to main, propagate the change to dev
+/sdd-done FEAT-014 --sync-down         # for hotfixes: after the user merges the PR
+                                       # to main, propagate the change back to dev
+/sdd-done FEAT-014 --sync-dev          # deprecated alias for --sync-down
 ```
 
 ## Guardrails
@@ -34,10 +37,14 @@ worktree to verify work, but modifies state only on `base_branch`.
 
 > **CRITICAL — `/sdd-done` NEVER pushes to `main` and NEVER opens a PR against `main` (FEAT-145).**
 > Hotfixes go to `main` ONLY via a manually-opened PR. This rule is non-negotiable
-> and applies to every flag combination — including `--force` and `--resolve-jira`.
+> and applies to every flag combination — including `--merge`, `--force`, and `--resolve-jira`.
 > For hotfixes, this command pushes the hotfix branch and prints a `gh pr create
-> --base main` snippet. After the user merges the PR, re-run with `--sync-dev` to
-> propagate the change back to `dev`.
+> --base main` snippet. After the user merges the PR, re-run with `--sync-down` to
+> propagate the change from `main` back to `dev`. (`--sync-dev` is a deprecated
+> alias for `--sync-down`.)
+>
+> **Default behavior for features**: `/sdd-done` opens a PR against `BASE_BRANCH`
+> (typically `dev`). Pass `--merge` to merge directly instead.
 
 ## Steps
 
@@ -102,19 +109,15 @@ Read the task file and extract the "Files to create/modify" section.
 test -f <worktree-path>/<filepath>
 ```
 
-**c) Test check (optional, skip if --force):**
-If the task file lists test commands, run them in the worktree:
-```bash
-cd <worktree-path> && npx vitest run <test-path> 2>&1 | tail -10
-# or
-cd <worktree-path> && pytest <test-path> -x -q 2>&1 | tail -5
-```
+**Note:** Test validation is intentionally skipped here — each task already ran
+its acceptance-criteria tests during `/sdd-start` or `sdd-worker` execution.
+Re-running them at close time adds latency without new signal.
 
 ### 5. Build Verification Report
 Classify each task:
 
-- **✅ VERIFIED** — commit found AND files exist AND tests pass (or no tests specified).
-- **⚠️ PARTIAL** — commit found but some files missing or tests failing.
+- **✅ VERIFIED** — commit found AND files exist.
+- **⚠️ PARTIAL** — commit found but some files missing.
 - **❌ NO EVIDENCE** — no matching commits, files don't exist.
 
 Present the report:
@@ -129,12 +132,10 @@ Tasks: <total> total, <verified> verified, <partial> partial, <missing> missing
   ✅ TASK-096 — Scene Editor Refactor
      Commits: feat(videoreel): TASK-096 — Scene Editor Refactor (abc1234)
      Files: src/lib/components/SceneEditor.svelte ✅
-     Tests: 3 passed ✅
 
   ⚠️ TASK-097 — Visual Transitions
      Commits: feat(videoreel): TASK-097 — Visual Transitions (def5678)
-     Files: src/lib/components/Transitions.svelte ✅
-     Tests: 1 failed ⚠️
+     Files: src/lib/components/Transitions.svelte ✅ | src/lib/utils/transitions.ts ❌
 
   ❌ TASK-098 — Export Pipeline
      Commits: none found
@@ -158,43 +159,40 @@ If any tasks are ⚠️ PARTIAL or ❌ NO EVIDENCE:
 If `--dry-run`, show the report and STOP.
 If `--force`, close all tasks regardless.
 
-### 7. Close Tasks (on `<BASE_BRANCH>`)
+### 7. Stamp Verification (on feature branch)
 
-For each task being closed, update the per-spec index in place. We are
-already on `BASE_BRANCH` (verified in Step 1).
+Stamp verification metadata on each closed task in the worktree's per-spec
+index. The feature branch already carries the task files in `completed/` and
+the index with `status: "done"` — this step only adds the `verification`
+field and the feature-level `completed_at`.
+
+> **Why not close_task.sh?** The feature branch already moved files
+> `active/` → `completed/` and set status/completed_at/file during
+> `sdd-worker`/`sdd-start`. Running `close_task.sh` again on `base_branch`
+> would create duplicate state that conflicts on merge (FEAT-414).
 
 ```bash
-INDEX="sdd/tasks/index/<feature-slug>.json"
-NOW=$(date -u +%Y-%m-%dT%H:%M:%S+00:00)
+WORKTREE_PATH=".claude/worktrees/feat-<FEAT-ID>-<slug>"
+INDEX="sdd/tasks/index/${FEATURE_SLUG}.json"
+NOW="$(date -u +%Y-%m-%dT%H:%M:%S+00:00)"
 
-# Move task files to completed
-mkdir -p sdd/tasks/completed/
-mv sdd/tasks/active/TASK-<NNN>-<slug>.md sdd/tasks/completed/
-# Repeat for each closed task...
+# Stamp verification on each task being closed.
+# Use "verified" for ✅ VERIFIED tasks, "partial" for ⚠️ PARTIAL, "forced" for --force.
+for TASK_ID in "${TASK_IDS[@]}"; do
+  jq --arg id "$TASK_ID" --arg ver "$VERIFICATION" '
+    (.tasks[] | select(.id == $id) | .verification) = $ver
+  ' "$WORKTREE_PATH/$INDEX" > tmp && mv tmp "$WORKTREE_PATH/$INDEX"
+done
 
-# Update per-spec index: status → "done", completed_at → now, verification → verified|partial|forced
-jq --arg id "TASK-<NNN>" --arg now "$NOW" --arg ver "verified" '
-  (.tasks[] | select(.id == $id) | .status) = "done" |
-  (.tasks[] | select(.id == $id) | .completed_at) = $now |
-  (.tasks[] | select(.id == $id) | .verification) = $ver |
-  (.tasks[] | select(.id == $id) | .file) = ("sdd/tasks/completed/TASK-<NNN>-<slug>.md")
-' "$INDEX" > "$INDEX.tmp" && mv "$INDEX.tmp" "$INDEX"
+# Stamp feature-level completed_at if all tasks are done.
+jq --arg now "$NOW" '
+  if all(.tasks[]; .status == "done") then .completed_at = $now else . end
+' "$WORKTREE_PATH/$INDEX" > tmp && mv tmp "$WORKTREE_PATH/$INDEX"
 
-# When every task in this index has status="done", also stamp the index header:
-# (.completed_at) = $now
-
-# Update task file headers: Status, Completed date, Verification
-
-# CRITICAL: Unstage everything first — NEVER commit unrelated changes
-git reset HEAD
-# Stage ONLY the SDD task state files — NEVER use "git add ." or "git add -A"
-git add "$INDEX"
-# Add each moved task file explicitly by name:
-git add sdd/tasks/active/TASK-<NNN>-<slug>.md sdd/tasks/completed/TASK-<NNN>-<slug>.md
-# Verify ONLY task-related files are staged
-git diff --cached --name-only
-# If ANY unrelated files appear, run "git reset HEAD" and start over
-git commit -m "sdd: close tasks for FEAT-<ID> — <title>"
+# Commit on the feature branch (inside the worktree) — never on base_branch.
+git -C "$WORKTREE_PATH" add "$INDEX"
+git -C "$WORKTREE_PATH" diff --cached --name-only   # sanity-check: only the index
+git -C "$WORKTREE_PATH" commit -m "sdd: close tasks for FEAT-<ID> — <slug>"
 ```
 
 ### 8. Push the Feature Branch
@@ -203,13 +201,14 @@ If the worktree branch hasn't been pushed yet:
 git -C <worktree-path> push origin feat-<FEAT-ID>-<slug>
 ```
 
-### 9. Merge Feature Branch into `<BASE_BRANCH>` (FEAT-145, flow-aware)
+### 9. Integrate Feature Branch (FEAT-145, flow-aware)
 
 > **CRITICAL**: This is the step that brings the implementation code into the
-> base branch. Without it, the task index is updated but the code changes remain
-> only on the feature branch — causing "marked done but not implemented" issues.
+> base branch. The default is to open a PR; pass `--merge` to merge directly.
 
 **Hard refusal — `BASE_BRANCH == "main"`:**
+
+Hotfixes ALWAYS go through a PR, regardless of flags (including `--merge`):
 
 ```bash
 if [[ "$BASE_BRANCH" == "main" ]]; then
@@ -223,59 +222,112 @@ if [[ "$BASE_BRANCH" == "main" ]]; then
        --title "<hotfix title>" \\
        --body "<verification summary>"
 
-   After the PR merges, re-run with --sync-dev to propagate the change to dev:
+   After the PR merges, re-run with --sync-down to propagate the change from
+   main back into dev:
 
-     /sdd-done <FEAT-ID> --sync-dev
+     /sdd-done <FEAT-ID> --sync-down
 
 EOF
     exit 0   # NOT an error — the hotfix workflow continues outside this command
 fi
 ```
 
-**Feature flow (`BASE_BRANCH != "main"`)** — perform the merge:
+**Feature flow (`BASE_BRANCH != "main"`) — default: open a PR:**
+
+Unless `--merge` is passed, push the feature branch and open a PR against
+`BASE_BRANCH`:
+
+```bash
+# Push the feature branch (already done in Step 8, but ensure it's up to date)
+git -C <worktree-path> push origin feat-<FEAT-ID>-<slug>
+
+# Open a PR against the base branch
+gh pr create \
+  --base "$BASE_BRANCH" \
+  --head "feat-<FEAT-ID>-<slug>" \
+  --title "feat(<feature-slug>): FEAT-<ID> — <title>" \
+  --body "$(cat <<EOF
+## Summary
+
+<Verification report from Step 5 — list of tasks implemented>
+
+## Tasks
+
+<N>/<total> tasks verified.
+
+---
+_Closed by /sdd-done_
+EOF
+)"
+```
+
+If `gh` is not installed or not authenticated, print the manual command:
+```
+ℹ️  Could not create PR automatically. Run manually:
+
+    gh pr create --base <BASE_BRANCH> --head feat-<FEAT-ID>-<slug> \
+      --title "feat(<feature-slug>): FEAT-<ID> — <title>" \
+      --body "<verification summary>"
+```
+
+**Feature flow with `--merge` — direct merge (old behavior):**
+
+When `--merge` is explicitly passed, perform a direct merge instead of a PR:
 
 ```bash
 # We're already on $BASE_BRANCH (verified in Step 1)
 git merge --no-edit feat-<FEAT-ID>-<slug>
 ```
 
-If the merge has conflicts:
+If the merge has conflicts (e.g. code-level changes to the same files):
 ```
 ⚠️  Merge conflict when merging feat-<FEAT-ID>-<slug> into <BASE_BRANCH>.
-   Conflicting files:
-     - <file1>
-     - <file2>
-
-   Options:
-     1. Resolve conflicts now (recommended)
-     2. Abort merge: git merge --abort
+   Resolve conflicts, then continue with: git merge --continue
+   Or abort: git merge --abort
 ```
-If conflicts are resolved, commit the merge. If the user aborts, STOP and
-do NOT proceed to cleanup.
+If the user aborts, STOP and do NOT proceed to cleanup.
 
-After a successful merge, push `<BASE_BRANCH>`:
+**Self-heal — reap stalled `active/` orphans (runs after every `--merge`):**
+
+> Only applies when `--merge` is used. When using PR flow, the orphan sweep
+> happens on the PR merge side.
+
+```bash
+scripts/sdd/heal_orphans.sh <feature-slug>
+# If it reaped anything, commit the cleanup before pushing:
+if ! git diff --cached --quiet -- sdd/tasks/active sdd/tasks/completed; then
+  git commit -m "sdd: reap stalled active task orphans for FEAT-<ID> — <title>"
+fi
+```
+
+After a successful merge and self-heal, push `<BASE_BRANCH>`:
 ```bash
 git push origin "$BASE_BRANCH"
 ```
 
-### 9.5. Hotfix → Dev Sync (FEAT-145, only with `--sync-dev`)
+### 9.5. Hotfix → Sync-down (only with `--sync-down`)
 
-This sub-step runs ONLY when the user passes `--sync-dev` AND `TYPE == "hotfix"`.
-It propagates a hotfix that has just been merged into `main` (via the manual PR
-from §9) back into `dev` so feature branches stay in sync.
+This sub-step runs ONLY when the user passes `--sync-down` (or the deprecated
+`--sync-dev` alias) AND `TYPE == "hotfix"`. It propagates a hotfix that has just
+been merged into `main` (via the manual PR from §9) back into `dev` so the
+integration branch stays in sync with production.
 
-**Pre-flight:** verify the hotfix landed on `origin/main`:
+If `--sync-dev` is used instead of `--sync-down`, first emit:
+```
+ℹ️  --sync-dev is deprecated; use --sync-down. Continuing with sync-down behaviour.
+```
+
+**Pre-flight (run once):** verify the hotfix landed on `origin/main`:
 ```bash
 git fetch origin
 if ! git merge-base --is-ancestor "feat-<FEAT-ID>-<slug>" origin/main; then
     echo "⚠️  feat-<FEAT-ID>-<slug> is not yet an ancestor of origin/main."
-    echo "   Open the PR and merge it first, then re-run with --sync-dev."
+    echo "   Open the PR and merge it first, then re-run with --sync-down."
     exit 1
 fi
 ```
 
-**Sync** — optimistic auto-merge with safe abort on conflict (decision 4c
-from the FEAT-145 design discussion):
+**Sync to `dev`** — optimistic auto-merge with safe abort on conflict:
 ```bash
 git checkout dev
 git pull --ff-only origin dev
@@ -283,8 +335,10 @@ git pull --ff-only origin dev
 if git merge --no-edit feat-<FEAT-ID>-<slug>; then
     git push origin dev
     echo "✅ dev synced with hotfix feat-<FEAT-ID>-<slug>."
+    DEV_OK=true
 else
     git merge --abort
+    DEV_OK=false
     cat <<EOF
 ⚠️  Conflict syncing hotfix into dev. The merge has been aborted (no changes left).
 
@@ -296,6 +350,21 @@ else
       git push origin dev
 
 EOF
+fi
+```
+
+**Return to base:** leave the user on `main` (the hotfix's base branch):
+```bash
+git checkout main
+```
+
+**Summary and exit code:**
+```bash
+if $DEV_OK; then
+    echo "✅ Sync-down complete: dev is in sync with main."
+    exit 0
+else
+    echo "⚠️  Sync-down failed. See above."
     exit 1
 fi
 ```
@@ -423,6 +492,8 @@ git branch -d feat-<FEAT-ID>-<slug>
 ```
 
 ### 12. Output
+
+**Default (PR flow):**
 ```
 ✅ FEAT-<ID> — <title>: <N>/<total> tasks closed.
 
@@ -430,9 +501,24 @@ Closed:
   ✅ TASK-096 — Scene Editor Refactor (verified)
   ✅ TASK-097 — Visual Transitions (verified)
 
-Index updated on dev and committed.
+Index updated and committed.
 Branch pushed: feat-<ID>-<slug>
-Merged into dev: feat-<ID>-<slug> ✅
+PR opened: feat-<ID>-<slug> → <BASE_BRANCH>  <PR-URL>
+Worktree removed: .claude/worktrees/feat-<ID>-<slug>
+Local branch deleted: feat-<ID>-<slug>
+```
+
+**With `--merge`:**
+```
+✅ FEAT-<ID> — <title>: <N>/<total> tasks closed.
+
+Closed:
+  ✅ TASK-096 — Scene Editor Refactor (verified)
+  ✅ TASK-097 — Visual Transitions (verified)
+
+Index updated and committed.
+Branch pushed: feat-<ID>-<slug>
+Merged into <BASE_BRANCH>: feat-<ID>-<slug> ✅
 Worktree removed: .claude/worktrees/feat-<ID>-<slug>
 Local branch deleted: feat-<ID>-<slug>
 ```
@@ -445,10 +531,11 @@ Jira: NAV-8036 → Done ✅
 
 If ALL tasks were closed:
 ```
-✅ FEAT-<ID> — <title>: all <N> tasks closed and merged into dev.
+✅ FEAT-<ID> — <title>: all <N> tasks closed.
 
-Worktree cleaned up.
-Feature branch merged and deleted.
+Branch pushed. PR opened → <BASE_BRANCH>.
+{if --merge} Merged into <BASE_BRANCH> directly. {end if}
+Worktree cleaned up. Feature branch deleted.
 {if --resolve-jira} Jira NAV-8036 → Done ✅ {end if}
 ```
 

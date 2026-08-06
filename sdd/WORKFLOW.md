@@ -1,8 +1,8 @@
-# AI-Parrot SDD Workflow for Claude Code
+# async-notify SDD Workflow for Claude Code
 
 ## Overview
 
-This document defines the **Spec-Driven Development (SDD)** methodology for AI-Parrot, optimized for Claude Code and Antigravity with multi-agent task distribution.
+This document defines the **Spec-Driven Development (SDD)** methodology for async-notify, optimized for Claude Code and Antigravity with multi-agent task distribution.
 
 The key idea: specifications are the Single Source of Truth (SSOT). Claude Code agents
 consume spec documents and produce **Task Artifacts** — discrete, self-contained files
@@ -86,7 +86,7 @@ Brief explanation of why this task exists and how it fits the feature.
 Exactly what this task must implement. Be precise.
 
 ## Files to Create/Modify
-- `parrot/path/to/file.py` — description
+- `notify/path/to/file.py` — description
 - `tests/path/to/test_file.py` — unit tests
 
 ## Implementation Notes
@@ -95,8 +95,8 @@ gotchas, constraints.
 
 ## Reference Code
 Existing patterns in the codebase the agent should follow:
-- See `parrot/loaders/base.py` for BaseLoader pattern
-- See `parrot/bots/orchestration/crew.py` for DAG execution pattern
+- See `notify/loaders/base.py` for BaseLoader pattern
+- See `notify/bots/orchestration/crew.py` for DAG execution pattern
 
 ## Acceptance Criteria
 - [ ] Criterion 1
@@ -125,7 +125,22 @@ When complete, the agent must:
 
 ---
 
-## Flow Types (FEAT-145)
+## Git Configuration
+
+The async-notify SDD Git Flow uses two long-lived branches:
+
+- **`main`** — tagged releases and production. Hotfixes land here via
+  PR; no feature work ever bases on `main`.
+- **`dev`** — integration branch for all feature work. Default base
+  for `type: feature` flows.
+
+**Sync-down**: after a hotfix PR merges into `main`, run
+`/sdd-done <FEAT-ID> --sync-down` to merge the change back into `dev`
+so the integration branch never drifts behind production.
+
+---
+
+## Flow Types (FEAT-145, refined by FEAT-187)
 
 Every brainstorm/proposal/spec declares its flow type via YAML frontmatter
 at the top of the document:
@@ -133,28 +148,73 @@ at the top of the document:
 ```yaml
 ---
 type: feature        # one of: feature | hotfix
-base_branch: dev     # for feature: any branch; for hotfix: must be "main"
+base_branch: dev     # for feature: dev (or a parent feature branch);
+                     # for hotfix: must be "main"
 ---
 ```
 
-| Type      | base_branch       | When to use                                        |
-|-----------|-------------------|----------------------------------------------------|
-| `feature` | `dev` (default)   | Most work. Lands on `dev` via `/sdd-done`.         |
-| `feature` | `<other-branch>`  | Sub-features extending another feature branch.     |
-| `hotfix`  | `main` (required) | Production hotfixes. Land on `main` via manual PR. |
+| Type      | base_branch         | When to use                                                  |
+|-----------|---------------------|--------------------------------------------------------------|
+| `feature` | `dev` (default)     | Most work. Lands on `dev` via `/sdd-done`.                   |
+| `feature` | `<other-branch>`    | Sub-features extending another feature branch.               |
+| `hotfix`  | `main` (required)   | Production hotfixes. Land on `main` via manual PR.           |
 
-`/sdd-done` enforces: hotfixes are NEVER auto-pushed or auto-PR'd to `main`.
-The user opens the PR manually; afterwards, `/sdd-done --sync-dev` propagates
-the change back to `dev`.
+Features MUST NOT base on `main`. `/sdd-done` enforces: hotfixes are NEVER
+auto-pushed or auto-PR'd to `main`. The user opens the PR manually; afterwards,
+run `/sdd-done <FEAT-ID> --sync-down` to propagate the change back into `dev`.
+
+---
+
+## Release Cut
+
+Releases are cut by merging `dev` into `main` and tagging the merge
+commit. There is no long-lived release-candidate branch.
+
+### Cutting the release
+
+```bash
+git checkout dev
+git pull --ff-only origin dev
+# run the full test suite here — main is production
+
+# Open the release PR (never push straight to main):
+gh pr create --base main --head dev \
+  --title "release: vX.Y.Z" --body "<changelog>"
+```
+
+### Releasing
+
+1. Review the `dev → main` PR and let CI run green.
+2. Merge the PR.
+3. Tag the merge commit: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+4. `.github/workflows/release.yml` fires on the tag event and publishes
+   the release artifacts.
+5. Bring `dev` back in line with `main` (it picks up the merge commit and
+   any hotfixes):
+   ```bash
+   git checkout dev
+   git merge --no-edit origin/main
+   git push origin dev
+   ```
+
+### During a freeze
+
+If you need to stabilize a release while feature work continues, branch a
+short-lived `release/vX.Y.Z` from `dev`, land stabilization fixes there as
+sub-features (`type: feature, base_branch: release/vX.Y.Z`), and PR it into
+`main` when green.
+
+### Recommended Branch Protection
+
+`main` should require PRs, passing CI status checks, and signed commits.
+Configure via GitHub repo settings — not declaratively in this repo.
 
 ---
 
 ## Per-Spec Index Schema (`sdd/tasks/index/<feature-slug>.json`, FEAT-145)
 
-> **Migration history**: the legacy monolithic `sdd/tasks/.index.json` was
-> split into per-spec files by `scripts/sdd/migrate_index.py`. The original
-> monolith is preserved as a historical artifact. New tooling reads only
-> per-spec indexes.
+> **Note**: there is no legacy monolithic `sdd/tasks/.index.json` in this
+> repo — per-spec indexes are the only supported format.
 
 Each per-spec index file contains a header describing the feature plus
 the `tasks[]` array for that feature only. Two parallel features touch
@@ -194,6 +254,57 @@ Tasks orphaned by the migration (no resolvable `feature`) live in
 
 See `sdd/specs/sdd-flow-types-and-per-spec-index.spec.md` (FEAT-145) for
 the authoritative design rationale.
+
+---
+
+## TASK/FEAT ID Allocation (FEAT-387)
+
+`TASK-<NNN>` and `FEAT-<NNN>` numbers are allocated by a tiny, git-native
+compare-and-swap ledger, not by scanning existing files for the highest
+number and incrementing — that scan-and-increment approach has no lock and
+no re-check against `origin/<base_branch>` immediately before committing,
+so two `/sdd-task`/`/sdd-spec` runs racing each other (e.g. concurrent
+dev-loop planner dispatches) can silently allocate the same number to two
+different features. Different filenames mean git's merge machinery never
+flags the collision — this is exactly how six real `TASK-<NNN>` collisions
+between FEAT-380 (sandbox-hardening) and two unrelated features went
+undetected until `/sdd-done`'s closeout tooling stumbled on them.
+
+- **`sdd/tasks/.id_ledger.json`** — the ledger itself: a single, git-tracked
+  JSON file holding `next_task_id` and `next_feature_id`. Every allocation
+  reads this file, computes a reservation, and races to commit+push an
+  update — the push itself is the compare-and-swap (a non-fast-forward
+  rejection means someone else already advanced the counter).
+- **`scripts/sdd/id_ledger.py`** — the `IdLedger` Pydantic model plus
+  `load_ledger`/`save_ledger` and the one-time `bootstrap_ledger()` used to
+  seed the ledger strictly ahead of every ID already in use.
+- **`scripts/sdd/reserve_ids.py`** — the allocator `/sdd-task` and
+  `/sdd-spec` call instead of hand-computing a number:
+  ```bash
+  python -m scripts.sdd.reserve_ids --kind task --count 8 \
+    --base-branch dev --label <feature-slug>
+  ```
+  Reads the ledger, commits a *ledger-only* update, and pushes to
+  `origin/<base_branch>`; on a rejected (non-fast-forward) push it fetches,
+  re-reads the now-current ledger, recomputes, and retries (bounded, with
+  jittered backoff) instead of silently succeeding with a stale, already-
+  claimed number. Prints the reserved IDs one per line.
+- **`scripts/sdd/check_id_collisions.py`** — an independent, read-only
+  defense-in-depth backstop (no dependency on the ledger/allocator): scans
+  `sdd/tasks/index/*.json`, `sdd/tasks/active/*.md`, and
+  `sdd/tasks/completed/*.md` for any `TASK-<NNN>` number claimed by more
+  than one distinct feature. Wired into CI (`.github/workflows/ci.yml`,
+  `lint-and-registry` job) against a one-time baseline exception file
+  (`scripts/sdd/.collision_baseline.json`) so historical, pre-ledger
+  collisions don't retroactively fail the build — only a genuinely NEW
+  collision does. `FEAT-<NNN>` reuse across specs (an accepted,
+  intentional pattern — e.g. FEAT-380 split across three specs) is
+  reported informationally and never fails the build.
+
+An intentional, explicit `FEAT-<NNN>` reuse (splitting one initiative
+across multiple specs, the FEAT-380 pattern) skips the reservation call
+via a `reuse_feature_id: FEAT-<NNN>` frontmatter field — see
+`.claude/commands/sdd-spec.md`.
 
 ---
 

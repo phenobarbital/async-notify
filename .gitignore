@@ -164,5 +164,13 @@ notify/_version.py
 # Claude Code / SDD local artifacts
 .claude/worktrees/
 .claude/settings.local.json
-sdd/tasks/active/
 artifacts/
+.autopilot/
+ai_fluency_report.html
+# NOTE: sdd/tasks/active/ is intentionally TRACKED — worktrees and other
+# sessions must see in-flight task files (see CLAUDE.md, "SDD Auto-Commit Rule").
+# parrot LLM-wiki state (local retrieval plane)
+.parrot/
+# navconfig scaffolds an empty plugins/{agents,tools} tree at BASE_DIR on
+# import; it is not part of async-notify and must not be tracked.
+plugins/

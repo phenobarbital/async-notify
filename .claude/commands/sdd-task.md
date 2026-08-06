@@ -13,6 +13,13 @@ Decompose an approved Feature Specification into atomic, assignable implementati
 - Check `sdd/tasks/index/<feature>.json` for existing tasks to avoid duplication.
 - Do NOT write implementation code — tasks are plans, not code.
 - Mark tasks that can run in parallel worktrees with `parallel: true`.
+- **`TASK-<NNN>` numbers are reserved via `scripts/sdd/reserve_ids.py`
+  (FEAT-387), never hand-computed by scanning existing files for the
+  highest number in use.** That scan-and-increment approach has no lock
+  and no re-check against `origin/<base_branch>` immediately before
+  committing, so two `/sdd-task` runs racing each other (e.g. concurrent
+  dev-loop planner dispatches) can silently allocate the same number to
+  different features. See §4 below.
 - **Must run on the spec's `base_branch`** (read from frontmatter — `dev` for features, `main` for hotfixes). Not inside a worktree.
 - **Always commit task files and per-spec index to `base_branch`** before creating the worktree.
 
@@ -32,8 +39,18 @@ git pull --ff-only origin "$BASE"
 ```
 
 For `type: hotfix`, `BASE` MUST be `main`. For `type: feature`, `BASE` defaults
-to `dev` and may be any non-main branch (sub-features extend a parent feature
-branch — see `CLAUDE.md`).
+to `dev` and may be any non-main branch
+(sub-features extend a parent feature branch — see `CLAUDE.md`).
+
+**Validation:** if `TYPE == "feature"` and `BASE_BRANCH == "main"`, abort:
+```
+⚠️  type='feature' cannot base on 'main'. Features land on dev (default)
+   or on a parent feature branch. For changes that must base on
+   main, set type='hotfix' in the document frontmatter.
+```
+
+Note: a parent feature branch is a valid `base_branch` for `type: feature` when
+decomposing a sub-feature. Only `type: hotfix` may base on `main`.
 
 **Abort conditions (do NOT stash or auto-resolve):**
 - Working tree dirty: `⚠️  Cannot sync <BASE>: working tree has uncommitted changes. Stash or commit first, then re-run /sdd-task.`
@@ -72,7 +89,7 @@ For EACH task, you MUST populate its `## Codebase Contract` section:
 3. **Add task-specific references**: if the task touches files not covered by the spec's
    contract, read those files now and add their signatures.
 4. **Be precise about scope**: only include imports/signatures the task actually needs.
-   A task that modifies `parrot/tools/` does not need signatures from `parrot/loaders/`.
+   A task that modifies one module does not need signatures from unrelated modules.
 5. **Include the "Does NOT Exist" section**: this is the strongest anti-hallucination
    measure. List plausible-sounding things that an agent might assume exist but don't.
 
@@ -83,7 +100,32 @@ explicit, verified code anchors.
 ### 4. Generate Tasks
 1. Ensure `sdd/tasks/active/` directory exists (create if needed).
 2. Read the task template at `sdd/templates/task.md`.
-3. For each task, create `sdd/tasks/active/TASK-<NNN>-<slug>.md` using the template.
+3. **Reserve `TASK-<NNN>` IDs via the git-native compare-and-swap ledger
+   (FEAT-387) — never scan existing files and increment by hand:**
+   ```bash
+   TASK_IDS=$(python -m scripts.sdd.reserve_ids --kind task --count <N> \
+     --base-branch "$BASE" --label <feature-slug>)
+   ```
+   Where `<N>` is the total number of tasks about to be generated for this
+   spec. On success this prints exactly `<N>` lines, one `TASK-<NNN>` per
+   line, e.g.:
+   ```
+   TASK-1968
+   TASK-1969
+   TASK-1970
+   ```
+   `reserve_ids.py` commits and pushes its own ledger-only update to
+   `origin/<BASE>` as part of this call (retrying internally on a
+   non-fast-forward rejection); it refuses to run if the working tree has
+   any uncommitted changes besides the ledger file. If the command exits
+   non-zero (retries exhausted, or the working tree wasn't clean), **STOP**
+   and report the error to the user — do NOT fall back to hand-computing a
+   number.
+4. For each task, create `sdd/tasks/active/TASK-<NNN>-<slug>.md` using the
+   template — consume the reserved IDs from `$TASK_IDS`, in order, one per
+   task. Use each ID verbatim for both the filename and every `id` field
+   in the per-spec index; never invent, recompute, or reuse a `TASK-<NNN>`
+   number outside of what `reserve_ids.py` returned.
 
 **CRITICAL — Task file header must include the Feature ID:**
 The `**Feature**:` line at the top of every task file MUST combine the formal
@@ -154,6 +196,10 @@ mkdir -p "$(dirname "$INDEX")"
 > **CRITICAL — Only commit the per-spec index and the new task files. NEVER
 > commit unrelated changes.** Other files may be modified or unstaged in the
 > working directory — do NOT touch them. Follow the exact sequence below.
+
+> **CRITICAL — Only commit task files and the index. NEVER commit unrelated changes.**
+> Other files may be modified or unstaged in the working directory — do NOT
+> touch them. Follow the exact sequence below.
 
 ```bash
 # 1. Unstage everything first to ensure a clean staging area

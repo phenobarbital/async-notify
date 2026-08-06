@@ -24,6 +24,75 @@ All providers share these capabilities:
 - Error handling and retries
 - Connection pooling
 
+Template Support
+-----------------
+
+Every provider that routes through ``ProviderBase._prepare_`` — which is all
+of them except OneSignal (see below) — accepts a ``template=`` keyword on
+``send()``. As of ``1.6.0``, ``template=`` accepts **either**:
+
+- a template **filename**, resolved through ``TEMPLATE_DIR`` (the original,
+  unchanged behaviour), or
+- raw **Jinja2 source text**, compiled on the fly.
+
+The two are told apart by a conservative, deterministic heuristic
+(``notify.templates.is_template_source``): *source* is detected only when
+the value contains a Jinja2 delimiter (``{{``, ``{%``, ``{#``) or a line
+break. Anything else — ``"email.html"``, ``"notifications/welcome.txt"`` —
+is treated as a filename, so every existing caller is unaffected.
+
+Use ``template_is_source=`` to override the heuristic explicitly:
+
+- ``template_is_source=None`` (default) — auto-detect via the rules above.
+- ``template_is_source=True`` — always compile *template* as Jinja2 source.
+- ``template_is_source=False`` — always resolve *template* as a filename
+  (exact pre-1.6.0 behaviour).
+
+**Caveat**: a template body with no Jinja2 markup and no line break (for
+example ``"Hello world"``) is indistinguishable from a filename and will be
+looked up on disk, raising ``FileNotFoundError``. Pass
+``template_is_source=True`` for that case.
+
+Example::
+
+    # raw source — new in 1.6.0
+    await Notify("smtp").send(
+        recipient=[actor],
+        subject="Welcome",
+        template="<p>Hola {{ recipient.account.address }} — {{ message }}</p>",
+        message="…",
+    )
+
+    # filename — unchanged from pre-1.6.0
+    await Notify("smtp").send(recipient=[actor], template="welcome.html")
+
+    # forced, for a body with no Jinja markup
+    await Notify("telegram").send(
+        recipient=[chat], template="Hello world", template_is_source=True,
+    )
+
+**Security — template source is executable.** ``autoescape`` is disabled
+(and stays disabled), so a template compiled from a string executes
+arbitrary Jinja2 (attribute traversal, loops, registered globals and
+filters) and emits **unescaped** output. Template *source* must come from
+trusted operators — configuration, or database rows written by staff. Never
+build it from end-user input. End-user data belongs in the **parameters**,
+which are only ever substituted as values::
+
+    # SAFE — user data is a parameter
+    await notify.send(recipient=[actor], template=body_from_db, name=user_input)
+
+    # UNSAFE — user data becomes template code
+    await notify.send(recipient=[actor], template=f"<p>Hi {user_input}</p>")
+
+Compiled string templates are cached in a bounded LRU (default size 128,
+tunable via ``TemplateParser(..., string_cache_size=N)``) keyed by a hash of
+the source, so re-sending the same body does not recompile it. See
+``api.rst`` ("templates") for the full ``TemplateParser`` reference.
+
+**OneSignal does not support templates** (file or string) — its ``send()``
+overrides the base implementation without calling ``_prepare_``.
+
 Configuration
 -----------
 

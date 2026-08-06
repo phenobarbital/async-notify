@@ -1,11 +1,13 @@
-# AI-Parrot Development Guide for Claude
+# async-notify Development Guide for Claude
 
 ## Project
 
-Async-first Python framework for AI Agents and Chatbots.
+Asyncio-based Python library for sending notifications (email, IM, SMS, push)
+through a uniform provider interface.
 See @.agent/CONTEXT.md for full architectural context.
 
-**Main Branch**: `main`
+**Distribution**: `async-notify` · **Import package**: `notify`
+**Production branch**: `main` · **Integration branch**: `dev`
 
 ## Development Environment
 
@@ -25,43 +27,50 @@ See @.agent/CONTEXT.md for full architectural context.
    ```
    **NEVER** run `uv`, `python`, or `pip` commands without activating first.
 
-3. **Dependencies**: Manage all dependencies via `pyprmodioject.toml`
+3. **Dependencies**: Manage all dependencies via `pyproject.toml`
 
+## Provider-Centric Architecture
 
-## Tool-Centric Architecture
+async-notify reaches the outside world through **providers**. When adding or
+changing a transport:
 
-AI-Parrot's agents interact with the world through tools. When creating tools:
-
-1. **Location**: Place all external API/service wrappers in `parrot/tools/`
-2. **Decorator Pattern**: Use `@tool` for simple functions
+1. **Location**: every provider is a package under `notify/providers/<name>/`
+   (`__init__.py` re-exports the class defined in `<name>.py`).
+2. **Base classes**: subclass `ProviderBase` (or `ProviderMessaging` /
+   `ProviderIM` / `ProviderPush`) from `notify/providers/base.py` and declare
+   `provider`, `provider_type`, and `blocking`.
    ```python
-   from parrot.tools import tool
+   from notify.providers.base import ProviderBase, ProviderType
 
-   @tool
-   def get_weather(location: str) -> str:
-       """Get the current weather for a location."""
-       return f"Weather in {location}: Sunny, 25°C"
+   class MyProvider(ProviderBase):
+       provider = "myprovider"
+       provider_type = ProviderType.NOTIFY
+       blocking = False
+
+       async def _send_(self, to, message, **kwargs):
+           """Deliver a single message. Never override send()."""
    ```
-
-3. **Toolkit Pattern**: Use `AbstractToolkit` for complex tool collections
-4. **Documentation**: Every tool MUST have clear docstrings explaining purpose, parameters, and return values
+3. **Instantiation**: user-facing code goes through the `Notify` factory
+   (`notify/notify.py`), never a direct provider import.
+4. **Configuration**: credentials/settings come from `notify/conf.py`
+   (navconfig) — never `os.environ` inside a provider.
+5. **Documentation**: every provider MUST have Google-style docstrings
+   explaining purpose, parameters, and return values.
 
 ## Async-First Development
 
-AI-Parrot is built on async/await patterns
+async-notify is built on async/await patterns. If a third-party SDK is
+sync-only, route it through `blocking = 'executor'` rather than blocking the
+event loop.
 
-## Integration Patterns
+## Cython Extensions
 
-AI-Parrot supports multiple integration methods:
-
-### 1. A2A (Agent-to-Agent)
-Native protocol for agent discovery and communication
-
-### 2. MCP (Model Context Protocol)
-Expose agents as MCP servers or consume external MCP servers
-
-### 3. OpenAPI Integration
-Consume any OpenAPI spec as a dynamic toolkit using `OpenAPIToolkit`
+`notify/exceptions.pyx` and `notify/types/typedefs.pyx` are Cython modules.
+Follow `.claude/rules/cython-development.md`, and rebuild after editing:
+```bash
+python setup.py build_ext --inplace
+```
+Generated `.c` sources are NOT tracked in git.
 
 ## Non-Negotiable Rules
 
@@ -87,9 +96,54 @@ Consume any OpenAPI spec as a dynamic toolkit using `OpenAPIToolkit`
 - Never run `rm -rf` or system-level deletions
 - No form submissions or logins without user approval
 
+### Adversarial Second Opinion: Codex CLI
+
+The OpenAI `codex` CLI is installed and authenticated. Use it as an
+independent perspective for adversarial code reviews, design opinions,
+brainstorming, research cross-checks, and implementation sanity checks.
+
+Rules:
+- Never feed Codex your reasoning, justification, or preferred conclusion.
+  Give it only the diff, the requirement, and the question. Supplying your
+  conclusions produces ratification, not review.
+- Treat Codex output as advisory. For every substantive finding, explicitly
+  mark it as `CONFIRM` (adopt), `REJECT` (with reason), or `ESCALATE`.
+- Never silently concede to Codex and never silently drop a finding.
+- Run each Codex call as a full background agent session. Typical runtime is
+  30 seconds to 2 minutes; do not call it per edit or from hooks.
+- For parallel perspective, use one Claude subagent and one background
+  `codex exec` with the same neutral brief, then synthesize agreements and
+  disagreements.
+
+Commands:
+```bash
+# Reviews
+codex exec review --uncommitted
+codex exec review --base dev
+codex exec review --commit <sha>
+
+# Opinions, brainstorming, and cross-checks
+codex exec --sandbox read-only -o <scratch-file> "<neutral brief>"
+
+# Follow-up in the same Codex session
+codex exec resume --last "<question>"
+
+# Image generation / mockups / wireframes
+codex exec --sandbox workspace-write -o <out.txt> \
+  "Generate an image: <description>. Save as <name>.png"
+codex exec --sandbox workspace-write -i <screenshot.png> -o <out.txt> \
+  "Generate an image variant: <neutral brief>. Save as <name>.png"
+```
+
+Image-generation gotcha: `resume` does not accept `--sandbox`; use
+`-c sandbox_mode="workspace-write"` on resume when a writable sandbox is
+required.
+
 ## Key References
 - Architecture & patterns: @.agent/CONTEXT.md
 - SDD workflow: @docs/sdd/WORKFLOW.md
+- SDD platform reference: `docs/sdd/PLATFORM.md`
+- SDD practical guide: `docs/sdd/GUIDE.md`
 - Skills: @.agent/skills/
 - Workflows: @.agent/workflows/
 
@@ -99,11 +153,32 @@ Consume any OpenAPI spec as a dynamic toolkit using `OpenAPIToolkit`
 
 ## Git Configuration
 
-- **Integration branch**: `dev` (default base for `type: feature`)
-- **Production branch**: `main` (mandatory base for `type: hotfix`)
-- **Flow types** (FEAT-145): every brainstorm/proposal/spec declares `type` and `base_branch` via YAML frontmatter at the top.
-- **Worktrees branch from `base_branch`** (which `/sdd-task` and `sdd-worker` ensure HEAD is on before creating the worktree). Hotfix worktrees branch from `main`; feature worktrees branch from `dev` (or any non-main branch the user picks for sub-features).
-- **`/sdd-done` NEVER pushes to or opens a PR against `main`** — hotfix PRs are user-initiated. After the user merges the hotfix into `main`, run `/sdd-done <FEAT-ID> --sync-dev` to propagate the change back to `dev`.
+async-notify uses two long-lived branches:
+
+- **`main`** — tagged releases and production. Hotfixes land here via PR;
+  no feature work ever bases on `main`.
+- **`dev`** — integration branch for all feature work. Default base
+  for `type: feature` flows.
+
+**Flow types** (FEAT-145): every brainstorm/proposal/spec declares `type`
+and `base_branch` via YAML frontmatter at the top.
+- `feature` — base is `dev` (default), or a parent feature branch for
+  sub-features. NEVER `main`.
+- `hotfix` — base is `main` (mandatory).
+
+**`/sdd-done` NEVER pushes to or opens a PR against `main`** —
+hotfix PRs are user-initiated. After the user merges the hotfix into
+`main`, run `/sdd-done <FEAT-ID> --sync-down` to propagate the change
+back into `dev`. (`--sync-dev` is a deprecated alias.)
+
+**Recommended branch protection**: `main` should require PRs and passing
+CI. Not configured declaratively in this repo — set via GitHub repo
+settings.
+
+- **Worktrees branch from `base_branch`** (which `/sdd-task` and `sdd-worker`
+  ensure HEAD is on before creating the worktree). Hotfix worktrees branch
+  from `main`; feature worktrees branch from `dev` (or any non-main branch
+  the user picks for sub-features).
 
 ## Worktree Creation
 
@@ -122,16 +197,16 @@ git worktree add -b <branch-name> .claude/worktrees/<worktree-name> HEAD
 ```bash
 # From dev (most common)
 git checkout dev
-git worktree add -b feat-014-videoreel-visual-changes \
-  .claude/worktrees/feat-014-videoreel-visual-changes HEAD
+git worktree add -b feat-014-teams-adaptive-cards \
+  .claude/worktrees/feat-014-teams-adaptive-cards HEAD
 
 # From another feature branch (sub-features)
-git checkout feat/ontology-rag
-git worktree add -b feat-014-sub-task \
-  .claude/worktrees/feat-014-sub-task HEAD
+git checkout feat-014-teams-adaptive-cards
+git worktree add -b feat-015-sub-task \
+  .claude/worktrees/feat-015-sub-task HEAD
 
 # Then launch Claude inside the worktree
-cd .claude/worktrees/feat-014-videoreel-visual-changes
+cd .claude/worktrees/feat-014-teams-adaptive-cards
 claude   # interactive, manual /sdd-start
 # or
 claude --agent sdd-worker --model sonnet --verbose
@@ -162,10 +237,10 @@ git worktree prune
 |---------|-----------------|------------------|
 | `/sdd-brainstorm` | `sdd/proposals/<n>.brainstorm.md` (with frontmatter) | `base_branch` |
 | `/sdd-proposal`   | `sdd/proposals/<n>.proposal.md` (with frontmatter)  | `base_branch` |
-| `/sdd-spec`       | `sdd/specs/<n>.spec.md` (with frontmatter)          | `base_branch` |
-| `/sdd-task`       | `sdd/tasks/index/<feature>.json` + `sdd/tasks/active/TASK-*` | `base_branch` |
+| `/sdd-spec`       | `sdd/specs/<n>.spec.md` (with frontmatter) + a `reserve_ids.py` FEAT-ID reservation commit to `sdd/tasks/.id_ledger.json` (FEAT-387) | `base_branch` |
+| `/sdd-task`       | `sdd/tasks/index/<feature>.json` + `sdd/tasks/active/TASK-*` + a `reserve_ids.py` TASK-ID reservation commit to `sdd/tasks/.id_ledger.json` (FEAT-387) | `base_branch` |
 | `/sdd-start`      | Per-spec index status update + implementation code  | worktree (feature branch) |
-| `/sdd-done`       | Per-spec index final state + task file moves; merges feature → `base_branch` | `base_branch` (NEVER `main`) |
+| `/sdd-done`       | Verification stamp on per-spec index (committed on feature branch); merges feature → `base_branch` | worktree (feature branch), merged to `base_branch` by Step 9 |
 
 Commit message convention:
 ```
@@ -176,6 +251,16 @@ sdd: <action> for <feature-name>
 repo to update SDD state — per-spec indexes mean each feature owns its own
 index file, so the worktree's commit covers code AND state in one stroke.
 The merge in `/sdd-done` brings them to `base_branch` atomically.
+
+**Note (FEAT-387)**: `sdd/tasks/.id_ledger.json` is a git-tracked
+compare-and-swap counter for `TASK-<NNN>`/`FEAT-<NNN>` numbers, allocated
+via `scripts/sdd/reserve_ids.py` (not scanned-and-incremented by hand). Its
+reservation commit is independent — pushed to `base_branch` immediately by
+`reserve_ids.py` itself, BEFORE the calling command's own task/spec files
+are written, never bundled into the same commit.
+`scripts/sdd/check_id_collisions.py` is an independent, read-only backstop
+that catches any `TASK-<NNN>` collision that still slips through. See
+`sdd/WORKFLOW.md` ("TASK/FEAT ID Allocation") for full details.
 
 ## Isolation Model
 
@@ -197,11 +282,11 @@ Terminal 1 (in .claude/worktrees/feat-007):     Terminal 2 (in .claude/worktrees
 git checkout dev && git pull origin dev
 
 # 2. Create and approve a spec (committed to dev automatically)
-/sdd-spec videoreel-visual-changes -- ...
-/sdd-task sdd/specs/videoreel-visual-changes.spec.md
+/sdd-spec teams-adaptive-cards -- ...
+/sdd-task sdd/specs/teams-adaptive-cards.spec.md
 
 # 3. Create worktree from dev
-git worktree add -b feat-014-videoreel-visual-changes \
+git worktree add -b feat-014-teams-adaptive-cards \
   .claude/worktrees/feat-014 HEAD
 
 # 4. Enter worktree and work
@@ -218,11 +303,11 @@ claude --agent sdd-worker --dangerously-skip-permissions --model sonnet --verbos
 /sdd-done FEAT-014
 
 # 5. Push and PR
-git push origin feat-014-videoreel-visual-changes
+git push origin feat-014-teams-adaptive-cards
 # Create PR against dev
 
 # 6. Cleanup after merge
-cd ~/proyectos/...   # back to main repo
+cd ~/proyectos/notify   # back to main repo
 git worktree remove .claude/worktrees/feat-014
 ```
 
@@ -277,29 +362,88 @@ The header carries flow metadata cached from the spec frontmatter; the
 
 Both `feature_id` and `feature` must be present on every task entry.
 Commands resolve features by matching either field (exact, numeric suffix,
-or substring) against the per-spec index headers.
-
-**Migration history**: the legacy `sdd/tasks/.index.json` monolith was
-split per-spec by `scripts/sdd/migrate_index.py`. The monolith is preserved
-as a historical artifact and ignored by all FEAT-145 commands. Tasks the
-migration could not attribute to a feature live in
+or substring) against the per-spec index headers. There is no legacy
+monolithic `.index.json` in this repo — per-spec indexes are the only
+supported format. Tasks that cannot be attributed to a feature live in
 `sdd/tasks/index/_orphans.json` and are surfaced (but not assigned) by
 `/sdd-status` / `/sdd-next`.
-
-Authoritative reference: `sdd/specs/sdd-flow-types-and-per-spec-index.spec.md`
-(FEAT-145).
-
-> **Heads-up**: `.gitignore` has a global `templates/` rule (line 245).
-> The three `sdd/templates/*.md` files were already tracked before the
-> rule landed, so they remain editable. If you ever need to add a NEW
-> template file, you must `git add -f` it and consider tightening the
-> ignore pattern.
 
 ### When NOT to Use Worktrees
 
 - **Hotfixes on `main`**: Work directly on `main` or a short-lived `hotfix/*` branch.
-- **Documentation-only changes**: No code conflicts possible, work on `develop` directly.
+- **Documentation-only changes**: No code conflicts possible, work on `dev` directly.
 - **Single-task features**: If a spec has only one task, a worktree adds overhead
   with no benefit. Work directly on a feature branch.
 - **Exploratory brainstorming**: `/sdd-brainstorm` doesn't produce code — no worktree needed.
 - **Quick bug fixes**: If the fix is a single commit, skip the worktree ceremony.
+
+<!-- parrot:wiki:begin -->
+## Codebase Knowledge Graph (LLM Wiki)
+
+This repository maintains a machine-first knowledge graph of the
+codebase (pages + typed edges over a local SQLite plane, built by
+`wikitoolkit build`). For ANY question about the codebase — where
+something lives, how modules relate, what a subsystem does — you MUST
+run a scoped wiki query FIRST, before Grep/Glob/Read or any shell
+search (`grep`/`rg`/`find`/`cat` via Bash):
+
+- `wikitoolkit query "<question>"` — token-budgeted, ranked page
+  stubs for a scoped question. ALWAYS start here.
+- `wikitoolkit page <id>` — read one page in full (file summaries,
+  API outlines, content). Use the ids returned by `query`.
+- `wikitoolkit related <id>` — follow typed edges (`contains`,
+  `references`) to neighbouring files/modules.
+- `wikitoolkit status` — plane statistics and staleness.
+- `wikitoolkit build` — refresh the graph after large changes
+  (a git post-commit hook may already keep it fresh).
+
+These same operations are also exposed as native MCP tools —
+`wiki_query`, `wiki_page`, `wiki_related`, `wiki_remember`, `wiki_note`,
+`wiki_status` — via the `wikitoolkit` MCP stdio server registered in
+this repo's `.mcp.json` (FEAT-403). If they appear in your tool list,
+prefer calling them directly; they have equal standing with Grep/Read
+at tool-selection time instead of competing via a Bash-invoked CLI.
+
+**Query discipline** (avoids the two most common ways the wiki
+"fails" — which are usually caller error, not missing coverage):
+
+1. **Query for the *thing*, not for your *hypothesis* about it.** The
+   ranking is lexical — extra concept words steer it toward those
+   concepts. To locate a class or feature, name the symbol/module/
+   subsystem you want (`"attestation model service"`), not your theory
+   about where it might live.
+2. **Follow the thread before falling back.** If a result scores low
+   or names a parent module, resolve it with `wikitoolkit page <id>`
+   or `wikitoolkit related <id>` — one hop usually lands the real
+   page. Do NOT jump to grep just because the first `query` didn't
+   rank the exact page first.
+
+Only fall back to Grep/Glob/Read (or shell search) once a clean query
+*and* a page/related follow-up have genuinely come up empty — and say
+so before you do. Consider `wikitoolkit build` if results look stale.
+
+**Saving knowledge (persistent memory).** The wiki is also your
+durable memory — what you save here survives this session and is
+found by future `wikitoolkit query` calls ("the agent forgets, the
+graph does not"). When you learn a durable fact, make a decision, or
+extract a lesson worth keeping, SAVE it:
+
+- `wikitoolkit remember "<fact>" --category [note|decision|lesson|concept]
+  [--title "<short title>"] [--link <page_id> --rel <relation>]` —
+  file new knowledge (idempotent: same title+category updates the
+  existing memory). Link it to the pages it is about.
+- `wikitoolkit note <page_id> "<text>"` — append an attributed,
+  dated note to an existing page.
+- `wikitoolkit link <src_id> <dst_id> --rel <relation>` — connect
+  two pages with a typed, asserted edge.
+- `wikitoolkit memories` — list saved memories;
+  `wikitoolkit audit` — the attributed write log.
+
+Save selectively: durable decisions, gotchas, and cross-file
+relationships — not session chatter. Every write is attributed and
+auditable.
+
+The `/parrotwiki` command wraps these (e.g. `/parrotwiki query how
+does ingest work`, `/parrotwiki remember <fact>`, `/parrotwiki --wiki`
+to export a human-readable markdown wiki).
+<!-- parrot:wiki:end -->

@@ -5,7 +5,7 @@
 A two-phase orchestration pipeline for Claude Code that takes a Jira ticket
 from inception to reviewed PR with minimal human intervention.
 
-**Phase 1 — Planning (interactive):** `/sdd-jira` command
+**Phase 1 — Planning (interactive):** `/sdd-fromjira` command
 **Phase 2 — Execution (autonomous):** `sdd-autopilot` agent
 
 The separation exists because planning REQUIRES human judgment (scope decisions,
@@ -16,11 +16,11 @@ once the spec is approved.
 
 ## Architecture
 
-### The Key Insight: Shell-Level AgentCrew
+### The Key Insight: Shell-Level Agent Crew
 
 Claude Code agents run as separate CLI processes. Orchestration happens at the
 shell level via `claude -p "prompt"` (non-interactive) and `claude --agent <name>`
-invocations. This mirrors the `AgentCrew.run_flow()` DAG pattern but with:
+invocations. This mirrors an in-process DAG orchestrator but with:
 
 - **Agents** = Claude Code agent definitions (`.claude/agents/*.md`)
 - **Tasks** = CLI invocations with structured prompts
@@ -32,7 +32,7 @@ invocations. This mirrors the `AgentCrew.run_flow()` DAG pattern but with:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Phase 1: /sdd-jira (INTERACTIVE — human in the loop)           │
+│ Phase 1: /sdd-fromjira (INTERACTIVE — human in the loop)           │
 │                                                                 │
 │   Jira ticket ──► brainstorm Q&A ──► spec ──► tasks ──► approve │
 │                   (2+ rounds)        (commit)  (commit)         │
@@ -69,20 +69,28 @@ invocations. This mirrors the `AgentCrew.run_flow()` DAG pattern but with:
 
 ---
 
-## Phase 1: `/sdd-jira` Command
+## Phase 1: `/sdd-fromjira` Command
+
+> **Implementation note.** "Phase 1" is a *logical* phase, not a single
+> command. The real entry point is `/sdd-fromjira`, which produces a
+> committed brainstorm; the worker-ready spec and task decomposition are
+> then produced by the standard chain `/sdd-spec` → `/sdd-task`. This
+> section describes the combined planning outcome those three commands
+> deliver. The `--auto-approve` flag below is aspirational — `/sdd-fromjira`
+> currently supports `--complexity` and `--skip-qa`.
 
 ### Purpose
 
-Interactive planner that converts a Jira ticket into a fully specified,
+Interactive planning that converts a Jira ticket into a fully specified,
 task-decomposed, worktree-ready feature — with enough detail that `sdd-worker`
 can execute without asking questions.
 
 ### Usage
 
 ```
-/sdd-jira NAV-8036
-/sdd-jira NAV-8036 --auto-approve    # skip manual spec approval (risky)
-/sdd-jira NAV-8036 --complexity=fix  # hint: simple fix, minimal Q&A
+/sdd-fromjira NAV-8036
+/sdd-fromjira NAV-8036 --auto-approve    # skip manual spec approval (risky)
+/sdd-fromjira NAV-8036 --complexity=fix  # hint: simple fix, minimal Q&A
 ```
 
 ### Flow
@@ -154,7 +162,7 @@ detailed comments, not just prose descriptions:
 ### 4.1 OAuth Callback Handler
 
 ```python
-# File: parrot/integrations/jira/oauth.py
+# File: notify/providers/office365/oauth.py
 # Extends: aiohttp route handler
 
 async def handle_oauth_callback(request: web.Request) -> web.Response:
@@ -209,9 +217,9 @@ async def handle_oauth_callback(request: web.Request) -> web.Response:
 ## 6. Codebase Contract
 
 ### Does NOT Exist (verified)
-- `parrot.auth.OAuthManager` — does not exist, must be created
+- `notify.auth.OAuthManager` — does not exist, must be created
 - `AbstractToolkit.set_credentials()` — no such method
-- `parrot.tools.context.permission_context` — planned but not yet implemented
+- `notify.tools.context.permission_context` — planned but not yet implemented
 - `JiraToolkit.oauth_mode` — no such attribute; auth is set at __init__
 ```
 
@@ -249,7 +257,7 @@ git worktree add -b feat-<FEAT-ID>-<slug> \
 #### 7. Output & Handoff
 
 ```
-✅ /sdd-jira complete for NAV-8036
+✅ /sdd-fromjira complete for NAV-8036
 
    Jira: NAV-8036 — "Add OAuth 2.0 support for JiraToolkit"
    Spec: sdd/specs/jira-oauth.spec.md (committed to dev)
@@ -604,69 +612,68 @@ wrong code).
 
 ### The Solution: Task Specification Depth
 
-The `/sdd-jira` command ensures each task contains enough detail that the
+The `/sdd-fromjira` command ensures each task contains enough detail that the
 worker never needs to ask:
 
 #### Level 1 — Minimum (current sdd-task)
 ```markdown
 ## Scope
-- Create `oauth.py` in `parrot/integrations/jira/`
-- Implement OAuth callback handler
+- Create `oauth.py` in `notify/providers/office365/`
+- Implement OAuth token refresh
 ```
 
 #### Level 2 — Worker-Ready (required for autopilot)
 ```markdown
 ## Scope
-- **CREATE** `parrot/integrations/jira/oauth.py`
-- **MODIFY** `parrot_tools/jiratoolkit.py` — add `_resolve_credentials()` method
+- **CREATE** `notify/providers/office365/oauth.py`
+- **MODIFY** `notify/providers/office365/__init__.py` — add `_resolve_credentials()` method
 
 ## Pseudo-Code
 
 ### oauth.py
 ```python
-# 1. Route handler: POST /oauth/jira/callback
-# 2. Extract code + state from query params
-# 3. Validate state against Redis (key: oauth:state:{state_value})
-# 4. Exchange code → access_token via POST to:
-#      https://auth.atlassian.com/oauth/token
-#    Body: grant_type=authorization_code, code=..., redirect_uri=...
-# 5. Store token in Redis (key: oauth:token:{user_id}, TTL from expires_in)
-# 6. Return HTML success page
+# 1. Build the client-credentials payload from tenant_id/client_id/client_secret
+# 2. Exchange it for an access_token via POST to:
+#      https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token
+#    Body: grant_type=client_credentials, scope=https://graph.microsoft.com/.default
+# 3. Cache the token in memory keyed by tenant_id, honouring expires_in
+# 4. Refresh transparently when the cached token is within 60s of expiry
+# 5. Raise ProviderError on a non-200 response, never swallow the body
 `` `
 
-### jiratoolkit.py modifications
+### office365/__init__.py modifications
 ```python
-# In JiraToolkit.__init__:
-#   Add self.credential_resolver: Optional[CredentialResolver] = None
-#   If credential_resolver is provided, skip basic_auth/token_auth setup
+# In Office365.__init__:
+#   Add self.token_provider: Optional[TokenProvider] = None
+#   If token_provider is provided, skip the static credential setup
 #
-# New method _resolve_credentials(self, user_id: str) -> Dict:
-#   If self.credential_resolver:
-#     return await self.credential_resolver.resolve('jira', user_id)
+# New method _resolve_credentials(self) -> dict:
+#   If self.token_provider:
+#     return await self.token_provider.get_token(self.tenant_id)
 #   Else:
 #     return {'auth_type': self.auth_type, 'token': self.token, ...}
 `` `
 
 ## Codebase Contract
 ### Verified Imports
-- `from parrot_tools.toolkit import AbstractToolkit` — packages/ai-parrot-tools/src/parrot_tools/toolkit.py:15
-- `from parrot.tools.manager import ToolManager` — packages/ai-parrot/src/parrot/tools/manager.py:1
+- `from notify.providers.base import ProviderBase` — notify/providers/base.py:30
+- `from notify.exceptions import ProviderError` — notify/exceptions.pyx
 
 ### Does NOT Exist
-- `parrot.auth.CredentialResolver` — must be created in this task
-- `AbstractToolkit.credentials` — no such attribute
-- `JiraToolkit.refresh_token()` — no such method
+- `notify.providers.office365.TokenProvider` — must be created in this task
+- `ProviderBase.credentials` — no such attribute
+- `Office365.refresh_token()` — no such method
 
 ## Test Skeleton
 ```python
 @pytest.mark.asyncio
-async def test_oauth_callback_valid_code():
-    """Mock Jira token endpoint, send valid code, verify token stored in Redis."""
+async def test_token_refresh_caches_until_expiry():
+    """Mock the Graph token endpoint; assert a second call reuses the cache."""
     ...
 
 @pytest.mark.asyncio
-async def test_oauth_callback_invalid_state():
-    """Send request with invalid state, expect 403."""
+async def test_token_refresh_raises_on_error_response():
+    """Return a 401 from the token endpoint; expect ProviderError."""
     ...
 `` `
 ```
@@ -688,7 +695,7 @@ async def test_oauth_callback_invalid_state():
 
 ```bash
 # Human does: review Jira ticket, approve spec
-/sdd-jira NAV-8036
+/sdd-fromjira NAV-8036
 
 # Then walk away
 cd .claude/worktrees/feat-071-jira-oauth
@@ -701,7 +708,7 @@ claude --agent sdd-autopilot --verbose
 
 ```bash
 # Planning phase (interactive)
-/sdd-jira NAV-8036
+/sdd-fromjira NAV-8036
 
 # Run worker + reviewer only
 cd .claude/worktrees/feat-071-jira-oauth
@@ -773,27 +780,27 @@ curl -s -X POST "$SLACK_WEBHOOK_URL" \
 
 ---
 
-## Files to Create
+## Files
 
-| File | Type | Purpose |
-|------|------|---------|
-| `.claude/commands/sdd-jira.md` | Command | Interactive planner |
-| `.claude/agents/sdd-autopilot.md` | Agent | Autonomous orchestrator |
-| `.claude/agents/qa-runner.md` | Agent | Test execution & reporting |
-| `.claude/commands/pr-review.md` | Command | PR vs Jira AC review |
+| File | Type | Purpose | Status |
+|------|------|---------|--------|
+| `.claude/commands/sdd-fromjira.md` | Command | Interactive Jira-seeded planner | exists |
+| `.claude/agents/sdd-autopilot.md` | Agent | Autonomous orchestrator (this doc) | exists |
+| `.claude/agents/qa-runner.md` | Agent | Test execution & reporting | exists |
+| `.claude/commands/pr-review.md` | Command | PR vs Jira AC review | see `pr-review` skill |
 
 ---
 
-## Comparison with ai-parrot AgentCrew
+## Comparison with an in-process agent crew
 
-| Aspect | AgentCrew (ai-parrot) | sdd-autopilot (Claude Code) |
+| Aspect | In-process crew (Python) | sdd-autopilot (Claude Code) |
 |--------|----------------------|----------------------------|
 | Runtime | Python asyncio | Bash + Claude CLI processes |
-| Agent type | `BasicAgent` / `AbstractBot` | `.claude/agents/*.md` files |
-| Context passing | In-memory `AgentContext` | Files on disk (`.autopilot/`) |
-| Dependency graph | `task_flow()` + DAG resolver | Sequential with gates |
+| Agent type | Python agent classes | `.claude/agents/*.md` files |
+| Context passing | In-memory context object | Files on disk (`.autopilot/`) |
+| Dependency graph | DAG resolver | Sequential with gates |
 | Error handling | `on_error` transitions | Exit codes + retry loops |
 | Parallelism | `asyncio.gather()` | Not needed (sequential pipeline) |
-| Observability | `ExecutionMemory` + logs | `state.json` + log files |
+| Observability | In-memory trace + logs | `state.json` + log files |
 | Resume | No | Yes (reads `state.json`) |
 | LLM for synthesis | Optional synthesis step | PR review = synthesis |

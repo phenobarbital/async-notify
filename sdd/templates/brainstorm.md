@@ -172,7 +172,7 @@ base_branch: dev
 
 #### Classes & Signatures
 ```python
-# From parrot/path/to/file.py:NN
+# From notify/path/to/file.py:NN
 class ExistingClass(BaseClass):
     attribute: Type  # line NN
     async def method(self, param: Type) -> ReturnType:  # line NN
@@ -182,17 +182,17 @@ class ExistingClass(BaseClass):
 #### Verified Imports
 ```python
 # These imports have been confirmed to work:
-from parrot.module import ClassName  # parrot/module/__init__.py:NN
+from notify.module import ClassName  # notify/module/__init__.py:NN
 ```
 
 #### Key Attributes & Constants
 <!-- List attributes/constants that tasks will need to reference -->
-- `ClassName.attribute_name` → `Type` (parrot/path/file.py:NN)
+- `ClassName.attribute_name` → `Type` (notify/path/file.py:NN)
 
 ### Does NOT Exist (Anti-Hallucination)
 <!-- List things that might seem like they should exist but DO NOT.
      This prevents implementing agents from assuming these are available. -->
-- ~~`parrot.module.NonExistentThing`~~ — does not exist
+- ~~`notify.module.NonExistentThing`~~ — does not exist
 - ~~`ClassName.phantom_attribute`~~ — not a real attribute
 
 ---
