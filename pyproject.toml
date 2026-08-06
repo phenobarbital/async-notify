@@ -71,6 +71,11 @@ azure = [
   "azure-identity>=1.23.0",
   "msgraph-sdk==1.22.0",
 ]
+templates = [
+  "jinja2-time>=0.2.0",
+  "jinja2-iso8601>=1.0.0",
+  "jinja2-humanize-extension>=0.4.0",
+]
 all = [
   "gmail==0.6.3",
   "google-auth>=2.6.0",
