@@ -1,19 +1,16 @@
 """Notify Worker server entry point."""
 import asyncio
 import argparse
-import uvloop
 from notify.server import NotifyWorker
 from notify.conf import (
     NOTIFY_DEFAULT_HOST,
     NOTIFY_DEFAULT_PORT
 )
+from notify.utils.uv import install_uvloop
 
 def main():
     """Main Worker Function."""
-    asyncio.set_event_loop_policy(
-        uvloop.EventLoopPolicy()
-    )
-    uvloop.install()
+    install_uvloop()
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter
     )

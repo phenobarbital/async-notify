@@ -34,7 +34,6 @@ classifiers = [
 
 # Core runtime deps (lifted from your previous setup.py)
 dependencies = [
-  "uvloop>=0.20.0",
   "aiosmtplib>=5.0",
   "python-datamodel>=0.3.12",
   "navconfig[default]>=2.2.0",
@@ -46,6 +45,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+uvloop = [
+  "uvloop>=0.20.0; sys_platform != 'win32'",
+]
 default = [
   "aiogram>=3.14.0",
   "slack_bolt==1.18.0",

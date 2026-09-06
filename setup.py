@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 """Async-Notify Setup."""
 
+import sys
+
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 from Cython.Build import cythonize
 
-COMPILE_ARGS = ["-O2"]
+COMPILE_ARGS = ["/O2"] if sys.platform == "win32" else ["-O2"]
 
 extensions = [
     Extension(
