@@ -170,7 +170,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -183,8 +183,8 @@
       "parallelism_notes": "Integrates lifecycle, batch hooks, and the graph mail builder/sender.",
       "assigned_to": null,
       "started_at": null,
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-27-office365-message-dispatch.md"
+      "completed_at": "2026-09-15T22:43:04+00:00",
+      "file": "sdd/tasks/completed/TASK-27-office365-message-dispatch.md"
     },
     {
       "id": "TASK-28",

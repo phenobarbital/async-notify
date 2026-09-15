@@ -63,8 +63,42 @@ async def _send_(self, to: list[Actor], message: str, subject: str = None, **kwa
 
 ## Acceptance Criteria
 
-- [ ] A multi-recipient `send()` returns one `MailSendResult` covering all addresses.
-- [ ] App-only routes through `/users/{mailbox}` and OBO/delegated route through `/me`.
-- [ ] OBO requires a per-send assertion and scopes it to the credential context.
-- [ ] `from_address` overrides the instance sender and callback data contains no assertion.
-- [ ] Provider dispatch tests pass offline.
+- [x] A multi-recipient `send()` returns one `MailSendResult` covering all addresses.
+- [x] App-only routes through `/users/{mailbox}` and OBO/delegated route through `/me`.
+- [x] OBO requires a per-send assertion and scopes it to the credential context.
+- [x] `from_address` overrides the instance sender and callback data contains no assertion.
+- [x] Provider dispatch tests pass offline.
+
+### Completion Note
+
+Implemented `_render_` (renders once with `recipient`/`username` bound to
+the full `to` list when a template is set; otherwise `kwargs["body"]` or
+`message`) and `_send_` (pops `user_assertion`/`cc`/`bcc`/`reply_to`/
+`importance`/`attachments`/`inline_images`/`from_address`/
+`save_to_sent_items` from a *copy* of kwargs, renders, loads attachments,
+builds the Graph message, and dispatches via `GraphMailSender`).
+Mailbox routing: `AuthFlow.CLIENT_CREDENTIALS` is the only "app-only" flow
+and always resolves `mailbox = from_address or sender`, raising
+`NotifyAuthError` if both are absent; every other flow (`delegated`,
+`on_behalf_of`, the legacy `password`/ROPC flow) routes through `/me`
+(`mailbox=None`) since all three represent a specific signed-in user, not
+an app-only token — the spec text names only "app-only" vs "Delegated/OBO"
+explicitly; ROPC is grouped with the delegated/OBO `/me` case by
+elimination, since app-only is defined as exactly the `client_credentials`
+flow. `on_behalf_of` wraps the `GraphMailSender.send` call in
+`self._credential.use_assertion(user_assertion)`, raising `NotifyAuthError`
+when the assertion is missing; an assertion passed to any other flow is
+dropped with a `self.logger.warning` instead of being forwarded to Graph.
+Extended `tests/test_office365_provider.py` with a `_FakeGraphMailSender`
+(patched in via an autouse fixture, so no real Graph HTTP call is ever
+made) and 9 new tests (app-only missing-mailbox raise, app-only
+`/users/{id}` routing, `from_address` override, delegated `/me` routing,
+OBO `/me` + assertion scoping verified via
+`credential._current_assertion.get()` inside the fake sender,
+OBO-without-assertion raise, assertion-on-non-OBO warns+ignored,
+multi-recipient → one `MailSendResult`, and `user_assertion` never
+reaching the `sent` callback) — 20 tests in the file total, all pass.
+Full-suite run unchanged from TASK-26's baseline (298 passed; only the
+same pre-existing, untouched `test_ses.py` ×2 and `test_outlook1.py` ×3
+failures). `flake8` is not installed in this environment; lint could not
+be run.
