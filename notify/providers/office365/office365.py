@@ -6,12 +6,14 @@ credential fronts all four Graph auth flows (client credentials, on-behalf-of,
 delegated, and the deprecated password/ROPC flow), and a `GraphServiceClient`
 handles Graph HTTP.
 
-This module implements the provider's *lifecycle* (constructor, flow
-resolution, `connect()`/`close()`). Rendering and message dispatch
-(`_render_`/`_send_`) are implemented alongside this (see TASK-27).
+This module implements the provider's lifecycle (constructor, flow
+resolution, `connect()`/`close()`) as well as rendering and message dispatch
+(`_render_`/`_send_`): one HTML render for the whole recipient list, and one
+Graph message sent through `GraphMailSender`, with send-as mailbox routing
+and On-Behalf-Of assertion scoping.
 """
 import warnings
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from msgraph import GraphServiceClient
 
@@ -28,9 +30,11 @@ from notify.conf import (
     O365_USER,
 )
 from notify.exceptions import NotifyAuthError, ProviderError
+from notify.models import Actor, MailSendResult
 from notify.providers._msgraph import patch_graph_host_os_header
 from notify.providers.mail import ProviderEmail
 from notify.providers.office365.credential import AuthFlow, MsalAsyncCredential, scopes_for
+from notify.providers.office365.graph_mail import GraphMailSender, build_message, load_attachments, to_recipients
 from notify.providers.office365.token_store import TokenStore, build_token_store
 
 
@@ -191,3 +195,127 @@ class Office365(ProviderEmail):
             await self._credential.close()
         self._graph = None
         self._credential = None
+
+    async def _render_(
+        self, to: list[Actor] = None, message: str = None, subject: str = None, **kwargs: Any
+    ) -> str:
+        """Render the HTML body once for every recipient.
+
+        Args:
+            to: The full recipient list (`ProviderEmail.batch_recipients=True`
+                makes this the list, not one `Actor`).
+            message: Plain-text/HTML body content, used as-is with no template.
+            subject: The message subject (also passed into the template context).
+            **kwargs: Extra template arguments; with a template, `recipient`
+                and `username` are both bound to `to` (the list).
+
+        Returns:
+            str: The rendered HTML body.
+        """
+        if self._template:
+            templateargs = {
+                "recipient": to,
+                "username": to,
+                "message": message,
+                "content": message,
+                "subject": subject,
+                **kwargs,
+            }
+            return await self._template.render_async(**templateargs)
+        return kwargs.get("body") or message or ""
+
+    async def _send_(
+        self, to: list[Actor], message: str, subject: str = None, **kwargs: Any
+    ) -> MailSendResult:
+        """Build and send one Graph message to every recipient in `to`.
+
+        Args:
+            to: Every recipient for this `send()` call (batched — see
+                `ProviderEmail.batch_recipients`).
+            message: Plain-text/HTML body content (see `_render_`).
+            subject: The message subject.
+            **kwargs: `cc`, `bcc`, `reply_to`, `importance`, `attachments`,
+                `inline_images`, `from_address`, `save_to_sent_items`, and
+                `user_assertion` (On-Behalf-Of only) — popped from a copy so
+                the caller's kwargs are never mutated. Anything else is
+                forwarded to the template renderer.
+
+        Returns:
+            MailSendResult: The outcome of the one Graph send.
+
+        Raises:
+            NotifyAuthError: Missing mailbox for an app-only send, a missing
+                On-Behalf-Of assertion, or an auth/permission Graph failure
+                (via `GraphMailSender`/`map_odata_error`).
+        """
+        send_kwargs = dict(kwargs)
+        user_assertion = send_kwargs.pop("user_assertion", None)
+        cc = send_kwargs.pop("cc", None)
+        bcc = send_kwargs.pop("bcc", None)
+        reply_to = send_kwargs.pop("reply_to", None)
+        importance = send_kwargs.pop("importance", None)
+        attachments = send_kwargs.pop("attachments", None)
+        inline_images = send_kwargs.pop("inline_images", None)
+        from_address = send_kwargs.pop("from_address", None)
+        save_to_sent_items = send_kwargs.pop("save_to_sent_items", self.save_to_sent_items)
+
+        await self.connect()
+
+        html = await self._render_(to, message, subject, **send_kwargs)
+        loaded_attachments = await load_attachments(attachments=attachments, inline_images=inline_images)
+
+        sender_address = from_address or self.sender
+        graph_message = build_message(
+            subject=subject,
+            html=html,
+            to=to_recipients(to),
+            cc=to_recipients(cc),
+            bcc=to_recipients(bcc),
+            reply_to=to_recipients(reply_to),
+            importance=importance,
+            from_address=sender_address,
+            attachments=loaded_attachments,
+        )
+        recipients = [r.email_address.address for r in (graph_message.to_recipients or [])]
+
+        # App-only (client_credentials) always routes through /users/{mailbox};
+        # every other flow is delegated to a specific user and routes through /me.
+        if self._flow == AuthFlow.CLIENT_CREDENTIALS:
+            mailbox = sender_address
+            if not mailbox:
+                raise NotifyAuthError(
+                    "O365 app-only send requires a mailbox: pass from_address= "
+                    "or configure sender=/O365_SENDER."
+                )
+        else:
+            mailbox = None
+
+        graph_sender = GraphMailSender(self._graph, provider=self.provider, logger=self.logger)
+
+        if self._flow == AuthFlow.ON_BEHALF_OF:
+            if not user_assertion:
+                raise NotifyAuthError(
+                    "O365 on_behalf_of send requires user_assertion= "
+                    "(a per-send Graph-audience bearer token)."
+                )
+            with self._credential.use_assertion(user_assertion):
+                return await graph_sender.send(
+                    mailbox=mailbox,
+                    message=graph_message,
+                    attachments=loaded_attachments,
+                    save_to_sent_items=save_to_sent_items,
+                    recipients=recipients,
+                )
+
+        if user_assertion:
+            self.logger.warning(
+                "user_assertion was provided but auth_flow=%r (not on_behalf_of); ignoring it.",
+                self._flow.value,
+            )
+        return await graph_sender.send(
+            mailbox=mailbox,
+            message=graph_message,
+            attachments=loaded_attachments,
+            save_to_sent_items=save_to_sent_items,
+            recipients=recipients,
+        )

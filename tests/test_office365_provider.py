@@ -1,12 +1,13 @@
-"""Offline tests for the rewritten Office365 Graph provider lifecycle
-(FEAT-004, M6 — constructor, flow resolution, connect()/close()).
-
-Rendering/dispatch (`_render_`/`_send_`) tests are added by TASK-27 in this
-same module.
+"""Offline tests for the rewritten Office365 Graph provider (FEAT-004, M6):
+constructor / flow resolution / connect() / close() (TASK-26), plus
+rendering and Graph message dispatch (TASK-27) below.
 """
 import pytest
 
 from notify.exceptions import NotifyAuthError, ProviderError
+from notify.models import Account, Actor, MailSendResult
+from notify.providers.office365 import credential as credential_module
+from notify.providers.office365 import office365 as office365_module
 from notify.providers.office365.credential import AuthFlow
 from notify.providers.office365.office365 import Office365
 
@@ -101,3 +102,119 @@ async def test_close_persists_and_clears_client():
     await provider.close()
     assert provider._graph is None
     assert provider._credential is None
+
+
+# ---------------------------------------------------------------------------
+# TASK-27: rendering and Graph message dispatch
+# ---------------------------------------------------------------------------
+
+
+class _FakeGraphMailSender:
+    """Records the call `_send_` makes to `GraphMailSender.send` and returns
+    a canned `MailSendResult`, so no real Graph HTTP call is ever made."""
+
+    last_call: dict = None
+    last_assertion_seen: str = None
+
+    def __init__(self, graph, *, provider, logger):
+        self.graph = graph
+        self.provider_name = provider
+        self.logger = logger
+
+    async def send(self, *, mailbox, message, attachments, save_to_sent_items, recipients):
+        type(self).last_call = {
+            "mailbox": mailbox,
+            "message": message,
+            "attachments": attachments,
+            "save_to_sent_items": save_to_sent_items,
+            "recipients": recipients,
+        }
+        type(self).last_assertion_seen = credential_module._current_assertion.get()
+        return MailSendResult(
+            success=True, provider=self.provider_name, mailbox=mailbox, recipients=recipients
+        )
+
+
+@pytest.fixture(autouse=True)
+def _fake_graph_mail_sender(monkeypatch):
+    monkeypatch.setattr(office365_module, "GraphMailSender", _FakeGraphMailSender)
+    _FakeGraphMailSender.last_call = None
+    _FakeGraphMailSender.last_assertion_seen = None
+    yield _FakeGraphMailSender
+
+
+@pytest.fixture
+def actors() -> list[Actor]:
+    return [
+        Actor(name="Alice", account=Account(address="alice@contoso.com")),
+        Actor(name="Bob", account=Account(address="bob@contoso.com")),
+    ]
+
+
+async def test_app_only_requires_mailbox(actors, monkeypatch):
+    monkeypatch.setattr("notify.providers.office365.office365.O365_SENDER", None)
+    provider = Office365(client_id="c", tenant_id="t", client_secret="s")  # client_credentials, no mailbox
+    with pytest.raises(NotifyAuthError):
+        await provider._send_(actors, "hi", subject="s")
+
+
+async def test_app_only_routes_users_by_id_with_sender(actors):
+    provider = Office365(client_id="c", tenant_id="t", client_secret="s", sender="shared@contoso.com")
+    result = await provider._send_(actors, "hi", subject="s")
+    assert result.success is True
+    assert _FakeGraphMailSender.last_call["mailbox"] == "shared@contoso.com"
+    assert set(_FakeGraphMailSender.last_call["recipients"]) == {"alice@contoso.com", "bob@contoso.com"}
+
+
+async def test_send_as_from_address_overrides_sender(actors):
+    provider = Office365(client_id="c", tenant_id="t", client_secret="s", sender="shared@contoso.com")
+    await provider._send_(actors, "hi", subject="s", from_address="override@contoso.com")
+    assert _FakeGraphMailSender.last_call["mailbox"] == "override@contoso.com"
+
+
+async def test_delegated_routes_via_me():
+    provider = Office365(client_id="c", tenant_id="t", auth_flow="delegated", username="me@contoso.com")
+    await provider._send_([], "hi", subject="s")
+    assert _FakeGraphMailSender.last_call["mailbox"] is None
+
+
+async def test_obo_send_uses_me_and_assertion(actors):
+    provider = Office365(client_id="c", tenant_id="t", client_secret="s", auth_flow="on_behalf_of")
+    await provider._send_(actors, "hi", subject="s", user_assertion="user-token-abc")
+    assert _FakeGraphMailSender.last_call["mailbox"] is None
+    assert _FakeGraphMailSender.last_assertion_seen == "user-token-abc"
+
+
+async def test_obo_send_without_assertion_raises(actors):
+    provider = Office365(client_id="c", tenant_id="t", client_secret="s", auth_flow="on_behalf_of")
+    with pytest.raises(NotifyAuthError):
+        await provider._send_(actors, "hi", subject="s")
+
+
+async def test_assertion_on_non_obo_flow_warns_and_is_ignored(actors, caplog):
+    provider = Office365(client_id="c", tenant_id="t", client_secret="s", sender="shared@contoso.com")
+    with caplog.at_level("WARNING"):
+        await provider._send_(actors, "hi", subject="s", user_assertion="should-be-ignored")
+    assert _FakeGraphMailSender.last_assertion_seen is None
+    assert any("user_assertion" in record.message for record in caplog.records)
+
+
+async def test_send_returns_single_result_for_many_recipients(actors):
+    provider = Office365(client_id="c", tenant_id="t", client_secret="s", sender="shared@contoso.com")
+    results = await provider.send(recipient=actors, message="hi", subject="s")
+    assert len(results) == 1
+    assert isinstance(results[0], MailSendResult)
+    assert set(results[0].recipients) == {"alice@contoso.com", "bob@contoso.com"}
+
+
+async def test_callback_never_receives_user_assertion(actors):
+    provider = Office365(client_id="c", tenant_id="t", client_secret="s", auth_flow="on_behalf_of")
+    seen_callback_kwargs = []
+    provider.sent = lambda recipient, message, result, **kwargs: seen_callback_kwargs.append(kwargs)
+
+    await provider.send(
+        recipient=actors, message="hi", subject="s", user_assertion="super-secret-user-token"
+    )
+
+    assert len(seen_callback_kwargs) == 1
+    assert "user_assertion" not in seen_callback_kwargs[0]
