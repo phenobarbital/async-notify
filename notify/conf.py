@@ -70,6 +70,17 @@ O365_CLIENT_SECRET = config.get("O365_CLIENT_SECRET")
 O365_TENANT_ID = config.get("O365_TENANT_ID")
 O365_USER = config.get("O365_USER")
 O365_PASSWORD = config.get("O365_PASSWORD")
+O365_AUTH_FLOW = config.get("O365_AUTH_FLOW")                       # None → resolution rules (M6)
+O365_SENDER = config.get("O365_SENDER")
+O365_CLIENT_CERTIFICATE_PATH = config.get("O365_CLIENT_CERTIFICATE_PATH")
+O365_CLIENT_CERTIFICATE_THUMBPRINT = config.get("O365_CLIENT_CERTIFICATE_THUMBPRINT")
+O365_CLIENT_CERTIFICATE_PASSWORD = config.get("O365_CLIENT_CERTIFICATE_PASSWORD")
+O365_TOKEN_STORE = config.get("O365_TOKEN_STORE", fallback="memory")  # memory | file | redis
+O365_TOKEN_STORE_DIR = config.get("O365_TOKEN_STORE_DIR", fallback=str(BASE_DIR.joinpath(".o365")))
+O365_TOKEN_STORE_REDIS = config.get("O365_TOKEN_STORE_REDIS", fallback=NOTIFY_REDIS)
+O365_TOKEN_STORE_TTL = config.getint("O365_TOKEN_STORE_TTL", fallback=0)  # 0 → no TTL
+O365_TOKEN_CIPHER_KEY = config.get("O365_TOKEN_CIPHER_KEY")          # Fernet key (urlsafe base64, 32 bytes)
+O365_TOKEN_ALLOW_UNENCRYPTED = config.getboolean("O365_TOKEN_ALLOW_UNENCRYPTED", fallback=False)
 
 # Microsoft Teams
 MS_TEAMS_TENANT_ID = config.get("MS_TEAMS_TENANT_ID")
