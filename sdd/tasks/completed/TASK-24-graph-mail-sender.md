@@ -60,8 +60,29 @@ graph.request_adapter
 
 ## Acceptance Criteria
 
-- [ ] A small request makes one `send_mail.post` with `save_to_sent_items`.
-- [ ] A large request creates a draft, uploads remaining files, and sends it.
-- [ ] Failed upload/send attempts delete the draft best effort.
-- [ ] 401/403 and configured permission codes raise; invalid recipients return failure result.
-- [ ] Mocked graph sender tests pass offline.
+- [x] A small request makes one `send_mail.post` with `save_to_sent_items`.
+- [x] A large request creates a draft, uploads remaining files, and sends it.
+- [x] Failed upload/send attempts delete the draft best effort.
+- [x] 401/403 and configured permission codes raise; invalid recipients return failure result.
+- [x] Mocked graph sender tests pass offline.
+
+### Completion Note
+
+Added `GraphMailSender` and `map_odata_error` to
+`notify/providers/office365/graph_mail.py`. `send()` picks `send_mail` vs
+`draft_upload` by total attachment size against `INLINE_REQUEST_LIMIT`;
+`_route()` uses `graph.users.by_user_id(mailbox)` when a mailbox is given,
+else `graph.me`. `draft_upload` keeps inline images and small files
+embedded on the draft (`_select_embedded_indices`, inline-first),
+uploads the rest through `create_upload_session` + `LargeFileUploadTask`,
+then sends the draft; any failure during upload/send deletes the draft
+best-effort (its own exception is swallowed and logged) before
+re-raising the original error. `map_odata_error` raises `NotifyAuthError`
+for 401/403 or `AUTH_ERROR_CODES`, otherwise returns a failed
+`MailSendResult`. Extended `tests/test_office365_graph.py` with a fake
+Graph route builder (`_FakeRouteBuilder`) and a patched
+`LargeFileUploadTask` (8 new tests: small send, large draft/upload/send,
+`save_to_sent_items=False` warning, draft deletion on upload failure,
+401/403 → raise, 400 → failed result, `ODataError` from `send_mail.post`
+→ raise) — 25 tests in the file total, all pass. `flake8` is not
+installed in this environment; lint could not be run.

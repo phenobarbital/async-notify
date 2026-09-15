@@ -2,38 +2,29 @@
 from pathlib import Path
 from navconfig import BASE_DIR, config
 
-
 # TEMPLATE SYSTEM
-if not (template_dir := config.get('TEMPLATE_DIR')):
+if not (template_dir := config.get("TEMPLATE_DIR")):
     TEMPLATE_DIR = BASE_DIR.joinpath("templates")
 else:
     TEMPLATE_DIR = Path(template_dir).resolve()
 
 
 # Notify Worker (Consumer)
-REDIS_HOST = config.get('REDIS_HOST', fallback='localhost')
-REDIS_PORT = config.getint('REDIS_PORT', fallback=6379)
-NOTIFY_DB = config.getint('NOTIFY_DB', fallback=5)
+REDIS_HOST = config.get("REDIS_HOST", fallback="localhost")
+REDIS_PORT = config.getint("REDIS_PORT", fallback=6379)
+NOTIFY_DB = config.getint("NOTIFY_DB", fallback=5)
 NOTIFY_REDIS = f"redis://{REDIS_HOST}:{REDIS_PORT}/{NOTIFY_DB}"
-NOTIFY_DEFAULT_HOST = config.get('NOTIFY_DEFAULT_HOST', fallback='0.0.0.0')
-NOTIFY_DEFAULT_PORT = config.get('NOTIFY_DEFAULT_PORT', fallback=8991)
-NOTIFY_USE_DISCOVERY = config.getboolean('NOTIFY_USE_DISCOVERY', fallback=False)
+NOTIFY_DEFAULT_HOST = config.get("NOTIFY_DEFAULT_HOST", fallback="0.0.0.0")
+NOTIFY_DEFAULT_PORT = config.get("NOTIFY_DEFAULT_PORT", fallback=8991)
+NOTIFY_USE_DISCOVERY = config.getboolean("NOTIFY_USE_DISCOVERY", fallback=False)
 
-NOTIFY_QUEUE_SIZE = config.getint('NOTIFY_QUEUE_SIZE', fallback=8)
+NOTIFY_QUEUE_SIZE = config.getint("NOTIFY_QUEUE_SIZE", fallback=8)
 ## Queue Consumed Callback
-NOTIFY_QUEUE_CALLBACK = config.get(
-    'NOTIFY_QUEUE_CALLBACK', fallback=None
-)
+NOTIFY_QUEUE_CALLBACK = config.get("NOTIFY_QUEUE_CALLBACK", fallback=None)
 ## Redis channel for notifications:
-NOTIFY_CHANNEL = config.get('NOTIFY_CHANNEL', fallback='NotifyChannel')
-NOTIFY_WORKER_STREAM = config.get(
-    'NOTIFY_WORKER_STREAM',
-    fallback='NotifyWorkerStream'
-)
-NOTIFY_WORKER_GROUP = config.get(
-    'NOTIFY_WORKER_GROUP',
-    fallback='NotifyWorkerGroup'
-)
+NOTIFY_CHANNEL = config.get("NOTIFY_CHANNEL", fallback="NotifyChannel")
+NOTIFY_WORKER_STREAM = config.get("NOTIFY_WORKER_STREAM", fallback="NotifyWorkerStream")
+NOTIFY_WORKER_GROUP = config.get("NOTIFY_WORKER_GROUP", fallback="NotifyWorkerGroup")
 
 ## Email
 EMAIL_SMTP_USERNAME = config.get("stmp_host_user")
@@ -70,6 +61,17 @@ O365_CLIENT_SECRET = config.get("O365_CLIENT_SECRET")
 O365_TENANT_ID = config.get("O365_TENANT_ID")
 O365_USER = config.get("O365_USER")
 O365_PASSWORD = config.get("O365_PASSWORD")
+O365_AUTH_FLOW = config.get("O365_AUTH_FLOW")  # None → resolution rules (M6)
+O365_SENDER = config.get("O365_SENDER")
+O365_CLIENT_CERTIFICATE_PATH = config.get("O365_CLIENT_CERTIFICATE_PATH")
+O365_CLIENT_CERTIFICATE_THUMBPRINT = config.get("O365_CLIENT_CERTIFICATE_THUMBPRINT")
+O365_CLIENT_CERTIFICATE_PASSWORD = config.get("O365_CLIENT_CERTIFICATE_PASSWORD")
+O365_TOKEN_STORE = config.get("O365_TOKEN_STORE", fallback="memory")  # memory | file | redis
+O365_TOKEN_STORE_DIR = config.get("O365_TOKEN_STORE_DIR", fallback=str(BASE_DIR.joinpath(".o365")))
+O365_TOKEN_STORE_REDIS = config.get("O365_TOKEN_STORE_REDIS", fallback=NOTIFY_REDIS)
+O365_TOKEN_STORE_TTL = config.getint("O365_TOKEN_STORE_TTL", fallback=0)  # 0 → no TTL
+O365_TOKEN_CIPHER_KEY = config.get("O365_TOKEN_CIPHER_KEY")  # Fernet key (urlsafe base64, 32 bytes)
+O365_TOKEN_ALLOW_UNENCRYPTED = config.getboolean("O365_TOKEN_ALLOW_UNENCRYPTED", fallback=False)
 
 # Microsoft Teams
 MS_TEAMS_TENANT_ID = config.get("MS_TEAMS_TENANT_ID")
@@ -87,9 +89,7 @@ SENDGRID_KEY = config.get("SENDGRID_KEY")
 # Amazon AWS
 AWS_EMAIL_USER = config.get("aws_email_user")
 AWS_EMAIL_PASSWORD = config.get("aws_email_password")
-AWS_EMAIL_HOST = config.get(
-    "aws_email_host", fallback="email-smtp.us-east-1.amazonaws.com"
-)
+AWS_EMAIL_HOST = config.get("aws_email_host", fallback="email-smtp.us-east-1.amazonaws.com")
 AWS_EMAIL_PORT = config.get("aws_email_port", fallback=587)
 AWS_EMAIL_ACCOUNT = config.get("aws_email_account")
 
