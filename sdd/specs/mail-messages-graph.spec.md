@@ -11,7 +11,7 @@ base_branch: dev
 **Feature ID**: FEAT-004
 **Date**: 2026-09-15
 **Author**: Jesus Lara
-**Status**: draft
+**Status**: approved
 **Target version**: 1.7.0
 **Brainstorm**: `sdd/proposals/mail-messages-graph.brainstorm.md` (Recommended Option B)
 
@@ -1198,9 +1198,9 @@ class BaseTestCase:                                              # line 7 — au
 - [x] Redis token store security? — *Resolved at spec time (Jesus Lara)*: **encrypted** (Fernet key from navconfig); plaintext only with explicit `allow_unencrypted=True` (M2, AC5). Same rule applied to the file store.
 - [x] Move `_msgraph_patch.py` to a shared module? — *Resolved at spec time (Jesus Lara)*: **yes**, `notify/providers/_msgraph.py` with a teams shim (M1, AC15).
 - [x] Where does the device-code bootstrap live? — *Resolved at spec time (Jesus Lara)*: `python -m notify.providers.office365.login` (M8, AC16).
-- [ ] Should `outlook` also log a `DeprecationWarning` pointing to `office365`, or stay a silent alias? (Spec default: silent alias.) — *Owner: Jesus Lara*
-- [ ] Target version: `1.7.0` (minor, behaviour changes plus removed extras) or `2.0.0` given the template-context and flow-default changes in §7? — *Owner: Jesus Lara*
-- [ ] Integration-test OBO helper: how does the live test obtain a user assertion for the exposed API scope (a ROPC test account in the test tenant, or a pre-issued token in navconfig)? — *Owner: Jesus Lara*
+- [ ] Should `outlook` also log a `DeprecationWarning` pointing to `office365`, or stay a silent alias? (Spec default: silent alias.) — *Owner: Jesus Lara*: stay without deprecation
+- [ ] Target version: `1.7.0` (minor, behaviour changes plus removed extras) or `2.0.0` given the template-context and flow-default changes in §7? — *Owner: Jesus Lara*: 2.0.0
+- [ ] Integration-test OBO helper: how does the live test obtain a user assertion for the exposed API scope (a ROPC test account in the test tenant, or a pre-issued token in navconfig)? — *Owner: Jesus Lara*: pre-issued
 - [ ] Should the rewritten outlook tests keep inheriting `notify/tests/base.py::BaseTestCase` (which calls the real `connect()` and checks `authenticate`) or move to plain fixtures? — *Owner: implementer (M11)*
 
 ---
