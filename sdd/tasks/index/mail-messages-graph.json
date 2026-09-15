@@ -147,7 +147,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -160,8 +160,8 @@
       "parallelism_notes": "Wires the patch, configuration, store, and credential into provider lifecycle.",
       "assigned_to": null,
       "started_at": null,
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-26-office365-provider-lifecycle.md"
+      "completed_at": "2026-09-15T22:39:57+00:00",
+      "file": "sdd/tasks/completed/TASK-26-office365-provider-lifecycle.md"
     },
     {
       "id": "TASK-27",
