@@ -170,7 +170,22 @@ ai_fluency_report.html
 # NOTE: sdd/tasks/active/ is intentionally TRACKED — worktrees and other
 # sessions must see in-flight task files (see CLAUDE.md, "SDD Auto-Commit Rule").
 # parrot LLM-wiki state (local retrieval plane)
-.parrot/
+# NOTE: `.parrot/*` (not `.parrot/`) so the negations below can re-include the
+# committed MCP toolkit config — a trailing-slash directory pattern would stop
+# git from ever descending into .parrot/.
+.parrot/*
+!.parrot/mcp-toolkits.yaml
+!.parrot/tool-guards.json
+# MCP custom local configs (machine-specific absolute paths; see .mcp.json.example)
+.mcp.json
+.sdd-coder/
+# Codex: local config/hooks/rules are machine-specific; only agents are shared
+.codex/*
+!.codex/
+!.codex/agents/
+!.codex/agents/*.toml
 # navconfig scaffolds an empty plugins/{agents,tools} tree at BASE_DIR on
 # import; it is not part of async-notify and must not be tracked.
 plugins/
+# parrot LLM-wiki state (local retrieval plane)
+.parrot/

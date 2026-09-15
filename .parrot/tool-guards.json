@@ -1,0 +1,6 @@
+{
+  "max_lines": 350,
+  "large_file_bytes": 64000,
+  "reader_server": "parrot-bounded-source",
+  "tool": "source_read"
+}

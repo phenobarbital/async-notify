@@ -10,16 +10,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build manylinux wheels (cp311-cp314)
+      - name: Build wheels (cp311-cp314)
         uses: pypa/cibuildwheel@v3.2.0
         env:
           CIBW_BUILD: "cp311-* cp312-* cp313-* cp314-*"
-          CIBW_SKIP: "*-musllinux*"
           CIBW_ARCHS_LINUX: x86_64
+          CIBW_ARCHS_WINDOWS: AMD64
+          CIBW_SKIP: "*-musllinux* *-win32 *-win_arm64"
           CIBW_BUILD_FRONTEND: build
           CIBW_BEFORE_ALL_LINUX: "yum install -y libmemcached-devel openssl-devel zlib-devel"
           CIBW_TEST_SKIP: "*"
@@ -27,7 +28,31 @@ jobs:
           output-dir: dist
 
       - name: List built wheels
-        run: ls -l dist
+        shell: python
+        run: |
+          from pathlib import Path
+          for wheel in sorted(Path("dist").glob("*.whl")):
+              print(wheel)
+
+      - name: Verify compiled Cython extensions
+        shell: python
+        run: |
+          import zipfile
+          from pathlib import Path
+
+          wheels = sorted(Path("dist").glob("*.whl"))
+          assert wheels, "no wheels were produced in dist/"
+          for wheel in wheels:
+              names = zipfile.ZipFile(wheel).namelist()
+              extensions = [
+                  name for name in names
+                  if name.startswith(("notify/exceptions.", "notify/types/typedefs."))
+                  and name.endswith((".so", ".pyd"))
+              ]
+              assert len(extensions) == 2, (
+                  f"compiled Cython extensions missing from {wheel}: {extensions}"
+              )
+              print(f"OK {wheel}: {extensions}")
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
@@ -66,4 +91,4 @@ jobs:
       - name: Publish to PyPI
         run: |
           uv tool install twine
-          uv tool run twine upload dist/*-manylinux*.whl --username __token__ --password ${{ secrets.ASYNC_NOTIFY_PYPI_API_TOKEN }}
+          uv tool run twine upload dist/*-manylinux*.whl dist/*-win_*.whl --username __token__ --password ${{ secrets.ASYNC_NOTIFY_PYPI_API_TOKEN }}

@@ -3,14 +3,12 @@
 
 Asyncio-based Notifications connectors for NAV.
 """
-import asyncio
-import uvloop
 from .providers.base import ProviderType
 from .notify import Notify
+from .utils.uv import install_uvloop
 
-# install uvloop and set as default loop for asyncio.
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-uvloop.install()
+# Use uvloop opportunistically when the optional dependency is installed.
+install_uvloop()
 
 __all__ = (
     "Notify",

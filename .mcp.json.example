@@ -1,0 +1,76 @@
+{
+  "mcpServers": {
+    "wikitoolkit": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "r=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$r/.parrot\" ] || r=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -d \"$r/.parrot\" ] || r=\"$(cd \"$(git rev-parse --git-common-dir 2>/dev/null)/..\" 2>/dev/null && pwd)\"; cd \"$r\" && exec \"${AI_PARROT_VENV:-$HOME/proyectos/ai-parrot/.venv}\"/bin/wikitoolkit mcp"
+      ],
+      "env": {}
+    },
+    "parrot-browsing": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "r=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$r/.parrot\" ] || r=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -d \"$r/.parrot\" ] || r=\"$(cd \"$(git rev-parse --git-common-dir 2>/dev/null)/..\" 2>/dev/null && pwd)\"; cd \"$r\" && exec \"${AI_PARROT_VENV:-$HOME/proyectos/ai-parrot/.venv}\"/bin/parrot mcp-local browsing"
+      ],
+      "env": {}
+    },
+    "parrot-memory": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "r=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$r/.parrot\" ] || r=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -d \"$r/.parrot\" ] || r=\"$(cd \"$(git rev-parse --git-common-dir 2>/dev/null)/..\" 2>/dev/null && pwd)\"; cd \"$r\" && exec \"${AI_PARROT_VENV:-$HOME/proyectos/ai-parrot/.venv}\"/bin/parrot mcp-local memory"
+      ],
+      "env": {}
+    },
+    "parrot-scraping": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "r=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$r/.parrot\" ] || r=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -d \"$r/.parrot\" ] || r=\"$(cd \"$(git rev-parse --git-common-dir 2>/dev/null)/..\" 2>/dev/null && pwd)\"; cd \"$r\" && exec \"${AI_PARROT_VENV:-$HOME/proyectos/ai-parrot/.venv}\"/bin/parrot mcp-local scraping"
+      ],
+      "env": {}
+    },
+    "bookstore": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "r=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$r/.parrot\" ] || r=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -d \"$r/.parrot\" ] || r=\"$(cd \"$(git rev-parse --git-common-dir 2>/dev/null)/..\" 2>/dev/null && pwd)\"; cd \"$r\" && exec \"${AI_PARROT_VENV:-$HOME/proyectos/ai-parrot/.venv}\"/bin/bookstore mcp"
+      ],
+      "env": {}
+    },
+    "parrot-bounded-source": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "r=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$r/.parrot\" ] || r=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -d \"$r/.parrot\" ] || r=\"$(cd \"$(git rev-parse --git-common-dir 2>/dev/null)/..\" 2>/dev/null && pwd)\"; cd \"$r\" && exec \"${AI_PARROT_VENV:-$HOME/proyectos/ai-parrot/.venv}\"/bin/parrot mcp-local bounded-source"
+      ],
+      "env": {}
+    },
+    "parrot-targeted-writer": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "r=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$r/.parrot\" ] || r=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -d \"$r/.parrot\" ] || r=\"$(cd \"$(git rev-parse --git-common-dir 2>/dev/null)/..\" 2>/dev/null && pwd)\"; cd \"$r\" && exec \"${AI_PARROT_VENV:-$HOME/proyectos/ai-parrot/.venv}\"/bin/parrot mcp-local targeted-writer"
+      ],
+      "env": {}
+    },
+    "parrot-sdd-coder": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "r=\"$CLAUDE_PROJECT_DIR\"; [ -d \"$r/.parrot\" ] || r=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -d \"$r/.parrot\" ] || r=\"$(cd \"$(git rev-parse --git-common-dir 2>/dev/null)/..\" 2>/dev/null && pwd)\"; cd \"$r\" && exec \"${AI_PARROT_VENV:-$HOME/proyectos/ai-parrot/.venv}\"/bin/parrot mcp-local sdd-coder --config \"$r/.parrot/mcp-toolkits.yaml\""
+      ],
+      "env": {}
+    }
+  }
+}
