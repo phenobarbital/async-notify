@@ -4,14 +4,14 @@ argument-hint: "[--jira-ticket <JIRA_KEY>] [--out <path>] <idea text | empty to 
 allowed-tools: Read, Grep, Glob, Bash(rg:*), Bash(fd:*), Bash(git grep:*), Bash(ls:*), Bash(curl:*), Bash(jq:*), Bash(python:*), Bash(git add:*), Bash(git reset:*), Bash(git commit:*), Bash(git diff:*)
 ---
 
-# /enrich-story — Idea/Ticket → Grounded User-Story Artifact
+# /user-story — Idea/Ticket → Grounded User-Story Artifact
 
 Transform a rough idea or a one-line Jira ticket into a **decision-closed, code-grounded user-story** that a senior engineer can act on and that feeds straight into the SDD pipeline.
 
 ```
 terse idea / thin Jira ticket
         │
-   /enrich-story   ← interactive Q&A + codebase grounding
+   /user-story     ← interactive Q&A + codebase grounding
         │
   grounded user-story artifact  ──►  /sdd-brainstorm → /sdd-spec
         └─ (optional) injected back into the Jira ticket (--jira-ticket)
@@ -21,10 +21,10 @@ This is **pre-SDD grooming**. It does not produce specs, tasks, or code. It prod
 
 ## Usage
 ```
-/enrich-story "tenants should be able to pause a running flow"
-/enrich-story --jira-ticket NAV-8042                 # seed from the ticket AND inject back into it
-/enrich-story --jira-ticket NAV-8042 "make it per-tenant, not global"   # ticket = seed + target, text augments
-/enrich-story --out docs/stories/pause-flow.md "..." # also save the artifact to a file
+/user-story "teams notifications should be able to reply inside an existing thread"
+/user-story --jira-ticket NAV-8042                 # seed from the ticket AND inject back into it
+/user-story --jira-ticket NAV-8042 "only for channel messages, not chats"   # ticket = seed + target, text augments
+/user-story --out docs/stories/teams-thread-replies.md "..." # also save the artifact to a file
 ```
 
 ### Arguments
@@ -56,16 +56,22 @@ Hard rules:
 
 ---
 
-# Codebase grounding (AI-Parrot)
+# Codebase grounding (async-notify)
 
-Before proposing any default, search the workspace to align with real patterns. The codebase is the only authority — these are search starting points (uv-workspace monorepo):
+Before proposing any default, search the repository to align with real patterns. The codebase is the only authority — these are search starting points (flat layout, import package `notify/`):
 
-- **`ai-parrot`** (core): `AbstractBot`, `AbstractClient`, `AbstractTool`, `AbstractToolkit`, `BotManager`, `AgentRegistry`, `ToolManager`, `AgentCrew`, `AgentsFlow` (DAG), `EventBus`, `HookManager`, memory/RAG/ontology layers.
-- **`ai-parrot-tools`**: tools & toolkits. **`ai-parrot-loaders`**: loaders producing `List[Document]`. Satellite **`AI-Parrot-Integrations`**: channel integrations.
-- Recurring patterns to align with: decorator-registered typed registries (`@register_node_type` / `NODE_TYPE_REGISTRY`, `ACTION_REGISTRY`, `ExtractionPlanRegistry`, etc.), `Abstract*` extension seams, mixins (`OntologyRAGMixin`, `MCPEnabledMixin`, `PersistenceMixin`), async-first, Pydantic v2 at I/O boundaries, `asyncpg` (not SQLAlchemy), per-backend storage (Postgres/PgVector, ArangoDB, Redis, S3).
-- Invariants to honor when scoping behavior: loaders produce `List[Document]` and never embed agent/LLM logic; observers cannot stop execution (interceptors can); routing/targeting on security-sensitive paths is deterministic, not LLM-driven; toolkits over multi-purpose tools (separate named operations).
+- **Entry point**: the `Notify` factory in `notify/notify.py` — user-facing code instantiates providers by name (`Notify("telegram", ...)`), and loaded classes are cached in the module-level `PROVIDERS` registry.
+- **Provider contract**: `ProviderBase` and the families `ProviderMessaging` (SMS), `ProviderIM` (instant messaging), `ProviderPush` in `notify/providers/base.py` — class attributes `provider`, `provider_type` (`ProviderType`), `blocking` (`True` / `'asyncio'` / `'executor'`), and the lifecycle hooks `connect()`, `close()`, `_prepare_()`, `_render_()` / `_render_sync_()`, `_send_()`, `__sent__()`. Public `send()` is never overridden.
+- **Providers**: one package per transport under `notify/providers/<name>/` — email (`smtp`, `gmail`, `office365`, `outlook`, `ses`, `sendgrid`), IM (`slack`, `teams`, `telegram`, `xmpp`, `zoom`, `dialpad`), SMS/voice (`twilio`, `aws`), push (`onesignal`), plus `dummy` for tests. Shared email plumbing: `notify/providers/mail.py`, `message.py`, `_mime_utils.py`.
+- **Models**: `notify/models.py` (`from datamodel import BaseModel`) — `Account`, `Actor`, `Chat`, `Channel`, `Message`, `Attachment`, `BlockMessage`, `MailMessage`, `MailAttachment`, and the Teams card family (`TeamsCard`, `TeamsSection`, `TeamsAction`, …).
+- **Templates**: `TemplateParser` / `JinjaConfig` in `notify/templates.py` (Jinja2, `enable_async=True`); template-name vs template-source dispatch in `ProviderBase._prepare_`.
+- **Configuration**: `notify/conf.py` (navconfig) — every credential and setting (`TEMPLATE_DIR`, `NOTIFY_REDIS`, provider keys).
+- **Notify server** (optional): `notify/server/` — `server.py` (Redis Streams + pub/sub worker), `queue.py` (`QueueManager`), `client.py` (enqueue API), `wrapper.py` (provider wrapper used by workers).
+- **Errors**: `NotifyException`, `ProviderError`, `NotSupported` in the Cython module `notify/exceptions.pyx`.
+- Recurring patterns to align with: new transport = new provider package subclassing the right family (not a branch inside an existing provider); sync-only SDKs routed through `blocking = 'executor'`; data structures as `datamodel` models, never bare dicts; configuration through navconfig, never `os.environ` inside a provider; async context manager usage (`async with Notify(...) as p:`).
+- Invariants to honor when scoping behavior: `send()` is the single public entry point; providers do not know about the notify server (the server wraps providers, not the reverse); rendering happens before transport, so template failures must surface before anything is sent; credentials never appear in messages, logs or exceptions.
 
-Grounded defaults must reference real endpoints, contracts, services, or registries and say briefly *why* they fit. Generic suggestions are not acceptable when code evidence exists.
+Grounded defaults must reference real classes, hooks, models, or configuration keys and say briefly *why* they fit. Generic suggestions are not acceptable when code evidence exists.
 
 ---
 
@@ -89,14 +95,14 @@ Ask trade-off questions (A vs B), each resolving one concrete decision, each wit
 
 Your questions must collectively cover these. If any is unresolved, ask about it.
 
-1. **Solution shape** — new vs extend (e.g. new `AbstractToolkit` vs extend an existing one; new registered node type vs mixin; new loader vs new tool).
-2. **Affected components & contracts** — which ABCs/registries/managers are touched; the Pydantic I/O boundary (inputs/outputs and their shapes).
-3. **Actor & usage context** — who triggers this and through which surface (channel, agent, MCP, flow); multi-tenant implications.
-4. **Behavior** — normal flow, edge cases, and failure modes (async boundaries, retries, timeouts, fallbacks).
-5. **Data & persistence** — which backend and why (Postgres/PgVector, ArangoDB, Redis, S3, etc.); state/lifecycle.
-6. **Scope boundaries** — explicitly in scope vs out of scope (Non-Goals).
-7. **Acceptance & success criteria** — observable, testable conditions for "done" (and how they'd be tested — e.g. integration test, `moto`+`syrupy` for AWS).
-8. **Constraints** — performance/security limits when relevant (e.g. observability overhead ceilings, deterministic routing on security paths).
+1. **Solution shape** — new provider package vs extending an existing provider vs a change to a shared layer (`ProviderBase` hook, `_mime_utils.py`, `TemplateParser`, `models.py`, notify server). Which provider family (`ProviderMessaging` / `ProviderIM` / `ProviderPush` / plain `ProviderBase`)?
+2. **Affected components & contracts** — which hooks (`_prepare_`, `_render_`, `_send_`, `__sent__`) and models change; the call contract of `Notify(...)` / `send(to=..., message=..., template=..., **kwargs)` (inputs, return value, raised exceptions); backwards compatibility for existing callers.
+3. **Actor & usage context** — who triggers this and through which surface: a developer calling `Notify` directly, a service enqueueing through `notify/server/client.py`, or an operator running the notify server; single recipient vs fan-out to many.
+4. **Behavior** — normal flow, edge cases, and failure modes: `blocking` mode (native async vs `'executor'`), provider rate limits and retries, partial delivery to a recipient list, attachment/message size limits, token expiry and refresh, what `send()` returns or raises on each failure.
+5. **Data & persistence** — templates (`TEMPLATE_DIR` vs inline source), attachments (paths vs bytes), OAuth token caches, Redis streams for the notify server; which `notify/conf.py` settings are added and their defaults.
+6. **Scope boundaries** — explicitly in scope vs out of scope (Non-Goals): which providers get the capability now, which later, and which cannot support it (`NotSupported`).
+7. **Acceptance & success criteria** — observable, testable conditions for "done", and how they are tested: an offline unit test in `tests/` with the transport mocked (always), plus an `@pytest.mark.integration` / `live` test against the real service when relevant.
+8. **Constraints** — provider API limits, message/attachment size caps, deliverability (MIME/UTF-8 correctness), security (no credentials in logs, header/template injection), and optional-dependency extras in `pyproject.toml` (which extra pulls the SDK).
 
 ## 4. Confirm before drafting
 
@@ -116,7 +122,7 @@ As a <actor>, I want <capability>, so that <outcome>.
 <1–2 paragraphs: the problem and the intended outcome.>
 
 ## Context & Codebase Grounding
-<Where this lives and what it touches, with grep anchors: `Symbol` in `package/.../file.py`.
+<Where this lives and what it touches, with grep anchors: `Symbol` in `notify/.../file.py`.
 What existing pattern it follows and why.>
 
 ## Scope
@@ -134,7 +140,7 @@ What existing pattern it follows and why.>
 - Failure modes: ...
 
 ## Expected Output / Contract
-- <inputs/outputs, Pydantic shapes, return contract — e.g. `List[Document]`>
+- <inputs/outputs, model shapes (`notify/models.py`), `send()` return value and raised exceptions>
 
 ## Acceptance Criteria
 1. <observable, testable condition>
@@ -163,19 +169,19 @@ The injected block is delimited by markers the command owns:
 
 ```
 ──────────────────────────────────────────────
-🤖 AI-Enriched Specification  ·  /enrich-story  ·  <YYYY-MM-DD>
+🤖 AI-Enriched Specification  ·  /user-story  ·  <YYYY-MM-DD>
 (Everything above this line is the original report, untouched.
  Everything below was generated by AI from codebase grounding.)
-enrich-story:begin id=<JIRA_KEY> rev=<YYYY-MM-DDThh:mm>
+user-story:begin id=<JIRA_KEY> rev=<YYYY-MM-DDThh:mm>
 ──────────────────────────────────────────────
 
 <artifact body, sections 1–N>
 
-enrich-story:end
+user-story:end
 ```
 
 - **First run:** read the current description, then set the new description = `<original description>` + the marker block + artifact. The original text is preserved verbatim above the first marker.
-- **Re-run (idempotent):** if an `enrich-story:begin … enrich-story:end` block already exists, **replace only the content between the markers**; keep everything above the first marker (the original report and any human edits) intact. Never stack multiple enriched blocks.
+- **Re-run (idempotent):** if an `user-story:begin … user-story:end` block already exists, **replace only the content between the markers**; keep everything above the first marker (the original report and any human edits) intact. Never stack multiple enriched blocks.
 - Do **not** modify the ticket summary, status, assignee, or any field other than the description.
 - An explicit overwrite of the original (replacing rather than appending) is **out of scope** for this command — refuse and explain if asked.
 
@@ -201,7 +207,7 @@ Use **mcp-atlassian** if available, falling back to **curl**.
    Acceptance criteria: <N>   Open questions: <N>
 
    Jira: appended enriched block to NAV-8042 (original description untouched)  [if --jira-ticket]
-   Saved: docs/stories/pause-flow.md                                          [if --out]
+   Saved: docs/stories/teams-thread-replies.md                                          [if --out]
 
 Next: /sdd-brainstorm  →  /sdd-spec
 ```
