@@ -134,6 +134,31 @@ class MailAttachment(Attachment):
     size: int
 
 
+class OutboundAttachment(BaseModel):
+    """A file prepared for a Microsoft Graph mail message (regular or inline CID)."""
+
+    name: str = Field(required=True)
+    content: bytes = Field(required=True, repr=False)
+    content_type: str = Field(required=True, default="application/octet-stream")
+    size: int = Field(required=True)
+    content_id: Optional[str] = Field(required=False, default=None)
+    is_inline: bool = Field(required=False, default=False)
+
+
+class MailSendResult(BaseModel):
+    """Outcome of one Microsoft Graph `send()` call (one message to all recipients)."""
+
+    success: bool = Field(required=True)
+    provider: str = Field(required=True)
+    mailbox: Optional[str] = Field(required=False, default=None)
+    recipients: list[str] = Field(required=False, default_factory=list)
+    strategy: Literal["send_mail", "draft_upload"] = Field(required=True, default="send_mail")
+    message_id: Optional[str] = Field(required=False, default=None)
+    status_code: Optional[int] = Field(required=False, default=None)
+    error_code: Optional[str] = Field(required=False, default=None)
+    error: Optional[str] = Field(required=False, default=None)
+
+
 class MailMessage(BlockMessage):
     """
     MailMessage.
