@@ -22,6 +22,12 @@ class ProviderEmail(ProviderBase, ABC):
     provider_type = ProviderType.EMAIL
     blocking: str = 'asyncio'
     timeout: int = 60
+    batch_recipients: bool = False
+    """When True, send() calls _send_ once with the full recipient list."""
+    raise_errors: tuple[type[BaseException], ...] = ()
+    """Exception types re-raised by send() instead of being logged and swallowed."""
+    redacted_send_kwargs: frozenset[str] = frozenset()
+    """Send kwargs never forwarded to __sent__ / the `sent` callback."""
 
     def __init__(self, *args, **kwargs):
         self.host: str = None
@@ -222,6 +228,11 @@ class ProviderEmail(ProviderBase, ABC):
         asyncio.set_event_loop(loop)
         try:
             await self.connect()
+        except self.raise_errors as err:
+            self.logger.warning(
+                f"{self.__name__} connect() raised {err.__class__.__name__}: {err}"
+            )
+            raise
         except Exception as err:
             raise ProviderError(
                 f"Error connecting to Mail Backend: {err}"
@@ -234,8 +245,37 @@ class ProviderEmail(ProviderBase, ABC):
             message=message,
             **kwargs
         )
-        results = []
         recipients = [recipient] if not isinstance(recipient, list) else recipient
+        # kwargs forwarded to __sent__ / the `sent` callback, minus any secret keys:
+        callback_kwargs = {
+            key: value for key, value in kwargs.items() if key not in self.redacted_send_kwargs
+        }
+
+        if self.batch_recipients:
+            # one _send_ call with the full recipient list, one __sent__ callback
+            try:
+                result = await self._send_(recipients, message, subject=subject, **kwargs)
+                results = [result]
+            except self.raise_errors as e:
+                self.logger.warning(
+                    f'Batch send for recipients {recipients} raised exception: {e}'
+                )
+                raise
+            except Exception as e:
+                self.logger.warning(
+                    f'Batch send for recipients {recipients} raised exception: {e}'
+                )
+                results = []
+            try:
+                await self.__sent__(recipients, message, result, loop=loop, **callback_kwargs)
+            except Exception as e:
+                self.logger.exception(
+                    f'Send for recipients {recipients} raised an exception: {e}',
+                    stack_info=True
+                )
+            return results
+
+        results = []
         # tasks = []
         tasks = [self._send_(to, message, subject=subject, **kwargs) for to in recipients]
 
@@ -243,12 +283,17 @@ class ProviderEmail(ProviderBase, ABC):
             try:
                 result = await future
                 results.append(result)
+            except self.raise_errors as e:
+                self.logger.warning(
+                    f'Task for recipient {to} raised exception: {e}'
+                )
+                raise
             except Exception as e:
                 self.logger.warning(
                     f'Task for recipient {to} raised exception: {e}'
                 )
             try:
-                await self.__sent__(to, message, result, loop=loop, **kwargs)
+                await self.__sent__(to, message, result, loop=loop, **callback_kwargs)
             except Exception as e:
                 self.logger.exception(
                     f'Send for recipient {to} raised an exception: {e}',
