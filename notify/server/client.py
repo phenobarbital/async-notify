@@ -8,6 +8,7 @@ from navconfig.logging import logging
 from qw.discovery import get_client_discovery
 from qw.conf import WORKER_LIST
 from .server import NotifyWrapper
+from .wrapper import reject_queued_secrets
 from ..conf import (
     NOTIFY_REDIS,
     NOTIFY_DEFAULT_PORT,
@@ -98,6 +99,7 @@ class NotifyClient:
 
     async def publish(self, message: dict, channel: str):
         """Publish a message to Redis PUB/SUB channel."""
+        reject_queued_secrets(message)
         if not self.redis:
             await self.connect_redis()
 
@@ -107,6 +109,7 @@ class NotifyClient:
 
     async def stream(self, message: dict, stream: str, use_wrapper: bool = False):
         """Publish a message to a Redis Stream."""
+        reject_queued_secrets(message)
         if not self.redis:
             await self.connect_redis()
 
@@ -129,6 +132,7 @@ class NotifyClient:
 
     async def send(self, message: dict):
         """Send a message via a TCP connection."""
+        reject_queued_secrets(message)
         try:
             _, writer = await asyncio.open_connection(self.tcp_host, self.tcp_port)
 

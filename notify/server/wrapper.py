@@ -9,10 +9,42 @@ import uuid
 from datamodel import BaseModel
 from navconfig.logging import logging
 from notify import Notify
+from notify.exceptions import MessageError
 from notify.models import Actor, Chat, Channel, TeamsChannel
 
 
 coro = Callable[[int], Coroutine[Any, Any, str]]
+
+#: Kwargs that must never reach a queued notification payload. Currently
+#: just the On-Behalf-Of user assertion (FEAT-004, M10): it is a live user
+#: token, so it must never be serialized into Redis/TCP and must instead be
+#: passed directly to `send(user_assertion=...)`.
+QUEUE_FORBIDDEN_KWARGS: frozenset[str] = frozenset({"user_assertion"})
+
+
+def reject_queued_secrets(message: dict) -> None:
+    """Raise `MessageError` if a queued notification carries a forbidden secret kwarg.
+
+    Checks both the top-level `message` dict keys and, when present, its
+    nested `kwargs` dict — queued payloads may carry provider kwargs under
+    either shape depending on the caller.
+
+    Args:
+        message: The payload about to be serialized/queued.
+
+    Raises:
+        MessageError: Naming the offending key — e.g. "user_assertion cannot
+            be queued; send On-Behalf-Of mail directly" — never its value.
+    """
+    forbidden = QUEUE_FORBIDDEN_KWARGS & message.keys()
+    nested_kwargs = message.get("kwargs")
+    if isinstance(nested_kwargs, dict):
+        forbidden = forbidden | (QUEUE_FORBIDDEN_KWARGS & nested_kwargs.keys())
+    if forbidden:
+        key = sorted(forbidden)[0]
+        raise MessageError(
+            f"{key} cannot be queued; send On-Behalf-Of mail directly instead of through the notify server."
+        )
 
 
 class NotifyWrapper:
@@ -38,6 +70,7 @@ class NotifyWrapper:
     _debug: bool = False
 
     def __init__(self, provider: str, *args, **kwargs):
+        reject_queued_secrets({**kwargs})
         self._id = str(uuid.uuid4())
         self.recipients: list = []
         recipients = kwargs.pop('recipient', [])
