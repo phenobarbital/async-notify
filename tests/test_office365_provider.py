@@ -218,3 +218,21 @@ async def test_callback_never_receives_user_assertion(actors):
 
     assert len(seen_callback_kwargs) == 1
     assert "user_assertion" not in seen_callback_kwargs[0]
+
+
+# ---------------------------------------------------------------------------
+# TASK-31: cross-cutting M6/M7/M9 regression
+# ---------------------------------------------------------------------------
+
+
+async def test_no_removed_libraries_imported():
+    """Importing both Graph-based providers never imports the removed
+    O365 / Office365-REST-Python-Client (`office365`) / pyo365 libraries."""
+    import sys
+
+    import notify.providers.office365.office365  # noqa: F401
+    import notify.providers.outlook.outlook  # noqa: F401
+
+    assert "O365" not in sys.modules
+    assert "office365" not in sys.modules
+    assert "pyo365" not in sys.modules
