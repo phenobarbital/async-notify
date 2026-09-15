@@ -12,7 +12,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/jesuslara/proyectos/ai-parrot/.venv/bin/wikitoolkit claude-hook",
+            "command": "/home/jesuslara/proyectos/notify/.venv/bin/wikitoolkit claude-hook",
             "timeout": 10
           }
         ]

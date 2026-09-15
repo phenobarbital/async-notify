@@ -187,3 +187,5 @@ ai_fluency_report.html
 # navconfig scaffolds an empty plugins/{agents,tools} tree at BASE_DIR on
 # import; it is not part of async-notify and must not be tracked.
 plugins/
+# parrot LLM-wiki state (local retrieval plane)
+.parrot/

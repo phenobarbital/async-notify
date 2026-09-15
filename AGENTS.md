@@ -77,7 +77,7 @@ Verify libraries in `package.json` or `requirements.txt` before importing.
 <!-- parrot:wiki:codex:begin -->
 ## Codebase Knowledge Graph (LLM Wiki)
 
-This repository has a parrot LLM-wiki. Before scanning source files, run `wikitoolkit query "<focused question>"`, then inspect a result with `wikitoolkit page <id>` or `wikitoolkit related <id>`. When you learn a durable fact or decision, save it: `wikitoolkit remember "<fact>" --category decision`.
+This repository has an ai-parrot LLM-wiki. Before scanning source files, run `wikitoolkit query "<focused question>"`, then inspect a result with `wikitoolkit page <id>` or `wikitoolkit related <id>`. When you learn a durable fact or decision, save it: `wikitoolkit remember "<fact>" --category decision`.
 
 <!-- parrot:wiki:codex:end -->
 
