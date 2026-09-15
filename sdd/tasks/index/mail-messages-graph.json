@@ -5,7 +5,7 @@
   "type": "feature",
   "base_branch": "dev",
   "created_at": "2026-09-15T23:39:00+02:00",
-  "completed_at": null,
+  "completed_at": "2026-09-15T23:28:27+00:00",
   "tasks": [
     {
       "id": "TASK-19",
@@ -23,7 +23,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:14:01+00:00",
-      "file": "sdd/tasks/completed/TASK-19-shared-msgraph-helper.md"
+      "file": "sdd/tasks/completed/TASK-19-shared-msgraph-helper.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-20",
@@ -41,7 +42,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:16:13+00:00",
-      "file": "sdd/tasks/completed/TASK-20-configuration-and-dependencies.md"
+      "file": "sdd/tasks/completed/TASK-20-configuration-and-dependencies.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-21",
@@ -61,7 +63,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:18:08+00:00",
-      "file": "sdd/tasks/completed/TASK-21-token-stores-and-cipher.md"
+      "file": "sdd/tasks/completed/TASK-21-token-stores-and-cipher.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-22",
@@ -82,7 +85,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:24:46+00:00",
-      "file": "sdd/tasks/completed/TASK-22-msal-async-credential.md"
+      "file": "sdd/tasks/completed/TASK-22-msal-async-credential.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-23",
@@ -100,7 +104,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:28:10+00:00",
-      "file": "sdd/tasks/completed/TASK-23-graph-mail-models-and-builder.md"
+      "file": "sdd/tasks/completed/TASK-23-graph-mail-models-and-builder.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-24",
@@ -120,7 +125,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:31:58+00:00",
-      "file": "sdd/tasks/completed/TASK-24-graph-mail-sender.md"
+      "file": "sdd/tasks/completed/TASK-24-graph-mail-sender.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-25",
@@ -138,7 +144,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:35:07+00:00",
-      "file": "sdd/tasks/completed/TASK-25-provideremail-hooks.md"
+      "file": "sdd/tasks/completed/TASK-25-provideremail-hooks.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-26",
@@ -161,7 +168,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:39:57+00:00",
-      "file": "sdd/tasks/completed/TASK-26-office365-provider-lifecycle.md"
+      "file": "sdd/tasks/completed/TASK-26-office365-provider-lifecycle.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-27",
@@ -184,7 +192,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:43:04+00:00",
-      "file": "sdd/tasks/completed/TASK-27-office365-message-dispatch.md"
+      "file": "sdd/tasks/completed/TASK-27-office365-message-dispatch.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-28",
@@ -204,7 +213,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:45:39+00:00",
-      "file": "sdd/tasks/completed/TASK-28-outlook-graph-alias.md"
+      "file": "sdd/tasks/completed/TASK-28-outlook-graph-alias.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-29",
@@ -226,7 +236,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:47:32+00:00",
-      "file": "sdd/tasks/completed/TASK-29-device-code-login-cli.md"
+      "file": "sdd/tasks/completed/TASK-29-device-code-login-cli.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-30",
@@ -244,7 +255,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:50:01+00:00",
-      "file": "sdd/tasks/completed/TASK-30-notify-server-obo-guard.md"
+      "file": "sdd/tasks/completed/TASK-30-notify-server-obo-guard.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-31",
@@ -275,7 +287,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T22:55:07+00:00",
-      "file": "sdd/tasks/completed/TASK-31-graph-mail-test-suite.md"
+      "file": "sdd/tasks/completed/TASK-31-graph-mail-test-suite.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-32",
@@ -299,7 +312,8 @@
       "assigned_to": null,
       "started_at": null,
       "completed_at": "2026-09-15T23:02:13+00:00",
-      "file": "sdd/tasks/completed/TASK-32-graph-mail-documentation-and-examples.md"
+      "file": "sdd/tasks/completed/TASK-32-graph-mail-documentation-and-examples.md",
+      "verification": "verified"
     }
   ]
 }
