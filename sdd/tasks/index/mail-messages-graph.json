@@ -213,7 +213,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "effort": "M",
       "depends_on": [
@@ -225,8 +225,8 @@
       "parallelism_notes": "Shares the stable settings, token store, and credential interfaces.",
       "assigned_to": null,
       "started_at": null,
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-29-device-code-login-cli.md"
+      "completed_at": "2026-09-15T22:47:32+00:00",
+      "file": "sdd/tasks/completed/TASK-29-device-code-login-cli.md"
     },
     {
       "id": "TASK-30",
