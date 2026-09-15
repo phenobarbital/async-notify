@@ -39,8 +39,8 @@ dependencies = [
   "navconfig[default]>=2.2.0",
   "jinja2>=3.1.4",
   "cloudpickle>=3.1.0",
-  "emoji>=1.7.0,<2.15.0",
-  "aiobotocore[boto3]==2.15.2",
+  "emoji>=1.7.0",
+  "aiobotocore>=2.15.2",
   "pillow>=8.3.2",
 ]
 
@@ -50,28 +50,28 @@ uvloop = [
 ]
 default = [
   "aiogram>=3.14.0",
-  "slack_bolt==1.18.0",
+  "slack_bolt>=1.18.0",
 ]
 telegram = [
   "aiogram>=3.14.0",
-  "moviepy==2.2.1",
+  "moviepy>=2.2.1",
 ]
 push = [
-  "onesignal-sdk==2.0.0",
+  "onesignal-sdk>=2.0.0",
 ]
 google = [
-  "gmail==0.6.3",
+  "gmail>=0.6.3",
   "google-auth>=2.6.0",
   "google-auth-httplib2>=0.1.0",
 ]
 azure = [
-  "pyo365==0.1.3",
-  "o365==2.0.37",
+  "pyo365>=0.1.3",
+  "o365>=2.0.37,<2.1",  # 2.1 removed MSOffice365Protocol (used by the office365 provider)
   "msal>=1.32.0",
-  "Office365-REST-Python-Client==2.5.13",
-  "msgraph-core==1.3.2",
+  "Office365-REST-Python-Client>=2.5.13",
+  "msgraph-core>=1.3.2",
   "azure-identity>=1.23.0",
-  "msgraph-sdk==1.22.0",
+  "msgraph-sdk>=1.22.0",
 ]
 templates = [
   "jinja2-time>=0.2.0",
@@ -79,25 +79,25 @@ templates = [
   "jinja2-humanize-extension>=0.4.0",
 ]
 all = [
-  "gmail==0.6.3",
+  "gmail>=0.6.3",
   "google-auth>=2.6.0",
   "google-auth-httplib2>=0.1.0",
-  "onesignal-sdk==2.0.0",
-  "o365==2.0.37",
-  "Office365-REST-Python-Client==2.5.13",
+  "onesignal-sdk>=2.0.0",
+  "o365>=2.0.37,<2.1",  # 2.1 removed MSOffice365Protocol (used by the office365 provider)
+  "Office365-REST-Python-Client>=2.5.13",
   "msal>=1.32.0",
-  "PySocks==1.7.1",
-  "pyshorteners==1.0.1",
-  "twilio==8.2.2",
-  "slixmpp==1.10.0",
-  "slack_bolt==1.18.0",
+  "PySocks>=1.7.1",
+  "pyshorteners>=1.0.1",
+  "twilio>=8.2.2",
+  "slixmpp>=1.10.0",
+  "slack_bolt>=1.18.0",
   "aiogram>=3.14.0",
-  "aiobotocore[boto3]==2.15.2",
+  "aiobotocore>=2.15.2",
   "qworker>=1.12.7",
-  "msgraph-core==1.3.2",
+  "msgraph-core>=1.3.2",
   "azure-identity>=1.23.0",
-  "msgraph-sdk==1.22.0",
-  "moviepy==2.2.1",
+  "msgraph-sdk>=1.22.0",
+  "moviepy>=2.2.1",
 ]
 dev = [
   "aiounittest>=1.4.2",
@@ -154,8 +154,8 @@ exclude = [
 notify = ["py.typed"]
 
 [tool.uv]
-# Keep the moviepy pin consistent (pattern borrowed from ai-parrot)
-override-dependencies = ["moviepy==2.2.1"]
+# Keep the moviepy floor consistent (pattern borrowed from ai-parrot)
+override-dependencies = ["moviepy>=2.2.1"]
 
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers"]
