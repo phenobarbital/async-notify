@@ -1,10 +1,10 @@
 """Configuration and dependency-manifest regression tests (FEAT-004, M9)."""
+
 from pathlib import Path
 
 import tomllib
 
 from notify import conf
-
 
 PYPROJECT_PATH = Path(__file__).resolve().parent.parent / "pyproject.toml"
 

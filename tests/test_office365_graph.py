@@ -2,6 +2,7 @@
 (FEAT-004, M4): TASK-23 covers the builder cases; TASK-24 adds the mocked
 sender / upload-session / error-mapping cases below.
 """
+
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -143,9 +144,7 @@ def test_build_message_from_address():
 
 
 def test_inline_cid_attachment_flags():
-    inline = OutboundAttachment(
-        name="logo.png", content=b"data", size=4, content_id="logo", is_inline=True
-    )
+    inline = OutboundAttachment(name="logo.png", content=b"data", size=4, content_id="logo", is_inline=True)
     message = build_message(subject="s", html='<img src="cid:logo">', to=[], attachments=[inline])
     assert len(message.attachments) == 1
     graph_attachment = message.attachments[0]
@@ -154,9 +153,7 @@ def test_inline_cid_attachment_flags():
 
 
 def test_inline_cid_missing_reference_logs_warning(caplog):
-    inline = OutboundAttachment(
-        name="logo.png", content=b"data", size=4, content_id="logo", is_inline=True
-    )
+    inline = OutboundAttachment(name="logo.png", content=b"data", size=4, content_id="logo", is_inline=True)
     with caplog.at_level("WARNING"):
         build_message(subject="s", html="<p>no cid reference here</p>", to=[], attachments=[inline])
     assert any("cid:logo" in record.message for record in caplog.records) is False
@@ -277,9 +274,7 @@ async def test_draft_upload_strategy_large(graph_client_mock, _fake_large_file_u
     small = _small_attachment(name="small.txt", size=10)
     large = OutboundAttachment(name="large.bin", content=b"y" * 10, size=INLINE_REQUEST_LIMIT + 1)
     attachments = [small, large]
-    message = build_message(
-        subject="s", html="h", to=to_recipients(["a@contoso.com"]), attachments=attachments
-    )
+    message = build_message(subject="s", html="h", to=to_recipients(["a@contoso.com"]), attachments=attachments)
 
     result = await sender.send(
         mailbox=None,
@@ -312,9 +307,7 @@ async def test_draft_upload_save_to_sent_items_false_warns(graph_client_mock, _f
     large = OutboundAttachment(name="large.bin", content=b"y" * 10, size=INLINE_REQUEST_LIMIT + 1)
     message = build_message(subject="s", html="h", to=[], attachments=[large])
 
-    await sender.send(
-        mailbox=None, message=message, attachments=[large], save_to_sent_items=False, recipients=[]
-    )
+    await sender.send(mailbox=None, message=message, attachments=[large], save_to_sent_items=False, recipients=[])
     assert warn_logger.warning.called
 
 
@@ -328,9 +321,7 @@ async def test_draft_deleted_on_upload_failure(graph_client_mock, _fake_large_fi
     message = build_message(subject="s", html="h", to=[], attachments=[large])
 
     with pytest.raises(RuntimeError):
-        await sender.send(
-            mailbox=None, message=message, attachments=[large], save_to_sent_items=True, recipients=[]
-        )
+        await sender.send(mailbox=None, message=message, attachments=[large], save_to_sent_items=True, recipients=[])
 
     draft_builder.delete.assert_called_once()
 

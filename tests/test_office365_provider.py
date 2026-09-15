@@ -2,6 +2,7 @@
 constructor / flow resolution / connect() / close() (TASK-26), plus
 rendering and Graph message dispatch (TASK-27) below.
 """
+
 import pytest
 
 from notify.exceptions import NotifyAuthError, ProviderError
@@ -15,7 +16,9 @@ from notify.providers.office365.office365 import Office365
 async def test_flow_resolution_explicit_auth_flow_wins():
     provider = Office365(
         auth_flow="on_behalf_of",
-        client_id="c", tenant_id="t", client_secret="s",
+        client_id="c",
+        tenant_id="t",
+        client_secret="s",
         use_credentials=True,  # would otherwise resolve to password
     )
     assert provider.auth_flow == AuthFlow.ON_BEHALF_OF
@@ -130,9 +133,7 @@ class _FakeGraphMailSender:
             "recipients": recipients,
         }
         type(self).last_assertion_seen = credential_module._current_assertion.get()
-        return MailSendResult(
-            success=True, provider=self.provider_name, mailbox=mailbox, recipients=recipients
-        )
+        return MailSendResult(success=True, provider=self.provider_name, mailbox=mailbox, recipients=recipients)
 
 
 @pytest.fixture(autouse=True)
@@ -212,9 +213,7 @@ async def test_callback_never_receives_user_assertion(actors):
     seen_callback_kwargs = []
     provider.sent = lambda recipient, message, result, **kwargs: seen_callback_kwargs.append(kwargs)
 
-    await provider.send(
-        recipient=actors, message="hi", subject="s", user_assertion="super-secret-user-token"
-    )
+    await provider.send(recipient=actors, message="hi", subject="s", user_assertion="super-secret-user-token")
 
     assert len(seen_callback_kwargs) == 1
     assert "user_assertion" not in seen_callback_kwargs[0]

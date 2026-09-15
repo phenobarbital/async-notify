@@ -5,6 +5,7 @@ header (moved here, verbatim, from ``notify.providers.teams._msgraph_patch``
 so both ``teams`` and ``office365`` can share one implementation), plus the
 default Graph scope constant used by client-credentials-style auth flows.
 """
+
 import logging
 import platform
 from typing import Any
@@ -56,7 +57,5 @@ def patch_graph_host_os_header() -> bool:
 
     GraphTelemetryHandler._add_host_os_header = _add_host_os_header
     _PATCHED = True
-    logging.getLogger(__name__).debug(
-        "Patched msgraph-core GraphTelemetryHandler: sanitised HostOs header."
-    )
+    logging.getLogger(__name__).debug("Patched msgraph-core GraphTelemetryHandler: sanitised HostOs header.")
     return True

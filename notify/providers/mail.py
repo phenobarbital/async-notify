@@ -7,6 +7,7 @@ from collections.abc import Callable
 import aiosmtplib
 from notify.models import Actor
 from notify.exceptions import ProviderError
+
 # abstract class
 from .base import ProviderBase, ProviderType
 from notify.providers import _mime_utils as _mu
@@ -20,7 +21,7 @@ class ProviderEmail(ProviderBase, ABC):
     """
 
     provider_type = ProviderType.EMAIL
-    blocking: str = 'asyncio'
+    blocking: str = "asyncio"
     timeout: int = 60
     batch_recipients: bool = False
     """When True, send() calls _send_ once with the full recipient list."""
@@ -72,32 +73,24 @@ class ProviderEmail(ProviderBase, ABC):
             )
             try:
                 await self._server.connect()
-                self.logger.debug(
-                    f":: {self.__name__}: Connected to: {self._server}"
-                )
+                self.logger.debug(f":: {self.__name__}: Connected to: {self._server}")
                 try:
                     if self._server.is_ehlo_or_helo_needed:
                         await self._server.ehlo()
                 except aiosmtplib.errors.SMTPHeloError as exc:
                     print(exc)
-                await asyncio.sleep(.1)
+                await asyncio.sleep(0.1)
                 # # making authentication:
                 # await self._server.login(
                 #     username=self.username,
                 #     password=self.password
                 # )
             except aiosmtplib.errors.SMTPAuthenticationError as err:
-                raise RuntimeError(
-                    f"{self.__name__} Error: Invalid credentials: {err}"
-                ) from err
+                raise RuntimeError(f"{self.__name__} Error: Invalid credentials: {err}") from err
             except aiosmtplib.errors.SMTPServerDisconnected as err:
-                raise RuntimeError(
-                    f"{self.__name__} Server Disconnected: {err}"
-                ) from err
+                raise RuntimeError(f"{self.__name__} Server Disconnected: {err}") from err
         except aiosmtplib.SMTPRecipientsRefused as err:
-            raise RuntimeError(
-                f"{self.__name__} Error: got SMTPRecipientsRefused: {err.recipients}"
-            ) from err
+            raise RuntimeError(f"{self.__name__} Error: got SMTPRecipientsRefused: {err.recipients}") from err
         except (OSError, aiosmtplib.errors.SMTPException) as e:
             raise RuntimeError(f"{self.__name__} Error: got {e.__class__}, {e}") from e
 
@@ -107,9 +100,7 @@ class ProviderEmail(ProviderBase, ABC):
         else:
             return False
 
-    async def _render_(
-        self, to: Actor = None, message: str = None, subject: str = None, **kwargs
-    ):
+    async def _render_(self, to: Actor = None, message: str = None, subject: str = None, **kwargs):
         """Build a UTF-8-safe multipart/alternative message.
 
         Constructs the MIME envelope via :func:`_mime_utils.build_alternative_message`
@@ -127,10 +118,7 @@ class ProviderEmail(ProviderBase, ABC):
         Returns:
             A :class:`email.mime.multipart.MIMEMultipart` ready for transport.
         """
-        recipient = (
-            to.account.address if not isinstance(to, list)
-            else ", ".join(to)
-        )
+        recipient = to.account.address if not isinstance(to, list) else ", ".join(to)
         msg = _mu.build_alternative_message(
             sender=self.actor,
             to=recipient,
@@ -177,16 +165,10 @@ class ProviderEmail(ProviderBase, ABC):
         """
         # Treat the misspelled legacy default (and its correct spelling) as
         # "no explicit type" so mimetypes.guess_type can do its job.
-        resolved = (
-            None
-            if mimetype in ("octect-stream", "application/octet-stream")
-            else mimetype
-        )
+        resolved = None if mimetype in ("octect-stream", "application/octet-stream") else mimetype
         _mu.attach_file(message, filename, resolved)
 
-    async def _send_(
-        self, to: Actor, message: str, subject: str, **kwargs
-    ):  # pylint: disable=W0221
+    async def _send_(self, to: Actor, message: str, subject: str, **kwargs):  # pylint: disable=W0221
         """
         _send_.
 
@@ -202,15 +184,11 @@ class ProviderEmail(ProviderBase, ABC):
                 if self._debug is True:
                     self.logger.debug(response)
             except aiosmtplib.errors.SMTPServerDisconnected as err:
-                raise RuntimeError(
-                    f"{self.__name__} Server Disconnected {err}"
-                ) from err
+                raise RuntimeError(f"{self.__name__} Server Disconnected {err}") from err
             return response
         except Exception as e:
             self.logger.exception(e)
-            raise ProviderError(
-                f"{self.__name__} Error: got {e.__class__}, {e}"
-            ) from e
+            raise ProviderError(f"{self.__name__} Error: got {e.__class__}, {e}") from e
 
     async def send(
         self,
@@ -229,27 +207,17 @@ class ProviderEmail(ProviderBase, ABC):
         try:
             await self.connect()
         except self.raise_errors as err:
-            self.logger.warning(
-                f"{self.__name__} connect() raised {err.__class__.__name__}: {err}"
-            )
+            self.logger.warning(f"{self.__name__} connect() raised {err.__class__.__name__}: {err}")
             raise
         except Exception as err:
-            raise ProviderError(
-                f"Error connecting to Mail Backend: {err}"
-            ) from err
+            raise ProviderError(f"Error connecting to Mail Backend: {err}") from err
         # after connection, proceed exactly like other connectors.
         ## recipients:
         # template (or message) for preparation
-        message = await self._prepare_(
-            recipient=recipient,
-            message=message,
-            **kwargs
-        )
+        message = await self._prepare_(recipient=recipient, message=message, **kwargs)
         recipients = [recipient] if not isinstance(recipient, list) else recipient
         # kwargs forwarded to __sent__ / the `sent` callback, minus any secret keys:
-        callback_kwargs = {
-            key: value for key, value in kwargs.items() if key not in self.redacted_send_kwargs
-        }
+        callback_kwargs = {key: value for key, value in kwargs.items() if key not in self.redacted_send_kwargs}
 
         if self.batch_recipients:
             # one _send_ call with the full recipient list, one __sent__ callback
@@ -257,22 +225,15 @@ class ProviderEmail(ProviderBase, ABC):
                 result = await self._send_(recipients, message, subject=subject, **kwargs)
                 results = [result]
             except self.raise_errors as e:
-                self.logger.warning(
-                    f'Batch send for recipients {recipients} raised exception: {e}'
-                )
+                self.logger.warning(f"Batch send for recipients {recipients} raised exception: {e}")
                 raise
             except Exception as e:
-                self.logger.warning(
-                    f'Batch send for recipients {recipients} raised exception: {e}'
-                )
+                self.logger.warning(f"Batch send for recipients {recipients} raised exception: {e}")
                 results = []
             try:
                 await self.__sent__(recipients, message, result, loop=loop, **callback_kwargs)
             except Exception as e:
-                self.logger.exception(
-                    f'Send for recipients {recipients} raised an exception: {e}',
-                    stack_info=True
-                )
+                self.logger.exception(f"Send for recipients {recipients} raised an exception: {e}", stack_info=True)
             return results
 
         results = []
@@ -284,19 +245,12 @@ class ProviderEmail(ProviderBase, ABC):
                 result = await future
                 results.append(result)
             except self.raise_errors as e:
-                self.logger.warning(
-                    f'Task for recipient {to} raised exception: {e}'
-                )
+                self.logger.warning(f"Task for recipient {to} raised exception: {e}")
                 raise
             except Exception as e:
-                self.logger.warning(
-                    f'Task for recipient {to} raised exception: {e}'
-                )
+                self.logger.warning(f"Task for recipient {to} raised exception: {e}")
             try:
                 await self.__sent__(to, message, result, loop=loop, **callback_kwargs)
             except Exception as e:
-                self.logger.exception(
-                    f'Send for recipient {to} raised an exception: {e}',
-                    stack_info=True
-                )
+                self.logger.exception(f"Send for recipient {to} raised an exception: {e}", stack_info=True)
         return results

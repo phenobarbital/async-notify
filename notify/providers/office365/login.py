@@ -9,6 +9,7 @@ device-code flow — no browser redirect, no `input()` prompt, safe to run
 on a headless server. All CLI output goes to `sys.stderr`; no secret,
 token, or cache content is ever printed.
 """
+
 import argparse
 import asyncio
 import sys

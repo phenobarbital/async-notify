@@ -1,4 +1,5 @@
 """Offline tests for the Office365 Graph token stores and cipher (FEAT-004, M2)."""
+
 import stat
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock

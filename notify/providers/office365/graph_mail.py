@@ -7,11 +7,13 @@ small requests, or a draft → upload-session → send workflow for large
 attachments (`GraphMailSender`), mapping Graph `ODataError`s to either a
 raised `NotifyAuthError` or a failed `MailSendResult` (`map_odata_error`).
 """
+
 import mimetypes
 import re
+from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Optional, Union
 
 from msgraph import GraphServiceClient
 from msgraph.generated.models.attachment_item import AttachmentItem
@@ -33,7 +35,6 @@ from navconfig.logging import logging
 
 from notify.exceptions import NotifyAuthError, ProviderError
 from notify.models import Actor, MailSendResult, OutboundAttachment
-
 
 logger = logging.getLogger(__name__)
 
@@ -189,9 +190,7 @@ def _to_importance(value: str) -> Importance:
     try:
         return Importance(str(value).lower())
     except ValueError as exc:
-        raise ValueError(
-            f"Invalid importance: {value!r}; expected 'low', 'normal', or 'high'."
-        ) from exc
+        raise ValueError(f"Invalid importance: {value!r}; expected 'low', 'normal', or 'high'.") from exc
 
 
 _CID_REFERENCE_RE = re.compile(r"cid:([\w.\-@]+)", re.IGNORECASE)
@@ -270,9 +269,7 @@ def build_message(
     return message
 
 
-def map_odata_error(
-    exc: ODataError, *, provider: str, mailbox: Optional[str], recipients: list[str]
-) -> MailSendResult:
+def map_odata_error(exc: ODataError, *, provider: str, mailbox: Optional[str], recipients: list[str]) -> MailSendResult:
     """Map a Graph `ODataError` to a failed `MailSendResult`, or raise for auth/permission failures.
 
     Args:
@@ -296,9 +293,7 @@ def map_odata_error(
     status_code = exc.response_status_code
 
     if status_code in (401, 403) or code in AUTH_ERROR_CODES:
-        raise NotifyAuthError(
-            f"O365 Graph mail send denied (code={code}, status={status_code}): {message}"
-        )
+        raise NotifyAuthError(f"O365 Graph mail send denied (code={code}, status={status_code}): {message}")
 
     return MailSendResult(
         success=False,

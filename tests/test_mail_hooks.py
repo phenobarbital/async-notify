@@ -4,6 +4,7 @@ Covers `batch_recipients`, `raise_errors`, and `redacted_send_kwargs`, and
 proves the defaults reproduce today's per-recipient, error-swallowing
 behavior exactly (AC13: `email`/`gmail`/`smtp`/`sendgrid`/`ses` unaffected).
 """
+
 import pytest
 
 from notify.exceptions import ProviderError

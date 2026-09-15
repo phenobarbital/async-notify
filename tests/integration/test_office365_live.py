@@ -10,6 +10,7 @@ On-Behalf-Of scenario reads a pre-issued user assertion from navconfig.
 Run explicitly with:
     pytest -m integration tests/integration/test_office365_live.py -v
 """
+
 from navconfig import config
 
 from notify import Notify
@@ -17,7 +18,6 @@ from notify.conf import O365_CLIENT_ID, O365_CLIENT_SECRET, O365_TENANT_ID
 from notify.models import Account, Actor
 
 import pytest
-
 
 pytestmark = pytest.mark.integration
 
@@ -115,9 +115,7 @@ async def test_live_delegated_silent_after_seed():
     # Assumes `python -m notify.providers.office365.login --username <user>`
     # already seeded the configured token store (file/redis) out of band —
     # this test proves the silent, non-interactive refresh path only.
-    async with Notify(
-        "office365", auth_flow="delegated", username=O365_TEST_DELEGATED_USERNAME
-    ) as mail:
+    async with Notify("office365", auth_flow="delegated", username=O365_TEST_DELEGATED_USERNAME) as mail:
         results = await mail.send(
             recipient=[_recipient()],
             subject="FEAT-004 live test: delegated silent send",

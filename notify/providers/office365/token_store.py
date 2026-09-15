@@ -9,6 +9,7 @@ persistent backends unless the caller explicitly opts into plaintext.
 No secret (cipher key, serialized cache contents, or token value) is ever
 logged.
 """
+
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -28,7 +29,6 @@ from notify.conf import (
     O365_TOKEN_CIPHER_KEY,
     O365_TOKEN_ALLOW_UNENCRYPTED,
 )
-
 
 logger = logging.getLogger(__name__)
 

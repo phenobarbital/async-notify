@@ -1,4 +1,5 @@
 """Offline tests for the Office365 device-code login CLI (FEAT-004, M8)."""
+
 import pytest
 
 from notify.exceptions import NotifyAuthError
@@ -15,18 +16,14 @@ def test_login_cli_refuses_memory_store(capsys):
 
 def test_login_cli_requires_tenant_id(monkeypatch, capsys):
     monkeypatch.setattr(login_module, "O365_TENANT_ID", None)
-    exit_code = login_module.main(
-        ["--username", "me@contoso.com", "--client-id", "c", "--token-store", "file"]
-    )
+    exit_code = login_module.main(["--username", "me@contoso.com", "--client-id", "c", "--token-store", "file"])
     assert exit_code == 2
     assert "tenant" in capsys.readouterr().err.lower()
 
 
 def test_login_cli_requires_client_id(monkeypatch, capsys):
     monkeypatch.setattr(login_module, "O365_CLIENT_ID", None)
-    exit_code = login_module.main(
-        ["--username", "me@contoso.com", "--tenant-id", "t", "--token-store", "file"]
-    )
+    exit_code = login_module.main(["--username", "me@contoso.com", "--tenant-id", "t", "--token-store", "file"])
     assert exit_code == 2
     assert "client" in capsys.readouterr().err.lower()
 
@@ -100,9 +97,7 @@ async def test_device_code_login_runs_full_flow(monkeypatch):
     monkeypatch.setattr(login_module, "MsalAsyncCredential", _fake_credential_factory)
 
     store = MemoryTokenStore()
-    await login_module.device_code_login(
-        username="me@contoso.com", tenant_id="t", client_id="c", token_store=store
-    )
+    await login_module.device_code_login(username="me@contoso.com", tenant_id="t", client_id="c", token_store=store)
 
     assert created["credential"].closed is True
 

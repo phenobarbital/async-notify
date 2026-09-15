@@ -11,13 +11,15 @@ via ``loop.run_in_executor``. Graph calls made by ``msgraph-sdk`` stay fully
 async and reach this module only through Kiota's
 ``get_token(*scopes, claims=..., enable_cae=...)`` calls.
 """
+
 import asyncio
 import time
 import warnings
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import Enum
-from typing import Any, Iterator, Optional
+from typing import Any, Optional
 
 import msal
 from azure.core.credentials import AccessToken
@@ -26,7 +28,6 @@ from navconfig.logging import logging
 from notify.exceptions import NotifyAuthError
 from notify.providers._msgraph import GRAPH_DEFAULT_SCOPE
 from notify.providers.office365.token_store import TokenStore
-
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +69,7 @@ def scopes_for(flow: AuthFlow) -> list[str]:
     return [GRAPH_DEFAULT_SCOPE]
 
 
-def _load_certificate_credential(
-    path: str, thumbprint: Optional[str], passphrase: Optional[str]
-) -> dict:
+def _load_certificate_credential(path: str, thumbprint: Optional[str], passphrase: Optional[str]) -> dict:
     """Build the MSAL certificate `client_credential` dict from a PEM file on disk."""
     with open(path, "r", encoding="utf-8") as fh:
         private_key = fh.read()
@@ -175,9 +174,7 @@ class MsalAsyncCredential:
                 token_cache=self._cache,
             )
         if self._flow == AuthFlow.DELEGATED:
-            return msal.PublicClientApplication(
-                self._client_id, authority=self._authority, token_cache=self._cache
-            )
+            return msal.PublicClientApplication(self._client_id, authority=self._authority, token_cache=self._cache)
         # AuthFlow.PASSWORD
         if self._client_credential:
             return msal.ConfidentialClientApplication(
@@ -186,9 +183,7 @@ class MsalAsyncCredential:
                 authority=self._authority,
                 token_cache=self._cache,
             )
-        return msal.PublicClientApplication(
-            self._client_id, authority=self._authority, token_cache=self._cache
-        )
+        return msal.PublicClientApplication(self._client_id, authority=self._authority, token_cache=self._cache)
 
     async def _ensure_app(self) -> Any:
         """Lazily build the MSAL application, once, under the async lock."""
@@ -263,6 +258,8 @@ class MsalAsyncCredential:
             tenant_id: Unused (this credential is bound to one tenant at
                 construction); accepted for protocol compatibility.
             enable_cae: Accepted and ignored (protocol compatibility).
+            **kwargs: Any other keyword Kiota's `AzureIdentityAccessTokenProvider`
+                passes through; accepted and ignored (protocol compatibility).
 
         Returns:
             AccessToken: `(token, expires_on)`.
@@ -290,9 +287,7 @@ class MsalAsyncCredential:
                 )
             result = await loop.run_in_executor(
                 None,
-                lambda: app.acquire_token_on_behalf_of(
-                    assertion, requested_scopes, claims_challenge=claims
-                ),
+                lambda: app.acquire_token_on_behalf_of(assertion, requested_scopes, claims_challenge=claims),
             )
         elif self._flow == AuthFlow.DELEGATED:
             accounts = await loop.run_in_executor(None, app.get_accounts)
@@ -304,9 +299,7 @@ class MsalAsyncCredential:
                 )
             result = await loop.run_in_executor(
                 None,
-                lambda: app.acquire_token_silent(
-                    requested_scopes, account=account, claims_challenge=claims
-                ),
+                lambda: app.acquire_token_silent(requested_scopes, account=account, claims_challenge=claims),
             )
             if not result:
                 raise NotifyAuthError(
@@ -363,9 +356,7 @@ class MsalAsyncCredential:
         app = await self._ensure_app()
         loop = asyncio.get_running_loop()
         requested_scopes = scopes or scopes_for(self._flow)
-        flow = await loop.run_in_executor(
-            None, lambda: app.initiate_device_flow(scopes=requested_scopes)
-        )
+        flow = await loop.run_in_executor(None, lambda: app.initiate_device_flow(scopes=requested_scopes))
         if "user_code" not in flow:
             raise NotifyAuthError(
                 f"Failed to start O365 device-code flow: "

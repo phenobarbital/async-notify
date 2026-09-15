@@ -12,6 +12,7 @@ resolution, `connect()`/`close()`) as well as rendering and message dispatch
 Graph message sent through `GraphMailSender`, with send-as mailbox routing
 and On-Behalf-Of assertion scoping.
 """
+
 import warnings
 from typing import Any, Optional, Union
 
@@ -37,7 +38,6 @@ from notify.providers.office365.credential import AuthFlow, MsalAsyncCredential,
 from notify.providers.office365.graph_mail import GraphMailSender, build_message, load_attachments, to_recipients
 from notify.providers.office365.token_store import TokenStore, build_token_store
 
-
 # Sanitise msgraph-core's HostOs telemetry header before the first Graph
 # request, same as notify/providers/teams/teams.py:57.
 patch_graph_host_os_header()
@@ -52,7 +52,7 @@ class Office365(ProviderEmail):
     """
 
     provider = "office365"
-    blocking: str = 'asyncio'
+    blocking: str = "asyncio"
     batch_recipients = True
     raise_errors = (NotifyAuthError,)
     redacted_send_kwargs = frozenset({"user_assertion"})
@@ -103,9 +103,7 @@ class Office365(ProviderEmail):
         self.client_secret = client_secret if client_secret is not None else O365_CLIENT_SECRET
         self.tenant_id = tenant_id if tenant_id is not None else O365_TENANT_ID
         self.client_certificate_path = client_certificate_path or O365_CLIENT_CERTIFICATE_PATH
-        self.client_certificate_thumbprint = (
-            client_certificate_thumbprint or O365_CLIENT_CERTIFICATE_THUMBPRINT
-        )
+        self.client_certificate_thumbprint = client_certificate_thumbprint or O365_CLIENT_CERTIFICATE_THUMBPRINT
         # Never a public attribute: keeping it off self avoids leaking it via
         # repr/logging the way ProviderBase's leftover-kwarg setattr would.
         self._client_certificate_password = client_certificate_password or O365_CLIENT_CERTIFICATE_PASSWORD
@@ -196,9 +194,7 @@ class Office365(ProviderEmail):
         self._graph = None
         self._credential = None
 
-    async def _render_(
-        self, to: list[Actor] = None, message: str = None, subject: str = None, **kwargs: Any
-    ) -> str:
+    async def _render_(self, to: list[Actor] = None, message: str = None, subject: str = None, **kwargs: Any) -> str:
         """Render the HTML body once for every recipient.
 
         Args:
@@ -224,9 +220,7 @@ class Office365(ProviderEmail):
             return await self._template.render_async(**templateargs)
         return kwargs.get("body") or message or ""
 
-    async def _send_(
-        self, to: list[Actor], message: str, subject: str = None, **kwargs: Any
-    ) -> MailSendResult:
+    async def _send_(self, to: list[Actor], message: str, subject: str = None, **kwargs: Any) -> MailSendResult:
         """Build and send one Graph message to every recipient in `to`.
 
         Args:
@@ -284,8 +278,7 @@ class Office365(ProviderEmail):
             mailbox = sender_address
             if not mailbox:
                 raise NotifyAuthError(
-                    "O365 app-only send requires a mailbox: pass from_address= "
-                    "or configure sender=/O365_SENDER."
+                    "O365 app-only send requires a mailbox: pass from_address= or configure sender=/O365_SENDER."
                 )
         else:
             mailbox = None
@@ -295,8 +288,7 @@ class Office365(ProviderEmail):
         if self._flow == AuthFlow.ON_BEHALF_OF:
             if not user_assertion:
                 raise NotifyAuthError(
-                    "O365 on_behalf_of send requires user_assertion= "
-                    "(a per-send Graph-audience bearer token)."
+                    "O365 on_behalf_of send requires user_assertion= (a per-send Graph-audience bearer token)."
                 )
             with self._credential.use_assertion(user_assertion):
                 return await graph_sender.send(

@@ -1,4 +1,5 @@
 """Offline tests for the MSAL-backed async Graph credential (FEAT-004, M3)."""
+
 import asyncio
 
 import pytest

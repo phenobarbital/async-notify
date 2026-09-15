@@ -3,6 +3,7 @@ Abstract Wrapper Base.
 
 Any other wrapper extends this.
 """
+
 from typing import Any
 from collections.abc import Coroutine, Callable
 import uuid
@@ -11,7 +12,6 @@ from navconfig.logging import logging
 from notify import Notify
 from notify.exceptions import MessageError
 from notify.models import Actor, Chat, Channel, TeamsChannel
-
 
 coro = Callable[[int], Coroutine[Any, Any, str]]
 
@@ -67,28 +67,29 @@ class NotifyWrapper:
         __call__(): Special method to make the object callable, which triggers the `call()` method.
         set_loop(event_loop): Method to set the event loop in which the notification will be sent.
     """
+
     _debug: bool = False
 
     def __init__(self, provider: str, *args, **kwargs):
         reject_queued_secrets({**kwargs})
         self._id = str(uuid.uuid4())
         self.recipients: list = []
-        recipients = kwargs.pop('recipient', [])
+        recipients = kwargs.pop("recipient", [])
         rcpt = []
         for recipient in recipients:
             if isinstance(recipient, dict):
-                if 'chat_id' in recipient:
+                if "chat_id" in recipient:
                     rcpt.append(Chat(**recipient))
-                elif 'team_id' in recipient:
+                elif "team_id" in recipient:
                     rcpt.append(TeamsChannel(**recipient))
-                elif 'channel_id' in recipient:
+                elif "channel_id" in recipient:
                     rcpt.append(Channel(**recipient))
                 else:
                     rcpt.append(Actor(**recipient))
             elif isinstance(recipient, BaseModel):
                 rcpt.append(recipient)
             else:
-                print(f'Recipient {recipient} discarded.')
+                print(f"Recipient {recipient} discarded.")
         self.recipients = rcpt
         self.loop = None
         # provider to be handled:
@@ -103,24 +104,18 @@ class NotifyWrapper:
         try:
             notify: coro = Notify(self._provider, **self.kwargs)
             async with notify as client:  # pylint: disable=E1701 # noqa
-                return await client.send(
-                    recipient=self.recipients,
-                    *self.args[1:], **self.kwargs
-                )
+                return await client.send(recipient=self.recipients, *self.args[1:], **self.kwargs)
         except Exception as exc:
-            logging.error(f'Unable to Send: {exc}')
+            logging.error(f"Unable to Send: {exc}")
             raise
 
     async def __call__(self):
         try:
             notify: coro = Notify(self._provider, **self.kwargs)
             async with notify as client:  # pylint: disable=E1701 # noqa
-                return await client.send(
-                    recipient=self.recipients,
-                    *self.args, **self.kwargs
-                )
+                return await client.send(recipient=self.recipients, *self.args, **self.kwargs)
         except Exception as exc:
-            logging.error(f'Unable to Send: {exc}')
+            logging.error(f"Unable to Send: {exc}")
             raise
 
     @property

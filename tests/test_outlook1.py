@@ -4,6 +4,7 @@
 legacy `office365.graph_client.GraphClient` / `acquire_token*` REST-client
 behavior no longer exists.
 """
+
 import sys
 from unittest.mock import AsyncMock, patch
 
@@ -24,8 +25,10 @@ async def test_outlook_is_office365_subclass(outlook):
 
 
 async def test_context_methods(outlook):
-    with patch.object(outlook, "connect", new_callable=AsyncMock) as mock_connect, \
-         patch.object(outlook, "close", new_callable=AsyncMock) as mock_close:
+    with (
+        patch.object(outlook, "connect", new_callable=AsyncMock) as mock_connect,
+        patch.object(outlook, "close", new_callable=AsyncMock) as mock_close,
+    ):
         async with outlook:
             mock_connect.assert_called_once()
         mock_close.assert_called_once()

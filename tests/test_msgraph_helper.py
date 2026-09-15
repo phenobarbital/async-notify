@@ -1,4 +1,5 @@
 """Offline tests for the shared Microsoft Graph telemetry helper (FEAT-004, M1)."""
+
 from notify.providers import _msgraph
 from notify.providers.teams import _msgraph_patch
 

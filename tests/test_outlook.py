@@ -10,12 +10,12 @@ TASK-26) — these tests just no longer assume the legacy REST lifecycle.
 Deeper Outlook-specific lifecycle/queueing coverage lives in
 `tests/test_outlook1.py`; this file focuses on the `Notify` factory path.
 """
+
 import pytest
 
 from notify import Notify
 from notify.providers.office365.office365 import Office365
 from notify.providers.outlook import Outlook
-
 
 COMPONENT_PARAMS = {
     "client_id": "test_client_id",

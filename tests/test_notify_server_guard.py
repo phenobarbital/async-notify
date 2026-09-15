@@ -6,6 +6,7 @@ statement of `NotifyWrapper.__init__` and of `NotifyClient.publish` /
 `stream` / `send`, so a forbidden key is caught before any serialization
 or network call.
 """
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

@@ -12,6 +12,7 @@ The legacy `add_attachment(filename)` queueing API is kept: a queued file
 is merged into the next `send()`'s attachments and the queue is cleared
 afterwards (even if that send fails).
 """
+
 from pathlib import Path
 from typing import Any, Union
 
@@ -42,9 +43,7 @@ class Outlook(Office365):
             raise FileNotFoundError(f"Attachment Error: {path} does not exist.")
         self._pending_attachments.append(path)
 
-    async def _send_(
-        self, to: list[Actor], message: str, subject: str = None, **kwargs: Any
-    ) -> MailSendResult:
+    async def _send_(self, to: list[Actor], message: str, subject: str = None, **kwargs: Any) -> MailSendResult:
         """Merge queued attachments into `kwargs['attachments']`, delegate to
         `Office365._send_`, then clear the queue — even if the send fails.
         """
