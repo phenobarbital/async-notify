@@ -14,7 +14,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "effort": "S",
       "depends_on": [],
@@ -22,8 +22,8 @@
       "parallelism_notes": "Independent shared-helper foundation; the per-spec worktree remains sequential.",
       "assigned_to": null,
       "started_at": null,
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-19-shared-msgraph-helper.md"
+      "completed_at": "2026-09-15T22:14:01+00:00",
+      "file": "sdd/tasks/completed/TASK-19-shared-msgraph-helper.md"
     },
     {
       "id": "TASK-20",
@@ -53,7 +53,9 @@
       "status": "pending",
       "priority": "high",
       "effort": "M",
-      "depends_on": ["TASK-20"],
+      "depends_on": [
+        "TASK-20"
+      ],
       "parallel": false,
       "parallelism_notes": "Consumes settings declared by TASK-20.",
       "assigned_to": null,
@@ -71,7 +73,10 @@
       "status": "pending",
       "priority": "high",
       "effort": "L",
-      "depends_on": ["TASK-19", "TASK-21"],
+      "depends_on": [
+        "TASK-19",
+        "TASK-21"
+      ],
       "parallel": false,
       "parallelism_notes": "Requires shared Graph scope and the token-store interface.",
       "assigned_to": null,
@@ -107,7 +112,9 @@
       "status": "pending",
       "priority": "high",
       "effort": "M",
-      "depends_on": ["TASK-23"],
+      "depends_on": [
+        "TASK-23"
+      ],
       "parallel": false,
       "parallelism_notes": "Extends the graph_mail module and models from TASK-23.",
       "assigned_to": null,
@@ -143,7 +150,12 @@
       "status": "pending",
       "priority": "high",
       "effort": "M",
-      "depends_on": ["TASK-19", "TASK-20", "TASK-21", "TASK-22"],
+      "depends_on": [
+        "TASK-19",
+        "TASK-20",
+        "TASK-21",
+        "TASK-22"
+      ],
       "parallel": false,
       "parallelism_notes": "Wires the patch, configuration, store, and credential into provider lifecycle.",
       "assigned_to": null,
@@ -161,7 +173,12 @@
       "status": "pending",
       "priority": "high",
       "effort": "M",
-      "depends_on": ["TASK-23", "TASK-24", "TASK-25", "TASK-26"],
+      "depends_on": [
+        "TASK-23",
+        "TASK-24",
+        "TASK-25",
+        "TASK-26"
+      ],
       "parallel": false,
       "parallelism_notes": "Integrates lifecycle, batch hooks, and the graph mail builder/sender.",
       "assigned_to": null,
@@ -179,7 +196,9 @@
       "status": "pending",
       "priority": "medium",
       "effort": "S",
-      "depends_on": ["TASK-27"],
+      "depends_on": [
+        "TASK-27"
+      ],
       "parallel": false,
       "parallelism_notes": "The alias depends on the finalized Office365 dispatch contract.",
       "assigned_to": null,
@@ -197,7 +216,11 @@
       "status": "pending",
       "priority": "medium",
       "effort": "M",
-      "depends_on": ["TASK-20", "TASK-21", "TASK-22"],
+      "depends_on": [
+        "TASK-20",
+        "TASK-21",
+        "TASK-22"
+      ],
       "parallel": false,
       "parallelism_notes": "Shares the stable settings, token store, and credential interfaces.",
       "assigned_to": null,
@@ -233,7 +256,20 @@
       "status": "pending",
       "priority": "high",
       "effort": "L",
-      "depends_on": ["TASK-19", "TASK-20", "TASK-21", "TASK-22", "TASK-23", "TASK-24", "TASK-25", "TASK-26", "TASK-27", "TASK-28", "TASK-29", "TASK-30"],
+      "depends_on": [
+        "TASK-19",
+        "TASK-20",
+        "TASK-21",
+        "TASK-22",
+        "TASK-23",
+        "TASK-24",
+        "TASK-25",
+        "TASK-26",
+        "TASK-27",
+        "TASK-28",
+        "TASK-29",
+        "TASK-30"
+      ],
       "parallel": false,
       "parallelism_notes": "Final verification imports and exercises every feature component after implementation lands.",
       "assigned_to": null,
@@ -251,7 +287,13 @@
       "status": "pending",
       "priority": "medium",
       "effort": "M",
-      "depends_on": ["TASK-20", "TASK-27", "TASK-28", "TASK-29", "TASK-30"],
+      "depends_on": [
+        "TASK-20",
+        "TASK-27",
+        "TASK-28",
+        "TASK-29",
+        "TASK-30"
+      ],
       "parallel": false,
       "parallelism_notes": "Documents finalized provider, alias, CLI, and queue behavior before final test consolidation.",
       "assigned_to": null,
