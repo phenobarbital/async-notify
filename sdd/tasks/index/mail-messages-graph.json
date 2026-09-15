@@ -193,7 +193,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "effort": "S",
       "depends_on": [
@@ -203,8 +203,8 @@
       "parallelism_notes": "The alias depends on the finalized Office365 dispatch contract.",
       "assigned_to": null,
       "started_at": null,
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-28-outlook-graph-alias.md"
+      "completed_at": "2026-09-15T22:45:39+00:00",
+      "file": "sdd/tasks/completed/TASK-28-outlook-graph-alias.md"
     },
     {
       "id": "TASK-29",
