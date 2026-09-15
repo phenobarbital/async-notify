@@ -1,13 +1,10 @@
-# async-notify SDD Workflow for Claude Code
+# async-notify SDD Workflow
 
 ## Overview
 
-This document defines the **Spec-Driven Development (SDD)** methodology for async-notify, optimized for Claude Code and Antigravity with multi-agent task distribution.
+This document defines the **Spec-Driven Development (SDD)** methodology for async-notify, unified across Claude Code, Codex, and Google Gemini via Antigravity CLI (`agy`) with multi-agent task distribution.
 
-The key idea: specifications are the Single Source of Truth (SSOT). Claude Code agents
-consume spec documents and produce **Task Artifacts** — discrete, self-contained files
-in `tasks/active/` that can be independently picked up and executed by any Claude Code
-agent in parallel.
+The key idea: specifications are the Single Source of Truth (SSOT). Agents across all supported platforms consume spec documents and produce **Task Artifacts** — discrete, self-contained files in `sdd/tasks/active/` that can be independently picked up and executed by agents in parallel.
 
 ---
 
@@ -95,8 +92,8 @@ gotchas, constraints.
 
 ## Reference Code
 Existing patterns in the codebase the agent should follow:
-- See `notify/loaders/base.py` for BaseLoader pattern
-- See `notify/bots/orchestration/crew.py` for DAG execution pattern
+- See `notify/providers/base.py` for the ProviderBase pattern
+- See `notify/notify.py` for the provider-dispatch pattern
 
 ## Acceptance Criteria
 - [ ] Criterion 1
@@ -125,18 +122,14 @@ When complete, the agent must:
 
 ---
 
-## Git Configuration
+## Git Configuration (FEAT-187)
 
-The async-notify SDD Git Flow uses two long-lived branches:
+async-notify uses two long-lived branches:
 
-- **`main`** — tagged releases and production. Hotfixes land here via
-  PR; no feature work ever bases on `main`.
+- **`main`** — tagged releases only. Hotfixes land here via PR;
+  no feature work ever bases on `main`.
 - **`dev`** — integration branch for all feature work. Default base
   for `type: feature` flows.
-
-**Sync-down**: after a hotfix PR merges into `main`, run
-`/sdd-done <FEAT-ID> --sync-down` to merge the change back into `dev`
-so the integration branch never drifts behind production.
 
 ---
 
@@ -148,8 +141,7 @@ at the top of the document:
 ```yaml
 ---
 type: feature        # one of: feature | hotfix
-base_branch: dev     # for feature: dev (or a parent feature branch);
-                     # for hotfix: must be "main"
+base_branch: dev     # for feature: dev or a parent feature branch; for hotfix: must be "main"
 ---
 ```
 
@@ -163,47 +155,6 @@ Features MUST NOT base on `main`. `/sdd-done` enforces: hotfixes are NEVER
 auto-pushed or auto-PR'd to `main`. The user opens the PR manually; afterwards,
 run `/sdd-done <FEAT-ID> --sync-down` to propagate the change back into `dev`.
 
----
-
-## Release Cut
-
-Releases are cut by merging `dev` into `main` and tagging the merge
-commit. There is no long-lived release-candidate branch.
-
-### Cutting the release
-
-```bash
-git checkout dev
-git pull --ff-only origin dev
-# run the full test suite here — main is production
-
-# Open the release PR (never push straight to main):
-gh pr create --base main --head dev \
-  --title "release: vX.Y.Z" --body "<changelog>"
-```
-
-### Releasing
-
-1. Review the `dev → main` PR and let CI run green.
-2. Merge the PR.
-3. Tag the merge commit: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-4. `.github/workflows/release.yml` fires on the tag event and publishes
-   the release artifacts.
-5. Bring `dev` back in line with `main` (it picks up the merge commit and
-   any hotfixes):
-   ```bash
-   git checkout dev
-   git merge --no-edit origin/main
-   git push origin dev
-   ```
-
-### During a freeze
-
-If you need to stabilize a release while feature work continues, branch a
-short-lived `release/vX.Y.Z` from `dev`, land stabilization fixes there as
-sub-features (`type: feature, base_branch: release/vX.Y.Z`), and PR it into
-`main` when green.
-
 ### Recommended Branch Protection
 
 `main` should require PRs, passing CI status checks, and signed commits.
@@ -213,8 +164,10 @@ Configure via GitHub repo settings — not declaratively in this repo.
 
 ## Per-Spec Index Schema (`sdd/tasks/index/<feature-slug>.json`, FEAT-145)
 
-> **Note**: there is no legacy monolithic `sdd/tasks/.index.json` in this
-> repo — per-spec indexes are the only supported format.
+> **Migration history**: the legacy monolithic `sdd/tasks/.index.json` was
+> split into per-spec files by `scripts/sdd/migrate_index.py`. The original
+> monolith is preserved as a historical artifact. New tooling reads only
+> per-spec indexes.
 
 Each per-spec index file contains a header describing the feature plus
 the `tasks[]` array for that feature only. Two parallel features touch
@@ -233,7 +186,7 @@ disjoint files and never collide on merge.
     {
       "id": "TASK-001",
       "slug": "base-loader-interface",
-      "title": "Define BaseLoader abstract interface",
+      "title": "Define ProviderBase abstract interface",
       "feature_id": "FEAT-NNN",
       "feature": "feature-slug",
       "status": "done",
@@ -284,11 +237,24 @@ undetected until `/sdd-done`'s closeout tooling stumbled on them.
   python -m scripts.sdd.reserve_ids --kind task --count 8 \
     --base-branch dev --label <feature-slug>
   ```
-  Reads the ledger, commits a *ledger-only* update, and pushes to
-  `origin/<base_branch>`; on a rejected (non-fast-forward) push it fetches,
-  re-reads the now-current ledger, recomputes, and retries (bounded, with
-  jittered backoff) instead of silently succeeding with a stale, already-
-  claimed number. Prints the reserved IDs one per line.
+  Reads the ledger **as of `origin/<base_branch>`**, builds a *ledger-only*
+  commit on that tip, and pushes it; on a rejected (non-fast-forward) push
+  it fetches, re-reads the now-current ledger, recomputes, and retries
+  (bounded, with jittered backoff) instead of silently succeeding with a
+  stale, already-claimed number. Prints the reserved IDs one per line.
+
+  **The reservation never touches local history.** The candidate commit is
+  assembled with git plumbing in a throwaway index, so no attempt mutates
+  the local branch, index or working tree, and the push carries that one
+  commit (`<sha>:refs/heads/<base>`) rather than `HEAD` — local-only
+  commits on the base branch are therefore neither published nor
+  destroyed. This is a fix for a real incident: the original implementation
+  committed on top of `HEAD`, pushed the whole branch, and ran
+  `git reset --hard origin/<base_branch>` on a lost race, silently eating
+  two unpushed commits and still exiting 0. After a successful push the
+  local branch is fast-forwarded onto the reservation as a convenience; if
+  it carries unpushed commits the fast-forward is skipped and a warning
+  tells you to reconcile with `git pull --no-rebase`.
 - **`scripts/sdd/check_id_collisions.py`** — an independent, read-only
   defense-in-depth backstop (no dependency on the ledger/allocator): scans
   `sdd/tasks/index/*.json`, `sdd/tasks/active/*.md`, and
@@ -327,18 +293,26 @@ are not in `tasks/completed/`.
 
 ## Commands Reference
 
-These commands are available as both Claude Code commands (`.claude/commands/`) and
-Antigravity workflows (`.agent/workflows/`):
+The SDD workflow is unified across all three developer platforms:
+- **Claude Code**: Slash commands in `.claude/commands/sdd-*.md`
+- **Codex**: Repository skills in `.agents/skills/sdd-*` (invoked as `$sdd-*`) and agent `.codex/agents/sdd-worker.toml`
+- **Antigravity CLI (Google Gemini)**: Slash command workflows in `.agent/workflows/sdd-*.md` (invoked as `/sdd-*`), skills in `.agents/skills/sdd-*`, and subagents in `.agents/agents/`
 
-| Command | Description |
-|---|---|
-| /sdd-fromjira | Bootstrap an SDD Brainstorm from a Jira ticket |
-| /sdd-tojira | Export an SDD Specification to a Jira Story |
-| `/sdd-proposal` | Propose and discuss a feature idea before building a spec |
-| `/sdd-spec` | Scaffold a new Feature Specification |
-| `/sdd-task <spec.md>` | Decompose a spec into Task Artifacts |
-| `/sdd-status` | Show task index status summary |
-| `/sdd-next` | Suggest next unblocked tasks to assign |
+| Command | Skill | Description |
+|---|---|---|
+| `/sdd-proposal` | `sdd-proposal` | Research a Jira issue, inline request, or notes file before writing a spec |
+| `/sdd-brainstorm` | `sdd-brainstorm` | Explore a feature idea, compare options, and write a brainstorm document |
+| `/sdd-spec` | `sdd-spec` | Scaffold a formal Feature Specification from exploration or direct request |
+| `/sdd-task <spec.md>` | `sdd-task` | Decompose an approved spec into atomic task files and a per-spec index |
+| `/sdd-start <task>` | `sdd-start` | Implement and close one task inside the feature worktree |
+| `/sdd-done <feat>` | `sdd-done` | Verify, push, open or describe PR, and clean up the worktree |
+| `/sdd-codereview <task>` | `sdd-codereview` | Code review a completed task with adversarial cross-checks |
+| `/sdd-explain <target>` | `sdd-explain` | Code-grounded architectural map or deep implementation trace |
+| `/sdd-status` | `sdd-status` | Show task index status board across all per-spec indexes |
+| `/sdd-next` | `sdd-next` | Suggest next unblocked tasks to assign |
+| `/sdd-fromjira` | `sdd-fromjira` | Bootstrap an SDD brainstorm from a Jira ticket |
+| `/sdd-tojira` | `sdd-tojira` | Export an SDD specification to a Jira Story and subtasks |
+| `/sdd-insight` | `sdd-insight` | Analyze collaboration transcripts and repo-level SDD process adherence |
 
 ---
 

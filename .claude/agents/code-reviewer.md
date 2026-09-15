@@ -116,21 +116,47 @@ Use the discovered conventions as your review checklist — do NOT assume conven
 5. **Testability**: Can I unit test this without mocking the entire framework?
 6. **Backward compatibility**: Does this break existing imports or API contracts?
 
-## Adversarial Codex Cross-Check
+## Adversarial Cross-Check
 
-The OpenAI `codex` CLI is installed and authenticated in this environment. Use it as an **independent second-opinion reviewer** to catch blind spots that a single-model review may miss.
+Use an external CLI agent as an **independent second-opinion reviewer** to
+catch blind spots that a single-model review may miss. The reviewer is
+**`codex` (OpenAI)**.
+
+> **`agy` (Google Gemini / Antigravity) MUST NOT be used as a reviewer.**
+> Removed 2026-09-01 after it returned a fabricated review — an invented
+> 188-test pytest run whose test names did not exist in the branch, then
+> `Error: timeout waiting for response`. Hallucinated passing evidence is
+> worse than no review, because it reads like corroboration. Do not re-add
+> it and do not fall back to it: with no external reviewer available, say
+> so and rely on a Claude subagent. (Unrelated to the `google_coding`
+> dev-loop *coding* backend, which drives the same binary and is fine.)
 
 ### Key Rules
 
-- **Never feed Codex your reasoning or draft review.** Give it only the diff/commit, the requirement/acceptance criteria, and a neutral review question. Supplying your conclusions produces ratification, not review.
-- **Run Codex as a background agent session** — each call takes 30 seconds to 2 minutes. Do not call it per-edit or from hooks.
-- **Treat Codex output as advisory.** For every substantive finding, explicitly mark it as:
+- **Never feed the reviewer your reasoning or draft review.** Give it only
+  the diff/commit, the requirement/acceptance criteria, and a neutral review
+  question. Supplying your conclusions produces ratification, not review.
+- **Run the reviewer as a background agent session** — each call takes 30
+  seconds to 2 minutes. Do not call it per-edit or from hooks.
+- **Treat reviewer output as advisory.** For every substantive finding,
+  explicitly mark it as:
   - `CONFIRM` — adopt the finding into your review
   - `REJECT` — record why you disagree
   - `ESCALATE` — flag for the user to decide
-- **Never silently concede** to Codex and **never silently drop** a finding.
+- **Never silently concede** to the reviewer and **never silently drop** a
+  finding.
+- **Verify the reviewer's evidence.** If it cites a test run, a file or a
+  symbol, spot-check that it exists. An unverifiable claim is not a
+  finding — report the review as unusable rather than as a pass.
 
-### Commands
+### Detection
+
+```bash
+if command -v codex &>/dev/null; then REVIEWER="codex"
+fi
+```
+
+### codex commands
 
 ```bash
 # Review uncommitted work
@@ -152,7 +178,9 @@ codex exec resume --last "<neutral follow-up question>"
 
 ### Parallel Perspective Pattern
 
-For the strongest review, run one Claude review subagent and one background `codex exec` with the **same neutral brief**, then synthesize agreements and disagreements in the final report.
+For the strongest review, run one Claude review subagent and one background
+reviewer session (`codex`) with the **same neutral brief**, then
+synthesize agreements and disagreements in the final report.
 
 ### Reporting Cross-Check Results
 
@@ -162,7 +190,7 @@ Include a dedicated section in your review report:
 ## Adversarial Cross-Check
 | Finding | Disposition | Reason |
 |---------|-------------|--------|
-| <Codex finding> | CONFIRM / REJECT / ESCALATE | <why> |
+| <Reviewer finding> | CONFIRM / REJECT / ESCALATE | <why> |
 ```
 
 ## Response Format

@@ -72,18 +72,18 @@ release-flit: lint test clean
 
 # Format code
 format:
-	uv run black parrot
+	uv run black --line-length 120 notify
 
 # Lint code
 lint:
-	uv run pylint --rcfile .pylint parrot/*.py
-	uv run black --check parrot
+	uv run pylint --rcfile .pylintrc notify
+	uv run black --line-length 120 --check notify
 
 # Run tests with coverage
 test:
-	uv run coverage run -m parrot.tests
+	uv run coverage run -m pytest
 	uv run coverage report
-	uv run mypy parrot/*.py
+	uv run mypy notify
 
 # Alternative test command using pytest directly
 test-pytest:
@@ -148,30 +148,30 @@ distclean:
 # Version management
 bump-patch:
 	@python -c "import re; \
-	content = open('parrot/version.py').read(); \
+	content = open('notify/version.py').read(); \
 	version = re.search(r'__version__ = \"(.+)\"', content).group(1); \
 	parts = version.split('.'); \
 	parts[2] = str(int(parts[2]) + 1); \
 	new_version = '.'.join(parts); \
 	new_content = re.sub(r'__version__ = \".+\"', f'__version__ = \"{new_version}\"', content); \
-	open('parrot/version.py', 'w').write(new_content); \
+	open('notify/version.py', 'w').write(new_content); \
 	print(f'Version bumped to {new_version}')"
 
 bump-minor:
 	@python -c "import re; \
-	content = open('parrot/version.py').read(); \
+	content = open('notify/version.py').read(); \
 	version = re.search(r'__version__ = \"(.+)\"', content).group(1); \
 	parts = version.split('.'); \
 	parts[1] = str(int(parts[1]) + 1); \
 	parts[2] = '0'; \
 	new_version = '.'.join(parts); \
 	new_content = re.sub(r'__version__ = \".+\"', f'__version__ = \"{new_version}\"', content); \
-	open('parrot/version.py', 'w').write(new_content); \
+	open('notify/version.py', 'w').write(new_content); \
 	print(f'Version bumped to {new_version}')"
 
 bump-major:
 	@python -c "import re; \
-	content = open('parrot/version.py').read(); \
+	content = open('notify/version.py').read(); \
 	version = re.search(r'__version__ = \"(.+)\"', content).group(1); \
 	parts = version.split('.'); \
 	parts[0] = str(int(parts[0]) + 1); \
@@ -179,7 +179,7 @@ bump-major:
 	parts[2] = '0'; \
 	new_version = '.'.join(parts); \
 	new_content = re.sub(r'__version__ = \".+\"', f'__version__ = \"{new_version}\"', content); \
-	open('parrot/version.py', 'w').write(new_content); \
+	open('notify/version.py', 'w').write(new_content); \
 	print(f'Version bumped to {new_version}')"
 
 help:

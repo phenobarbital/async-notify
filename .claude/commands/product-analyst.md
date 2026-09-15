@@ -1,11 +1,11 @@
 ---
-description: Deep-dive a product or feature idea for AI-Parrot — define how it should be realized, its potential impact, feasibility, hidden assumptions, and opportunities. Interactive (clarifies hidden assumptions with you, like /sdd-brainstorm), produces a standalone analysis doc.
+description: Deep-dive a product or feature idea for async-notify — define how it should be realized, its potential impact, feasibility, hidden assumptions, and opportunities. Interactive (clarifies hidden assumptions with you, like /sdd-brainstorm), produces a standalone analysis doc.
 ---
 
 # /product-analyst — Strategic Idea Deep-Dive
 
 Take a raw idea and pressure-test it BEFORE any spec work: what problem it really solves,
-who for, how it should be realized inside AI-Parrot, its potential impact, feasibility,
+who for, how it should be realized inside async-notify, its potential impact, feasibility,
 the **hidden assumptions** it quietly depends on, and the **opportunities** it unlocks.
 
 ```
@@ -23,7 +23,7 @@ touch the SDD task index or any branch state.
 - **No implementation code, no spec, no tasks.** This is strategy and analysis only.
 - Output is a single standalone doc under `docs/product-analysis/`.
 - **Balanced**: pair every upside with the assumption that must hold for it to be real.
-- Every claim about existing AI-Parrot code must be **verified** (`path:line`). Never
+- Every claim about existing async-notify code must be **verified** (`path:line`). Never
   invent classes, modules, or integrations.
 - Do NOT commit unless the user asks (standalone artifact; not part of SDD auto-commit).
 
@@ -36,7 +36,7 @@ Extract from the invocation:
 
 ### 2. Frame the Idea
 Restate the idea in one sentence and name, provisionally: the **job** it does and the
-**user** (developer? operator? end-user of an agent built with AI-Parrot?). Show this
+**user** (developer? operator? operator of the notify server?). Show this
 back to the user so a wrong frame gets corrected before any analysis.
 
 ### 3. Interactive Discovery — Surface Hidden Assumptions (mandatory, ≥2 rounds)
@@ -59,12 +59,12 @@ ask — do not assume silently.
 Launch **two research lanes concurrently** using the Agent tool (`subagent_type:
 product-analyst`), passing the framed idea + discovery answers to each:
 
-- **Lane A — Codebase fit**: what already exists in AI-Parrot that this builds on,
-  competes with, or conflicts with (clients/bots/tools/toolkits/crew/skills/RAG/
-  integrations/memory). Must return verified `path:line` references and an explicit
+- **Lane A — Codebase fit**: what already exists in async-notify that this builds on,
+  competes with, or conflicts with (Notify factory/provider base classes/
+  email, IM, SMS and push providers/models/templates/notify server). Must return verified `path:line` references and an explicit
   "does NOT exist" list.
 - **Lane B — External feasibility**: comparable tools/libraries, prior art, relevant
-  standards (e.g. MCP, A2A, OpenAPI), and rough effort signals. Cite sources.
+  standards (e.g. email/MIME RFCs, platform messaging APIs), and rough effort signals. Cite sources.
 
 If the idea is small/internal, Lane B may be skipped — say so. Use returned findings;
 do not re-derive them yourself.
@@ -76,8 +76,8 @@ Combine discovery answers + research into the analysis, applying:
 - **RICE / ICE** — rough prioritization signal.
 - **Pre-mortem** — "it shipped and failed — why?" → feeds Risks + Hidden Assumptions.
 
-Frame "How It Should Be Realized" at the **strategy** level against AI-Parrot's surfaces
-(no code): which abstractions it extends, which integration path (A2A / MCP / OpenAPI),
+Frame "How It Should Be Realized" at the **strategy** level against async-notify's surfaces
+(no code): which abstractions it extends, which delivery path (new provider / provider family / notify server),
 where it lives.
 
 ### 6. Write the Standalone Document
@@ -92,7 +92,7 @@ today's date from the environment (`date +%F` — do not guess). Structure:
 ## 1. Idea in One Line
 ## 2. Problem & Opportunity
 ## 3. Target Users & Jobs-to-be-Done
-## 4. How It Should Be Realized        (strategy mapped to AI-Parrot surfaces; no code)
+## 4. How It Should Be Realized        (strategy mapped to async-notify surfaces; no code)
 ## 5. Potential Impact                 (value prop, differentiation, success metrics/KPIs)
 ## 6. Feasibility                      (approach, effort T-shirt, dependencies,
                                         codebase readiness w/ verified refs, RICE/ICE)

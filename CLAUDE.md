@@ -102,6 +102,12 @@ The OpenAI `codex` CLI is installed and authenticated. Use it as an
 independent perspective for adversarial code reviews, design opinions,
 brainstorming, research cross-checks, and implementation sanity checks.
 
+> **`agy` (Google Gemini / Antigravity) MUST NOT be used as a reviewer.**
+> It returned a fabricated review in ai-parrot (an invented pytest run with
+> test names that did not exist in the branch). A reviewer that hallucinates
+> passing evidence is worse than no reviewer. When `codex` is unavailable,
+> say so and rely on a Claude subagent.
+
 Rules:
 - Never feed Codex your reasoning, justification, or preferred conclusion.
   Give it only the diff, the requirement, and the question. Supplying your
@@ -114,6 +120,9 @@ Rules:
 - For parallel perspective, use one Claude subagent and one background
   `codex exec` with the same neutral brief, then synthesize agreements and
   disagreements.
+- **Verify the reviewer's evidence before believing it.** If it claims a
+  test run, a file, or a symbol, spot-check that the thing exists. Treat an
+  unverifiable claim as no finding at all.
 
 Commands:
 ```bash
@@ -139,6 +148,18 @@ Image-generation gotcha: `resume` does not accept `--sandbox`; use
 `-c sandbox_mode="workspace-write"` on resume when a writable sandbox is
 required.
 
+#### Design research at spec time (FEAT-545)
+
+The same codex seat gives an **independent design opinion** in `/sdd-spec`
+§3b, over the *accepted* brainstorm/proposal only — never over the spec
+draft. Model: `${SDD_DESIGN_RESEARCH_MODEL:-gpt-5.6-luna}` with
+`-c model_reasoning_effort=high` and `--ignore-user-config`. The pass is
+**optional and never blocking**: no `codex`, failed probe, timeout or invalid
+output ⇒ spec §9 reads `Status: skipped (<reason>)` and the command continues.
+Every suggestion is triaged `CONFIRM` / `REJECT` / `ESCALATE` in spec
+**§9 Design Research Cross-Check**; the transcript is committed under
+`sdd/state/<FEAT-ID>/design_research/`.
+
 ## Key References
 - Architecture & patterns: @.agent/CONTEXT.md
 - SDD workflow: @docs/sdd/WORKFLOW.md
@@ -146,6 +167,10 @@ required.
 - SDD practical guide: `docs/sdd/GUIDE.md`
 - Skills: @.agent/skills/
 - Workflows: @.agent/workflows/
+- Codebase conventions: `.claude/rules/codebase-conventions.md`
+- MCP servers: `.mcp.json` is local and git-ignored (absolute paths into
+  ai-parrot's `.venv`); copy `.mcp.json.example` and set `AI_PARROT_VENV` on a
+  new machine. Toolkit config: `.parrot/mcp-toolkits.yaml`.
 
 # SDD Workflow & Worktree Policy
 
@@ -175,57 +200,21 @@ back into `dev`. (`--sync-dev` is a deprecated alias.)
 CI. Not configured declaratively in this repo — set via GitHub repo
 settings.
 
-- **Worktrees branch from `base_branch`** (which `/sdd-task` and `sdd-worker`
-  ensure HEAD is on before creating the worktree). Hotfix worktrees branch
-  from `main`; feature worktrees branch from `dev` (or any non-main branch
-  the user picks for sub-features).
+- **Worktrees branch from `origin/<base_branch>`** — never `HEAD`, so a
+  worktree can never inherit an unpushed local commit (FEAT-466). Hotfix
+  worktrees branch from `origin/main`; feature worktrees from `origin/dev`
+  (or a parent feature branch for sub-features).
 
-## Worktree Creation
+## Worktrees
 
-> **CRITICAL**: Do NOT use `claude --worktree`. It branches from the repo's default
-> branch (`main`), which does not contain SDD artifacts.
->
-> Always create worktrees manually from the current branch:
-
-```bash
-# Standard pattern: create worktree from current branch
-git worktree add -b <branch-name> .claude/worktrees/<worktree-name> HEAD
-```
-
-### Quick reference
-
-```bash
-# From dev (most common)
-git checkout dev
-git worktree add -b feat-014-teams-adaptive-cards \
-  .claude/worktrees/feat-014-teams-adaptive-cards HEAD
-
-# From another feature branch (sub-features)
-git checkout feat-014-teams-adaptive-cards
-git worktree add -b feat-015-sub-task \
-  .claude/worktrees/feat-015-sub-task HEAD
-
-# Then launch Claude inside the worktree
-cd .claude/worktrees/feat-014-teams-adaptive-cards
-claude   # interactive, manual /sdd-start
-# or
-claude --agent sdd-worker --model sonnet --verbose
-```
-
-### Cleanup
-
-```bash
-# After PR merge
-git worktree remove .claude/worktrees/<name>
-# or prune all dead worktrees
-git worktree prune
-```
-
-### .gitignore
-
-```gitignore
-.claude/worktrees/
-```
+Everything about worktrees — location (`.claude/worktrees/`), naming,
+creation via `python -m scripts.sdd.ensure_worktree` (always from
+`origin/<base_branch>`, never `HEAD`, never `claude --worktree`), working
+inside one (`PYTHONPATH=.` and a Cython `build_ext --inplace` before tests),
+finishing and cleanup (`/remove-worktree`) — lives in **one** rule:
+`.claude/rules/worktree-management.md` (twin: `.agent/skills/worktree-management/`).
+Worktrees are created by whoever implements (`/sdd-start`, `sdd-worker`, the
+dev-loop orchestrators); `/sdd-task` creates none (FEAT-552).
 
 ## SDD Auto-Commit Rule
 
@@ -238,7 +227,7 @@ git worktree prune
 | `/sdd-brainstorm` | `sdd/proposals/<n>.brainstorm.md` (with frontmatter) | `base_branch` |
 | `/sdd-proposal`   | `sdd/proposals/<n>.proposal.md` (with frontmatter)  | `base_branch` |
 | `/sdd-spec`       | `sdd/specs/<n>.spec.md` (with frontmatter) + a `reserve_ids.py` FEAT-ID reservation commit to `sdd/tasks/.id_ledger.json` (FEAT-387) | `base_branch` |
-| `/sdd-task`       | `sdd/tasks/index/<feature>.json` + `sdd/tasks/active/TASK-*` + a `reserve_ids.py` TASK-ID reservation commit to `sdd/tasks/.id_ledger.json` (FEAT-387) | `base_branch` |
+| `/sdd-task`       | `sdd/tasks/index/<feature>.json` + `sdd/tasks/active/TASK-*` + a `reserve_ids.py` TASK-ID reservation commit to `sdd/tasks/.id_ledger.json` (FEAT-387) — and NO worktree (FEAT-552: it is created by the implementing lane) | `base_branch` |
 | `/sdd-start`      | Per-spec index status update + implementation code  | worktree (feature branch) |
 | `/sdd-done`       | Verification stamp on per-spec index (committed on feature branch); merges feature → `base_branch` | worktree (feature branch), merged to `base_branch` by Step 9 |
 
@@ -246,6 +235,12 @@ Commit message convention:
 ```
 sdd: <action> for <feature-name>
 ```
+
+**Note (FEAT-466)**: the `/sdd-spec` and `/sdd-task` reservation commits in
+the table above do **not** occur for `type: hotfix`. A bugfix is not a
+feature and reserves no `FEAT-<NNN>`/`TASK-<NNN>` id — `/sdd-spec` skips
+`reserve_ids.py --kind feature` and `/sdd-task` is normally skipped
+entirely. The hotfix's identity is its Jira issue key instead.
 
 **Note (FEAT-145)**: `/sdd-start` no longer needs to `cd` back to the main
 repo to update SDD state — per-spec indexes mean each feature owns its own
@@ -278,37 +273,13 @@ Terminal 1 (in .claude/worktrees/feat-007):     Terminal 2 (in .claude/worktrees
 ## Typical Workflow
 
 ```bash
-# 1. Ensure you're on dev with latest
 git checkout dev && git pull origin dev
-
-# 2. Create and approve a spec (committed to dev automatically)
-/sdd-spec teams-adaptive-cards -- ...
-/sdd-task sdd/specs/teams-adaptive-cards.spec.md
-
-# 3. Create worktree from dev
-git worktree add -b feat-014-teams-adaptive-cards \
-  .claude/worktrees/feat-014 HEAD
-
-# 4. Enter worktree and work
-cd .claude/worktrees/feat-014
-
-# Manual (task-by-task):
-claude
-/sdd-start TASK-069
-/sdd-start TASK-070
-/sdd-done FEAT-014
-
-# Or autonomous:
-claude --agent sdd-worker --dangerously-skip-permissions --model sonnet --verbose
-/sdd-done FEAT-014
-
-# 5. Push and PR
-git push origin feat-014-teams-adaptive-cards
-# Create PR against dev
-
-# 6. Cleanup after merge
-cd ~/proyectos/notify   # back to main repo
-git worktree remove .claude/worktrees/feat-014
+/sdd-spec <feature> -- ...                 # spec, committed to dev
+/sdd-task sdd/specs/<feature>.spec.md      # tasks, committed to dev
+/sdd-start TASK-<NNN>                      # creates the worktree, implements the task
+cd .claude/worktrees/feat-FEAT-<NNN>-<slug>
+/sdd-start TASK-<NNN+1> …                  # or: claude --agent sdd-worker
+/sdd-done FEAT-<NNN>                       # verify, push, merge → dev, clean up
 ```
 
 ## Autonomous Agent (`sdd-worker`)
@@ -403,6 +374,16 @@ These same operations are also exposed as native MCP tools —
 this repo's `.mcp.json` (FEAT-403). If they appear in your tool list,
 prefer calling them directly; they have equal standing with Grep/Read
 at tool-selection time instead of competing via a Bash-invoked CLI.
+
+**Symbol lookup and blast radius (FEAT-498).** For a specific
+function/class/method — not a general question — prefer the structural
+tools over `wiki_query`: `wikitoolkit symbols lookup <name>`
+(`wiki_symbol_lookup` MCP tool) finds it by name/qualname directly;
+`wikitoolkit symbols outline <file>` (`wiki_code_outline`) lists a
+file's symbols before you read the whole thing; `wikitoolkit symbols
+blast <symbol>` (`wiki_blast_radius`) shows every symbol that
+transitively calls/extends/implements it — run this BEFORE editing a
+widely-used function or class to see what you might break.
 
 **Query discipline** (avoids the two most common ways the wiki
 "fails" — which are usually caller error, not missing coverage):

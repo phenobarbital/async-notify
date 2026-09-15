@@ -91,9 +91,9 @@ grep -rnE 'id_rsa|id_ed25519|\.ssh|\.env|ANTHROPIC_API_KEY|credentials|token' .c
 
 
 Slash commands and skills are markdown that lands verbatim in the model's
-context. This repo also loads skills **from disk at runtime**
-(`SkillsDirectoryLoader` / `SkillFileRegistry` in `parrot/skills/`), so a
-poisoned skill file is an injection into every agent that loads it.
+context, and the SDD agents (`sdd-worker`, `sdd-coder`, the dev-loop
+subagents) execute them with broad tool access, so a poisoned command or skill
+file is an injection into every session that loads it.
 
 ```bash
 # Hidden instructions: zero-width chars, RTL override, HTML comments

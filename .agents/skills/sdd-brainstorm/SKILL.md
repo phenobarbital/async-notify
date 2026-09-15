@@ -37,9 +37,8 @@ $sdd-brainstorm -> review -> $sdd-spec -> $sdd-task -> $sdd-start
 Ask these first unless the user already supplied explicit values:
 
 1. Is this `feature` or `hotfix`?
-2. For `feature`, which base branch? Default: `dev`. Use `staging` during a
-   release freeze or a parent feature branch for sub-features. For `hotfix`,
-   base is always `main`.
+2. For `feature`, which base branch? Default: `dev`, or a parent feature
+   branch for sub-features. For `hotfix`, base is always `main`.
 
 Defaults when unanswered: `type: feature`, `base_branch: dev`.
 
@@ -47,7 +46,7 @@ Validation:
 
 - `type: hotfix` requires `base_branch: main`.
 - `type: feature` with `base_branch: main` is invalid. Stop and explain that
-  features land on `dev`, `staging`, or a non-main parent feature branch.
+  features land on `dev` or a non-main parent feature branch.
 
 ## Workflow
 
