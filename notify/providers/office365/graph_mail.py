@@ -1,34 +1,62 @@
-"""Microsoft Graph mail message construction (recipients, body, attachments).
+"""Microsoft Graph mail message construction, delivery, and error mapping.
 
 This module turns render output and `send()` kwargs into typed `msgraph-sdk`
-models: it loads attachments/inline images asynchronously, flattens `Actor`
-recipients into Graph `Recipient` objects, and builds the `Message` sent to
-Graph. Request execution (the `send_mail` / `draft_upload` strategy switch,
-upload sessions, and Graph error mapping) lives alongside this in the same
-module (see `GraphMailSender` / `map_odata_error`, added by TASK-24).
+models (attachment/inline-image loading, `Actor` → `Recipient` flattening,
+`build_message`), then executes the send: one direct `sendMail` call for
+small requests, or a draft → upload-session → send workflow for large
+attachments (`GraphMailSender`), mapping Graph `ODataError`s to either a
+raised `NotifyAuthError` or a failed `MailSendResult` (`map_odata_error`).
 """
 import mimetypes
 import re
+from io import BytesIO
 from pathlib import Path
-from typing import Iterable, Optional, Union
+from typing import Any, Iterable, Optional, Union
 
+from msgraph import GraphServiceClient
+from msgraph.generated.models.attachment_item import AttachmentItem
+from msgraph.generated.models.attachment_type import AttachmentType
 from msgraph.generated.models.body_type import BodyType
 from msgraph.generated.models.email_address import EmailAddress
 from msgraph.generated.models.file_attachment import FileAttachment
 from msgraph.generated.models.importance import Importance
 from msgraph.generated.models.item_body import ItemBody
 from msgraph.generated.models.message import Message
+from msgraph.generated.models.o_data_errors.o_data_error import ODataError
 from msgraph.generated.models.recipient import Recipient
+from msgraph.generated.users.item.messages.item.attachments.create_upload_session.create_upload_session_post_request_body import (  # noqa: E501
+    CreateUploadSessionPostRequestBody,
+)
+from msgraph.generated.users.item.send_mail.send_mail_post_request_body import SendMailPostRequestBody
+from msgraph_core.tasks.large_file_upload import LargeFileUploadTask
 from navconfig.logging import logging
 
-from notify.exceptions import ProviderError
-from notify.models import Actor, OutboundAttachment
+from notify.exceptions import NotifyAuthError, ProviderError
+from notify.models import Actor, MailSendResult, OutboundAttachment
 
 
 logger = logging.getLogger(__name__)
 
+#: Aggregate raw size (bytes) of all attachments (inline images included)
+#: that still fits in one `sendMail` request. Above this, the `draft_upload`
+#: strategy is used instead.
+INLINE_REQUEST_LIMIT: int = 3 * 1024 * 1024
+
 #: Per-file hard limit (bytes). Larger files are rejected before any Graph call.
 MAX_ATTACHMENT_SIZE: int = 150 * 1024 * 1024
+
+#: Graph `error.code` values that mean "auth/permission failure" and must
+#: raise `NotifyAuthError` instead of returning a failed `MailSendResult`.
+AUTH_ERROR_CODES: frozenset[str] = frozenset(
+    {
+        "ErrorSendAsDenied",
+        "ErrorAccessDenied",
+        "AccessDenied",
+        "InvalidAuthenticationToken",
+        "Authorization_RequestDenied",
+        "MailboxNotEnabledForRESTAPI",
+    }
+)
 
 
 async def _read_file(path: Path) -> bytes:
@@ -240,3 +268,200 @@ def build_message(
         _check_cid_references(html, attachments)
         message.attachments = [_to_file_attachment(a) for a in attachments]
     return message
+
+
+def map_odata_error(
+    exc: ODataError, *, provider: str, mailbox: Optional[str], recipients: list[str]
+) -> MailSendResult:
+    """Map a Graph `ODataError` to a failed `MailSendResult`, or raise for auth/permission failures.
+
+    Args:
+        exc: The `ODataError` raised by an `msgraph-sdk` request.
+        provider: The provider name to stamp on the result (e.g. `"office365"`).
+        mailbox: The mailbox the send was attempted against, or `None` for `/me`.
+        recipients: The addresses the send was attempted for.
+
+    Returns:
+        MailSendResult: A `success=False` result for any non-auth Graph failure
+        (e.g. `ErrorInvalidRecipients` / 400).
+
+    Raises:
+        NotifyAuthError: When `response_status_code` is 401/403, or
+            `error.code` is one of `AUTH_ERROR_CODES` — never leaks Graph
+            response internals beyond `code`/`message`/`status_code`.
+    """
+    error = exc.error
+    code = getattr(error, "code", None) if error else None
+    message = (getattr(error, "message", None) if error else None) or exc.message or str(exc)
+    status_code = exc.response_status_code
+
+    if status_code in (401, 403) or code in AUTH_ERROR_CODES:
+        raise NotifyAuthError(
+            f"O365 Graph mail send denied (code={code}, status={status_code}): {message}"
+        )
+
+    return MailSendResult(
+        success=False,
+        provider=provider,
+        mailbox=mailbox,
+        recipients=recipients,
+        status_code=status_code,
+        error_code=code,
+        error=message,
+    )
+
+
+class GraphMailSender:
+    """Execute a Graph mail send using the `send_mail` or `draft_upload` strategy."""
+
+    def __init__(self, graph: GraphServiceClient, *, provider: str, logger: logging.Logger) -> None:
+        """Build a sender bound to one `GraphServiceClient`.
+
+        Args:
+            graph: The Graph client to issue requests through.
+            provider: The provider name stamped on every `MailSendResult`.
+            logger: The provider's own logger (never a module-level logger),
+                so `save_to_sent_items` warnings surface under the caller's name.
+        """
+        self._graph = graph
+        self._provider = provider
+        self._logger = logger
+
+    def _route(self, mailbox: Optional[str]):
+        """Return the Graph request builder for `mailbox` (`/users/{mailbox}`) or `/me`."""
+        if mailbox:
+            return self._graph.users.by_user_id(mailbox)
+        return self._graph.me
+
+    def _select_embedded_indices(self, attachments: list[OutboundAttachment]) -> list[int]:
+        """Pick which attachment indices stay embedded on the draft (inline images first)."""
+        order = sorted(range(len(attachments)), key=lambda i: (not attachments[i].is_inline, i))
+        selected: list[int] = []
+        total = 0
+        for i in order:
+            size = attachments[i].size
+            if total + size <= INLINE_REQUEST_LIMIT:
+                selected.append(i)
+                total += size
+        return sorted(selected)
+
+    async def _upload_large_attachment(self, draft_route: Any, attachment: OutboundAttachment) -> None:
+        """Upload one large attachment onto an existing draft via an upload session."""
+        upload_body = CreateUploadSessionPostRequestBody(
+            attachment_item=AttachmentItem(
+                attachment_type=AttachmentType.File,
+                name=attachment.name,
+                size=attachment.size,
+                content_type=attachment.content_type,
+            )
+        )
+        session = await draft_route.attachments.create_upload_session.post(upload_body)
+        task = LargeFileUploadTask(session, self._graph.request_adapter, BytesIO(attachment.content))
+        await task.upload()
+
+    async def _send_mail_strategy(
+        self,
+        route: Any,
+        message: Message,
+        save_to_sent_items: bool,
+        mailbox: Optional[str],
+        recipients: list[str],
+    ) -> MailSendResult:
+        """Send everything in one `sendMail` call (total size within `INLINE_REQUEST_LIMIT`)."""
+        body = SendMailPostRequestBody(message=message, save_to_sent_items=save_to_sent_items)
+        await route.send_mail.post(body)
+        return MailSendResult(
+            success=True, provider=self._provider, mailbox=mailbox, recipients=recipients, strategy="send_mail"
+        )
+
+    async def _draft_upload_strategy(
+        self,
+        route: Any,
+        message: Message,
+        attachments: list[OutboundAttachment],
+        save_to_sent_items: bool,
+        mailbox: Optional[str],
+        recipients: list[str],
+    ) -> MailSendResult:
+        """Create a draft, upload the remaining large files, then send the draft.
+
+        A sent draft always lands in Sent Items — `save_to_sent_items=False`
+        only logs a warning. If the upload or the final send fails, the draft
+        is deleted best-effort before the failure propagates.
+        """
+        if save_to_sent_items is False:
+            self._logger.warning(
+                "O365 draft_upload strategy always saves to Sent Items; save_to_sent_items=False is ignored."
+            )
+
+        embedded_indices = self._select_embedded_indices(attachments)
+        if message.attachments:
+            message.attachments = [message.attachments[i] for i in embedded_indices]
+
+        draft = await route.messages.post(message)
+        draft_id = getattr(draft, "id", None)
+        if not draft_id:
+            raise ProviderError("Graph did not return a draft message id for the upload-session strategy.")
+        draft_route = route.messages.by_message_id(draft_id)
+
+        embedded_set = set(embedded_indices)
+        large_indices = [i for i in range(len(attachments)) if i not in embedded_set]
+
+        try:
+            for i in large_indices:
+                await self._upload_large_attachment(draft_route, attachments[i])
+            await draft_route.send.post()
+        except Exception:
+            try:
+                await draft_route.delete()
+            except Exception:  # noqa: BLE001 - best-effort cleanup, never masks the real error
+                self._logger.debug("Best-effort deletion of failed O365 draft %s also failed.", draft_id)
+            raise
+
+        return MailSendResult(
+            success=True,
+            provider=self._provider,
+            mailbox=mailbox,
+            recipients=recipients,
+            strategy="draft_upload",
+            message_id=draft_id,
+        )
+
+    async def send(
+        self,
+        *,
+        mailbox: Optional[str],
+        message: Message,
+        attachments: list[OutboundAttachment],
+        save_to_sent_items: bool,
+        recipients: list[str],
+    ) -> MailSendResult:
+        """Choose the strategy by total attachment size, send, and return a `MailSendResult`.
+
+        Args:
+            mailbox: `None` routes through `/me`; otherwise `/users/{mailbox}`.
+            message: The Graph `Message` built by `build_message` (already
+                carries every attachment as a `FileAttachment`).
+            attachments: The same attachments as `OutboundAttachment` models,
+                used to compute the total size and to drive uploads.
+            save_to_sent_items: Whether the send should land in Sent Items
+                (`send_mail` strategy only; `draft_upload` always does).
+            recipients: The resolved recipient addresses, for the result.
+
+        Returns:
+            MailSendResult: `success=True` on delivery, or `success=False` for
+            a non-auth Graph failure.
+
+        Raises:
+            NotifyAuthError: Via `map_odata_error`, for auth/permission failures.
+        """
+        total_size = sum(a.size for a in attachments)
+        route = self._route(mailbox)
+        try:
+            if total_size <= INLINE_REQUEST_LIMIT:
+                return await self._send_mail_strategy(route, message, save_to_sent_items, mailbox, recipients)
+            return await self._draft_upload_strategy(
+                route, message, attachments, save_to_sent_items, mailbox, recipients
+            )
+        except ODataError as exc:
+            return map_odata_error(exc, provider=self._provider, mailbox=mailbox, recipients=recipients)
