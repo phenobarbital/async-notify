@@ -284,7 +284,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "effort": "M",
       "depends_on": [
@@ -298,8 +298,8 @@
       "parallelism_notes": "Documents finalized provider, alias, CLI, and queue behavior before final test consolidation.",
       "assigned_to": null,
       "started_at": null,
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-32-graph-mail-documentation-and-examples.md"
+      "completed_at": "2026-09-15T23:02:13+00:00",
+      "file": "sdd/tasks/completed/TASK-32-graph-mail-documentation-and-examples.md"
     }
   ]
 }
