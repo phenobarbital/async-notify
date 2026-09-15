@@ -21,7 +21,7 @@ Currently Async-Notify supports the following providers:
 * Amazon SES
 * Email (SMTP)
 * Gmail
-* Office 365
+* Office 365 (Microsoft Graph; `outlook` is a compatible alias)
 * Telegram (requires aiogram)
 * Twilio (SMS)
 * OneSignal
@@ -61,6 +61,43 @@ string executes arbitrary Jinja2 and emits unescaped output. Template
 *source* must come from trusted operators (configuration, database rows
 written by staff) — never from end-user input. End-user data belongs in the
 message **parameters**, not in the template body itself.
+
+### Microsoft Graph mail (`office365` / `outlook`) ###
+
+`office365` (and its backward-compatible alias `outlook`) now send mail
+through **Microsoft Graph** (`msgraph-sdk`), not the legacy Outlook REST
+API — one Graph message per `send()` call, to every recipient. Four auth
+flows share one MSAL-backed credential: `client_credentials` (app-only,
+secret or certificate), `on_behalf_of` (OAuth2 OBO — a signed-in user's
+token exchanged for a Graph token, **send-only**, never queued), `delegated`
+(headless device-code bootstrap, then silent cached refresh), and the
+deprecated `password` (ROPC).
+
+```python
+# App-only, sending as a shared mailbox
+mail = Notify(
+    "office365", auth_flow="client_credentials",
+    client_id="CLIENT_ID", client_secret="CLIENT_SECRET", tenant_id="TENANT_ID",
+    sender="noreply@contoso.com",
+)
+async with mail as m:
+    [result] = await m.send(
+        recipient=[alice, bob], subject="Report", template="report.html",
+        cc=["ops@contoso.com"], attachments=["/tmp/report.pdf"], importance="high",
+    )
+    assert result.success
+
+# One-time headless delegated bootstrap (no browser redirect):
+#   $ python -m notify.providers.office365.login --username me@contoso.com
+```
+
+Token caches are pluggable (`memory` default, `file`, `redis`) and
+**encrypted** (Fernet) for the persistent stores unless
+`allow_unencrypted=True` is explicit. Full flow reference, tenant/app
+permission prerequisites, send-as/OBO semantics, and the migration notes
+for the `use_credentials` default change and the removed
+`o365`/`Office365-REST-Python-Client` dependencies live in
+[`docs/providers.rst`](docs/providers.rst).
 
 #### Future work: ####
 
