@@ -109,7 +109,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -119,8 +119,8 @@
       "parallelism_notes": "Extends the graph_mail module and models from TASK-23.",
       "assigned_to": null,
       "started_at": null,
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-24-graph-mail-sender.md"
+      "completed_at": "2026-09-15T22:31:58+00:00",
+      "file": "sdd/tasks/completed/TASK-24-graph-mail-sender.md"
     },
     {
       "id": "TASK-25",
