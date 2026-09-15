@@ -4,12 +4,10 @@ import uuid
 import base64
 import aiohttp
 import msal
-from azure.identity.aio import (
-    ClientSecretCredential
-)
+from azure.identity.aio import ClientSecretCredential
 from azure.identity import UsernamePasswordCredential
 from msgraph import GraphServiceClient
-from ._msgraph_patch import patch_graph_host_os_header
+from notify.providers._msgraph import patch_graph_host_os_header  # was: from ._msgraph_patch import …
 from msgraph.generated.models.chat import Chat
 from msgraph.generated.models.chat_type import ChatType
 from msgraph.generated.models.chat_message import ChatMessage
@@ -22,13 +20,7 @@ from msgraph.generated.chats.chats_request_builder import ChatsRequestBuilder
 from kiota_abstractions.base_request_configuration import RequestConfiguration
 from navconfig.logging import logging
 from datamodel.parsers.json import json_decoder, json_encoder
-from ...models import (
-    Actor,
-    TeamsWebhook,
-    TeamsChannel,
-    TeamsChat,
-    TeamsCard
-)
+from ...models import Actor, TeamsWebhook, TeamsChannel, TeamsChat, TeamsCard
 from ...providers.base import ProviderIM, ProviderType
 from ...exceptions import NotifyException, MessageError
 from ...conf import (
@@ -40,17 +32,16 @@ from ...conf import (
     MS_TEAMS_DEFAULT_CHANNEL_ID,
     MS_TEAMS_DEFAULT_WEBHOOK,
     O365_USER,
-    O365_PASSWORD
+    O365_PASSWORD,
 )
 
-
 # disable MSAL debug:
-logging.getLogger('msal').setLevel(logging.INFO)
-logging.getLogger('httpcore').setLevel(logging.INFO)
-logging.getLogger('azure').setLevel(logging.WARNING)
-logging.getLogger('hpack').setLevel(logging.INFO)
+logging.getLogger("msal").setLevel(logging.INFO)
+logging.getLogger("httpcore").setLevel(logging.INFO)
+logging.getLogger("azure").setLevel(logging.WARNING)
+logging.getLogger("hpack").setLevel(logging.INFO)
 # disable aiohttp debug:
-logging.getLogger('aiohttp').setLevel(logging.INFO)
+logging.getLogger("aiohttp").setLevel(logging.INFO)
 
 # Sanitise the msgraph-core HostOs telemetry header so trailing-space kernel
 # versions don't trigger h11 "Illegal header value" on Graph API requests.
@@ -63,22 +54,23 @@ class Teams(ProviderIM):
 
     Send messages to a channel using Teams.
     """
+
     provider = "teams"
     provider_type = ProviderType.IM
-    blocking: str = 'asyncio'
+    blocking: str = "asyncio"
 
     def __init__(self, *args, **kwargs):
-        self.as_user: bool = kwargs.pop('as_user', False)
-        self._client_id = kwargs.pop('client_id', MS_TEAMS_CLIENT_ID)
-        self._client_secret = kwargs.pop('client_secret', MS_TEAMS_CLIENT_SECRET)
-        self._tenant_id = kwargs.pop('tenant_id', MS_TEAMS_TENANT_ID)
-        self._team_id = kwargs.pop('team_id', MS_TEAMS_DEFAULT_TEAMS_ID)
-        self._chat_id = kwargs.pop('chat_id', None)
+        self.as_user: bool = kwargs.pop("as_user", False)
+        self._client_id = kwargs.pop("client_id", MS_TEAMS_CLIENT_ID)
+        self._client_secret = kwargs.pop("client_secret", MS_TEAMS_CLIENT_SECRET)
+        self._tenant_id = kwargs.pop("tenant_id", MS_TEAMS_TENANT_ID)
+        self._team_id = kwargs.pop("team_id", MS_TEAMS_DEFAULT_TEAMS_ID)
+        self._chat_id = kwargs.pop("chat_id", None)
         self.credentials: dict = {}
         if self.as_user:
             self.credentials = {
-                "username": kwargs.pop('username', O365_USER),
-                "password": kwargs.pop('password', O365_PASSWORD)
+                "username": kwargs.pop("username", O365_USER),
+                "password": kwargs.pop("password", O365_PASSWORD),
             }
         super(Teams, self).__init__(*args, **kwargs)
 
@@ -95,32 +87,19 @@ class Teams(ProviderIM):
         scopes = ["https://graph.microsoft.com/.default"]
         authority = f"https://login.microsoftonline.com/{self._tenant_id}"
         if self.as_user is True:
-            self.app = msal.PublicClientApplication(
-                self._client_id, authority=authority
-            )
+            self.app = msal.PublicClientApplication(self._client_id, authority=authority)
             # Acquire token using ROPC
-            result = self.app.acquire_token_by_username_password(
-                scopes=scopes,
-                **self.credentials
-            )
+            result = self.app.acquire_token_by_username_password(scopes=scopes, **self.credentials)
             self._client = UsernamePasswordCredential(
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                **self.credentials
+                tenant_id=self._tenant_id, client_id=self._client_id, **self.credentials
             )
         else:
             self.app = msal.ConfidentialClientApplication(
-                self._client_id,
-                authority=authority,
-                client_credential=self._client_secret
+                self._client_id, authority=authority, client_credential=self._client_secret
             )
-            result = self.app.acquire_token_for_client(
-                scopes=scopes
-            )
+            result = self.app.acquire_token_for_client(scopes=scopes)
             self._client = ClientSecretCredential(
-                tenant_id=self._tenant_id,
-                client_id=self._client_id,
-                client_secret=self._client_secret
+                tenant_id=self._tenant_id, client_id=self._client_id, client_secret=self._client_secret
             )
         try:
             self._token = result["access_token"]
@@ -129,9 +108,7 @@ class Teams(ProviderIM):
             error = result.get("error")
             desc = result.get("error_description")
             _id = result.get("correlation_id")
-            raise NotifyException(
-                f"{_id}: {error}: {desc}"
-            ) from exc
+            raise NotifyException(f"{_id}: {error}: {desc}") from exc
         # using the token to create a Graph Client:
         self._graph = self.get_graph_client(client=self._client, scopes=scopes)
         self._owner_id = None
@@ -140,11 +117,7 @@ class Teams(ProviderIM):
             self._owner_id = me.id
 
     async def _render_(
-        self,
-        to: Actor = None,
-        message: Union[str, TeamsCard] = None,
-        _type: str = 'card',
-        **kwargs
+        self, to: Actor = None, message: Union[str, TeamsCard] = None, _type: str = "card", **kwargs
     ):  # pylint: disable=W0613
         """
         _render_.
@@ -152,21 +125,18 @@ class Teams(ProviderIM):
         Returns the parseable version of Message template.
         """
         if isinstance(message, TeamsCard):
-            if _type == 'card':
+            if _type == "card":
                 # converting message to a dictionary
                 payload = message.to_dict()
             else:
                 card = {
                     "id": str(message.card_id),
                     "contentType": message.content_type,
-                    "content": json.dumps(message.to_adaptative())
+                    "content": json.dumps(message.to_adaptative()),
                 }
                 payload = {
-                    "body": {
-                        "contentType": "html",
-                        "content": f"<attachment id=\"{message.card_id}\"></attachment>"
-                    },
-                    "attachments": [card]
+                    "body": {"contentType": "html", "content": f'<attachment id="{message.card_id}"></attachment>'},
+                    "attachments": [card],
                 }
         elif isinstance(message, dict):
             # is already a dictionary
@@ -177,38 +147,20 @@ class Teams(ProviderIM):
                 payload = message
             else:
                 # is the text message
-                payload = {
-                    "@type": "MessageCard",
-                    "@context": "http://schema.org/extensions",
-                    "text": message
-                }
+                payload = {"@type": "MessageCard", "@context": "http://schema.org/extensions", "text": message}
         else:
-            raise RuntimeError(
-                f"Invalid Message Type: {type(message)}"
-            )
+            raise RuntimeError(f"Invalid Message Type: {type(message)}")
         # TODO: using Jinja Templates on Teams Cards.
         return payload
 
-    async def send_to_group(
-        self,
-        recipient: List[Actor],
-        message: Union[str, Any],
-        **kwargs
-    ) -> Any:
+    async def send_to_group(self, recipient: List[Actor], message: Union[str, Any], **kwargs) -> Any:
         """send_to_group.
         Send message to Microsoft Teams channel using an incoming webhook.
         """
-        return await self._send_(
-            to=recipient,
-            message=message,
-            **kwargs
-    )
+        return await self._send_(to=recipient, message=message, **kwargs)
 
     async def _send_(
-        self,
-        to: Union[Actor, List[Actor], TeamsChannel, TeamsChat, TeamsWebhook],
-        message: Union[str, Any],
-        **kwargs
+        self, to: Union[Actor, List[Actor], TeamsChannel, TeamsChat, TeamsWebhook], message: Union[str, Any], **kwargs
     ) -> Any:
         """_send_.
         Send message to Microsoft Teams channel using an incoming webhook.
@@ -216,14 +168,14 @@ class Teams(ProviderIM):
         result = None
         if isinstance(to, TeamsWebhook):
             # using webhook instead channel ID
-            msg = await self._render_(to, message, _type='card', **kwargs)
+            msg = await self._render_(to, message, _type="card", **kwargs)
             try:
                 webhook_url = to.uri or MS_TEAMS_DEFAULT_WEBHOOK
             except (KeyError, ValueError):
                 webhook_url = MS_TEAMS_DEFAULT_WEBHOOK
             result = await self.send_webhook(webhook_url, msg)
         else:
-            msg = await self._render_(to, message, _type='adaptative', **kwargs)
+            msg = await self._render_(to, message, _type="adaptative", **kwargs)
             if isinstance(to, TeamsChannel):
                 channel = to.channel_id
                 team = to.team_id
@@ -231,41 +183,23 @@ class Teams(ProviderIM):
                     channel = MS_TEAMS_DEFAULT_CHANNEL_ID
                     team = MS_TEAMS_DEFAULT_TEAMS_ID
                 # using graph to send messages to a channel.
-                result = await self.send_message_to_channel(
-                    team, channel, msg
-                )
+                result = await self.send_message_to_channel(team, channel, msg)
             elif isinstance(to, TeamsChat):
                 if chat := to.chat_id:
                     # using graph to send messages to a channel.
-                    result = await self.send_message_to_chat(
-                        chat, msg
-                    )
+                    result = await self.send_message_to_chat(chat, msg)
                 else:
-                    raise NotifyException(
-                        "Invalid Recipient Object: Need an string or a TeamsChat Object"
-                    )
+                    raise NotifyException("Invalid Recipient Object: Need an string or a TeamsChat Object")
             elif isinstance(to, Actor):
-                result = await self.send_direct_message(
-                    to, msg
-                )
+                result = await self.send_direct_message(to, msg)
             elif isinstance(to, list) and all(isinstance(r, Actor) for r in to):
-                result = await self.send_group_direct_message(
-                    to, msg, topic=kwargs.get('topic')
-                )
+                result = await self.send_group_direct_message(to, msg, topic=kwargs.get("topic"))
             else:
-                raise NotifyException(
-                    "Invalid Recipient Object: Need an string or a TeamsChannel Object"
-                )
+                raise NotifyException("Invalid Recipient Object: Need an string or a TeamsChannel Object")
 
         return result
 
-    async def send_message_to_channel(
-        self,
-        team_id: str,
-        channel_id: str,
-        message: dict,
-        use_aiohttp: bool = False
-    ):
+    async def send_message_to_channel(self, team_id: str, channel_id: str, message: dict, use_aiohttp: bool = False):
         """
         Send a message to a specific channel in a Microsoft Teams team.
 
@@ -284,63 +218,52 @@ class Teams(ProviderIM):
         MessageError: If there's an error sending the notification (when using aiohttp).
         """
         if use_aiohttp:
-            headers = {
-                'Authorization': f'Bearer {self._token}',
-                'Content-Type': 'application/json'
-            }
-            message_url = f'https://graph.microsoft.com/v1.0/teams/{team_id}/channels/{channel_id}/messages'
+            headers = {"Authorization": f"Bearer {self._token}", "Content-Type": "application/json"}
+            message_url = f"https://graph.microsoft.com/v1.0/teams/{team_id}/channels/{channel_id}/messages"
             async with aiohttp.ClientSession() as session:
                 async with session.post(message_url, headers=headers, json=message) as response:
                     if response.status not in [200, 201]:
-                        raise MessageError(
-                            f"Teams: Error sending Notification: {await response.text()}"
-                        )
+                        raise MessageError(f"Teams: Error sending Notification: {await response.text()}")
                     return await response.json()
         else:
             body = message.get("body", {})
             attachments_list = message.get("attachments", [])
         request_body = ChatMessage(
             subject=None,
-            body=ItemBody(
-                content_type=BodyType.Html,
-                content=body.get('content')
-            ),
+            body=ItemBody(content_type=BodyType.Html, content=body.get("content")),
             attachments=[
                 ChatMessageAttachment(
                     id=att.get("id"),
                     content_type=att.get("contentType", "application/vnd.microsoft.card.adaptive"),
-                    content=att.get('content', ''),
+                    content=att.get("content", ""),
                     content_url=None,
                     name=None,
                     thumbnail_url=None,
                 )
                 for att in attachments_list
-            ]
+            ],
         )
         # Send the message to Channel
-        print('TEAM > ', team_id)
-        print('Channel > ', channel_id)
-        return await self._graph.teams.by_team_id(
-            team_id
-        ).channels.by_channel_id(channel_id).messages.post(request_body)
+        print("TEAM > ", team_id)
+        print("Channel > ", channel_id)
+        return (
+            await self._graph.teams.by_team_id(team_id).channels.by_channel_id(channel_id).messages.post(request_body)
+        )
 
     async def send_webhook(self, webhook_url: str, message: str):
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                webhook_url,
-                data=json.dumps(message),
-                headers={"Content-Type": "application/json"}
+                webhook_url, data=json.dumps(message), headers={"Content-Type": "application/json"}
             ) as response:
                 if response.status != 200:
-                    raise MessageError(
-                        f"Teams: Error sending Notification: {await response.text()}"
-                    )
+                    raise MessageError(f"Teams: Error sending Notification: {await response.text()}")
                 return await response.text()
 
     async def send_message_to_chat(self, chat_id: str, message: Dict[str, Any]):
         """
         Generic method: send a message to an existing chat (group or one-on-one).
         """
+
         async def _post_attachment_card(
             card_payload: Dict[str, Any],
             content_type: str,
@@ -348,10 +271,7 @@ class Teams(ProviderIM):
             attachment_id = str(uuid.uuid4())
             request_body = ChatMessage(
                 subject=None,
-                body=ItemBody(
-                    content_type=BodyType.Html,
-                    content=f'<attachment id="{attachment_id}"></attachment>'
-                ),
+                body=ItemBody(content_type=BodyType.Html, content=f'<attachment id="{attachment_id}"></attachment>'),
                 attachments=[
                     ChatMessageAttachment(
                         id=attachment_id,
@@ -361,7 +281,7 @@ class Teams(ProviderIM):
                         name=None,
                         thumbnail_url=None,
                     )
-                ]
+                ],
             )
             return await self._graph.chats.by_chat_id(chat_id).messages.post(request_body)
 
@@ -375,78 +295,55 @@ class Teams(ProviderIM):
 
             if isinstance(parsed_message, dict):
                 if parsed_message.get("type") == "AdaptiveCard":
-                    return await _post_attachment_card(
-                        parsed_message,
-                        "application/vnd.microsoft.card.adaptive"
-                    )
+                    return await _post_attachment_card(parsed_message, "application/vnd.microsoft.card.adaptive")
 
                 if parsed_message.get("@type") == "MessageCard":
                     return await _post_attachment_card(
-                        parsed_message,
-                        "application/vnd.microsoft.teams.card.o365connector"
+                        parsed_message, "application/vnd.microsoft.teams.card.o365connector"
                     )
 
                 adaptive_card = {
                     "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                     "type": "AdaptiveCard",
                     "version": "1.5",
-                    "body": parsed_message
+                    "body": parsed_message,
                 }
                 if not adaptive_card["body"]:
-                    logging.warning(
-                        "Teams send_message_to_chat: empty Adaptive Card body; message not sent."
-                    )
+                    logging.warning("Teams send_message_to_chat: empty Adaptive Card body; message not sent.")
                     return
 
-                return await _post_attachment_card(
-                    adaptive_card,
-                    "application/vnd.microsoft.card.adaptive"
-                )
+                return await _post_attachment_card(adaptive_card, "application/vnd.microsoft.card.adaptive")
 
             message_payload = {"body": {"content": message}, "attachments": []}
         elif isinstance(message, dict):
             if message.get("type") == "AdaptiveCard":
-                return await _post_attachment_card(
-                    message,
-                    "application/vnd.microsoft.card.adaptive"
-                )
+                return await _post_attachment_card(message, "application/vnd.microsoft.card.adaptive")
             if message.get("@type") == "MessageCard":
-                return await _post_attachment_card(
-                    message,
-                    "application/vnd.microsoft.teams.card.o365connector"
-                )
+                return await _post_attachment_card(message, "application/vnd.microsoft.teams.card.o365connector")
             message_payload = message
         else:
-            message_payload = {
-                "body": {"content": str(message)},
-                "attachments": []
-            }
+            message_payload = {"body": {"content": str(message)}, "attachments": []}
 
         body = message_payload.get("body", {}) if message_payload else {}
         if not body or not body.get("content"):
-            logging.warning(
-                "Teams send_message_to_chat: empty message body; message not sent."
-            )
+            logging.warning("Teams send_message_to_chat: empty message body; message not sent.")
             return
 
         attachments_list = message_payload.get("attachments", []) if message_payload else []
         request_body = ChatMessage(
             subject=None,
-            body=ItemBody(
-                content_type=BodyType.Html,
-                content=body.get('content')
-            ),
+            body=ItemBody(content_type=BodyType.Html, content=body.get("content")),
             attachments=[
                 ChatMessageAttachment(
                     id=att.get("id"),
                     content_type=att.get("contentType", "application/vnd.microsoft.card.adaptive"),
-                    content=att.get('content', ''),
+                    content=att.get("content", ""),
                     content_url=None,
                     name=None,
                     thumbnail_url=None,
                 )
                 for att in attachments_list
-            ]
+            ],
         )
         return await self._graph.chats.by_chat_id(chat_id).messages.post(request_body)
 
@@ -478,28 +375,20 @@ class Teams(ProviderIM):
                     # for 1st user (owner)
                     odata_type="#microsoft.graph.aadUserConversationMember",
                     roles=["owner"],
-                    additional_data={
-                        "user@odata.bind": f"https://graph.microsoft.com/beta/users('{owner}')"
-                    },
+                    additional_data={"user@odata.bind": f"https://graph.microsoft.com/beta/users('{owner}')"},
                 ),
                 AadUserConversationMember(
                     # for 2nd user (owner)
                     odata_type="#microsoft.graph.aadUserConversationMember",
                     roles=["owner"],
-                    additional_data={
-                        "user@odata.bind": f"https://graph.microsoft.com/beta/users('{user_id}')"
-                    },
+                    additional_data={"user@odata.bind": f"https://graph.microsoft.com/beta/users('{user_id}')"},
                 ),
             ],
         )
         result = await self._graph.chats.post(request_body)
         return result.id
 
-    async def _create_group_chat(
-        self,
-        member_ids: list[str],
-        topic: Optional[str] = None
-    ) -> str:
+    async def _create_group_chat(self, member_ids: list[str], topic: Optional[str] = None) -> str:
         """
         Create a group chat between the delegated account and N users.
         member_ids should include self._owner_id as well.
@@ -538,9 +427,7 @@ class Teams(ProviderIM):
             query_parameters=query_params,
         )
 
-        chats = await self._graph.chats.get(
-            request_configuration=request_configuration
-        )
+        chats = await self._graph.chats.get(request_configuration=request_configuration)
         if not chats.value:
             return None
 
@@ -553,11 +440,7 @@ class Teams(ProviderIM):
                 return chat.id
         return None
 
-    async def _get_group_chat(
-        self,
-        member_ids: list[str],
-        restricted: bool = True
-    ) -> Optional[str]:
+    async def _get_group_chat(self, member_ids: list[str], restricted: bool = True) -> Optional[str]:
         """
         Find an existing group chat that contains *at least* all member_ids.
         """
@@ -571,14 +454,12 @@ class Teams(ProviderIM):
             query_parameters=query_params,
         )
 
-        chats = await self._graph.chats.get(
-            request_configuration=request_configuration
-        )
+        chats = await self._graph.chats.get(request_configuration=request_configuration)
         if not chats.value:
             return None
 
         members_set = set(member_ids)
-        print('::: Members Set > ', members_set)
+        print("::: Members Set > ", members_set)
 
         for chat in chats.value:
             if not chat.members:
@@ -601,37 +482,24 @@ class Teams(ProviderIM):
             user_info = await self._graph.users.by_user_id(email).get()
             if not user_info:
                 # trying to find a user
-                users = await self._graph.users.get(
-                    query_parameters={
-                        "$filter": f"mail eq '{email}'"
-                    }
-                )
+                users = await self._graph.users.get(query_parameters={"$filter": f"mail eq '{email}'"})
                 if not users.value:
                     raise ValueError(f"No user found for {email}.")
                 user_info = users.value[0]
-            self.logger.info(
-                f"Retrieved information for user: {email}"
-            )
+            self.logger.info(f"Retrieved information for user: {email}")
             return user_info
         except Exception as e:
-            self.logger.error(
-                f"Failed to retrieve user info for {email}: {e}"
-            )
+            self.logger.error(f"Failed to retrieve user info for {email}: {e}")
 
     async def send_group_direct_message(
-        self,
-        recipients: list[Actor],
-        message: Dict[str, Any],
-        topic: Optional[str] = None
+        self, recipients: list[Actor], message: Dict[str, Any], topic: Optional[str] = None
     ):
         """
         Send a message to a group chat between the delegated account and 2+ users.
         """
 
         if not self._owner_id:
-            raise NotifyException(
-                "send_group_direct_message requires as_user=True so _owner_id is set."
-            )
+            raise NotifyException("send_group_direct_message requires as_user=True so _owner_id is set.")
 
         # Resolve the user ids for all recipients
         user_ids: list[str] = []

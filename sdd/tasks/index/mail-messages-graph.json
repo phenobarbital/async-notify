@@ -5,7 +5,7 @@
   "type": "feature",
   "base_branch": "dev",
   "created_at": "2026-09-15T23:39:00+02:00",
-  "completed_at": null,
+  "completed_at": "2026-09-15T23:28:27+00:00",
   "tasks": [
     {
       "id": "TASK-19",
@@ -14,16 +14,17 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "S",
       "depends_on": [],
       "parallel": true,
       "parallelism_notes": "Independent shared-helper foundation; the per-spec worktree remains sequential.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-19-shared-msgraph-helper.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:14:01+00:00",
+      "file": "sdd/tasks/completed/TASK-19-shared-msgraph-helper.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-20",
@@ -32,16 +33,17 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "S",
       "depends_on": [],
       "parallel": true,
       "parallelism_notes": "Manifest/config foundation is file-disjoint from the other independent foundations.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-20-configuration-and-dependencies.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:16:13+00:00",
+      "file": "sdd/tasks/completed/TASK-20-configuration-and-dependencies.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-21",
@@ -50,7 +52,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -59,9 +61,10 @@
       "parallel": false,
       "parallelism_notes": "Consumes settings declared by TASK-20.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-21-token-stores-and-cipher.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:18:08+00:00",
+      "file": "sdd/tasks/completed/TASK-21-token-stores-and-cipher.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-22",
@@ -70,7 +73,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -80,9 +83,10 @@
       "parallel": false,
       "parallelism_notes": "Requires shared Graph scope and the token-store interface.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-22-msal-async-credential.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:24:46+00:00",
+      "file": "sdd/tasks/completed/TASK-22-msal-async-credential.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-23",
@@ -91,16 +95,17 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [],
       "parallel": true,
       "parallelism_notes": "Independent typed model and builder foundation; sequence it in the shared worktree.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-23-graph-mail-models-and-builder.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:28:10+00:00",
+      "file": "sdd/tasks/completed/TASK-23-graph-mail-models-and-builder.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-24",
@@ -109,7 +114,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -118,9 +123,10 @@
       "parallel": false,
       "parallelism_notes": "Extends the graph_mail module and models from TASK-23.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-24-graph-mail-sender.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:31:58+00:00",
+      "file": "sdd/tasks/completed/TASK-24-graph-mail-sender.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-25",
@@ -129,16 +135,17 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "S",
       "depends_on": [],
       "parallel": true,
       "parallelism_notes": "Independent mail-base change required before Office365 dispatch.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-25-provideremail-hooks.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:35:07+00:00",
+      "file": "sdd/tasks/completed/TASK-25-provideremail-hooks.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-26",
@@ -147,7 +154,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -159,9 +166,10 @@
       "parallel": false,
       "parallelism_notes": "Wires the patch, configuration, store, and credential into provider lifecycle.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-26-office365-provider-lifecycle.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:39:57+00:00",
+      "file": "sdd/tasks/completed/TASK-26-office365-provider-lifecycle.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-27",
@@ -170,7 +178,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -182,9 +190,10 @@
       "parallel": false,
       "parallelism_notes": "Integrates lifecycle, batch hooks, and the graph mail builder/sender.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-27-office365-message-dispatch.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:43:04+00:00",
+      "file": "sdd/tasks/completed/TASK-27-office365-message-dispatch.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-28",
@@ -193,7 +202,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "S",
       "depends_on": [
@@ -202,9 +211,10 @@
       "parallel": false,
       "parallelism_notes": "The alias depends on the finalized Office365 dispatch contract.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-28-outlook-graph-alias.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:45:39+00:00",
+      "file": "sdd/tasks/completed/TASK-28-outlook-graph-alias.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-29",
@@ -213,7 +223,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "M",
       "depends_on": [
@@ -224,9 +234,10 @@
       "parallel": false,
       "parallelism_notes": "Shares the stable settings, token store, and credential interfaces.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-29-device-code-login-cli.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:47:32+00:00",
+      "file": "sdd/tasks/completed/TASK-29-device-code-login-cli.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-30",
@@ -235,16 +246,17 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "S",
       "depends_on": [],
       "parallel": true,
       "parallelism_notes": "Independent queue-boundary security change; keep it in the shared worktree.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-30-notify-server-obo-guard.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:50:01+00:00",
+      "file": "sdd/tasks/completed/TASK-30-notify-server-obo-guard.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-31",
@@ -253,7 +265,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -273,9 +285,10 @@
       "parallel": false,
       "parallelism_notes": "Final verification imports and exercises every feature component after implementation lands.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-31-graph-mail-test-suite.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T22:55:07+00:00",
+      "file": "sdd/tasks/completed/TASK-31-graph-mail-test-suite.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-32",
@@ -284,7 +297,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "M",
       "depends_on": [
@@ -297,9 +310,10 @@
       "parallel": false,
       "parallelism_notes": "Documents finalized provider, alias, CLI, and queue behavior before final test consolidation.",
       "assigned_to": null,
-      "started_at": "2026-09-15T22:10:57+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-32-graph-mail-documentation-and-examples.md"
+      "started_at": null,
+      "completed_at": "2026-09-15T23:02:13+00:00",
+      "file": "sdd/tasks/completed/TASK-32-graph-mail-documentation-and-examples.md",
+      "verification": "verified"
     }
   ]
 }
