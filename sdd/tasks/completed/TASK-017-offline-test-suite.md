@@ -351,10 +351,60 @@ When you pick up this task:
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Created `tests/test_jinja_string_templates.py` (only file touched;
+`git status --porcelain` shows nothing under `notify/`). Implements every
+row in spec §4's unit table (31 rows, including the 3 `Message`/
+`BlockMessage` tests from TASK-016) plus every row in the integration table
+(7 rows), grouped into `TestIsTemplateSource` (7 — added a constant-value
+test for `JINJA_MARKERS`), `TestFromString` (8), `TestStringCache`
+(7 — added a constant-value test for `DEFAULT_STRING_CACHE_SIZE`),
+`TestPrepareDispatch` (8), `TestMessageModel` (3), `TestRenderPaths` (7) —
+45 tests total (43 passed, 2 xfailed by design, 0 failed). Fixtures follow
+spec §4 exactly (`template_dir`, `parser`); the `dummy_provider` fixture
+had to become an **async** `pytest_asyncio.fixture` (not spec's plain
+`@pytest.fixture`) constructing `Dummy()` inside it — this repo's `uvloop`
+policy does not auto-create a loop for the main thread, so building a
+`ProviderBase` subclass from a sync fixture raised
+`RuntimeError: There is no current event loop in thread 'MainThread'`
+(`ProviderBase.__init__` calls `asyncio.get_running_loop()` / falls back to
+`asyncio.get_event_loop()`). `tests/test_email_utf8.py` documents the same
+constraint from the FEAT-001 hotfix ("The test is async so that
+ProviderBase.__init__ can find a running event loop") — followed that
+existing repo convention rather than inventing a new one.
+`test_mail_send_path_forwards_kwargs` targets `ProviderEmail` (imported
+from `notify.providers.mail`) rather than a class literally named `Mail`
+— grep confirms no `class Mail` exists in the package; `ProviderEmail` is
+the concrete, instantiable class `mail.py`'s `send()` is defined on, which
+is what the spec's Codebase Contract table (`notify/providers/mail.py::Mail.send`)
+actually refers to. `test_ses_send_path_forwards_kwargs` fakes
+`provider.session`/`connect()`/`close()`/`_send_()` to avoid any real
+`aiobotocore`/AWS calls. Ran `ruff check tests/test_jinja_string_templates.py`:
+clean (fixed one `I001` import-order finding via `ruff --fix`, safe on a
+brand-new file). Full suite `pytest tests/ -v`: 102 passed, 2 xfailed, 2
+failed, 3 errors — the 2 failed + 3 errors are the same pre-existing,
+unrelated baseline failures confirmed on `dev` (AWS region validation,
+asyncio event-loop fixture in `test_outlook1.py`); zero new failures.
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**: What was implemented, any deviations from scope, issues encountered.
-
-**Deviations from spec**: none | describe if any
+**Deviations from spec**: two tests are `xfail(strict=True)` rather than
+plain passing assertions, both tracing back to TASK-016's documented,
+pre-existing findings (not something this task's scope permits fixing —
+"If a test reveals a production bug, stop and report it... Do not edit
+notify/"):
+1. `TestMessageModel::test_message_template_accepts_str` — `python-datamodel`
+   eagerly coerces the `Union[Path, str]` field to `Path` (tries `Path`
+   first, `Path(str)` never raises), so a plain `str` does not round-trip
+   as `str`. `xfail(strict=True)` so the suite stays green today and would
+   flip to a loud `XPASS` failure if a future `python-datamodel` version
+   changes this coercion behaviour.
+2. `TestMessageModel::test_blockmessage_inherits_widened_template` —
+   `BlockMessage` cannot be constructed at all today
+   (`content_type = Field(default_factory=CONTENT_TYPES)` passes a list
+   where a callable is required → `TypeError`), reproduced identically on
+   baseline `dev`. Unrelated to the widening; pre-existing.
+`dummy_provider` fixture uses `pytest_asyncio.fixture` (new import,
+`pytest_asyncio` — already a transitive dependency of the installed
+`pytest-asyncio` plugin, confirmed importable in the venv) instead of
+spec's plain `@pytest.fixture` — required by the uvloop constraint above,
+not a scope deviation in test *coverage*.

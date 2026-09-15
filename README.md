@@ -28,6 +28,40 @@ Currently Async-Notify supports the following providers:
 * Twitter
 * XMPP stanzas
 
+### Templates ###
+
+`send(template=...)` accepts either a template **filename** (resolved on
+`TEMPLATE_DIR`, unchanged since earlier versions) or raw **Jinja2 source
+text**, auto-detected by a conservative heuristic (a Jinja2 delimiter
+`{{`, `{%`, `{#`, or a line break means source; anything else is treated as
+a filename). Use `template_is_source=True`/`False` to force either
+interpretation when the heuristic can't decide (for example a body with no
+Jinja markup and no newline, which is indistinguishable from a filename).
+
+```python
+# raw source — new in 1.6.0
+await Notify("smtp").send(
+    recipient=[actor],
+    subject="Welcome",
+    template="<p>Hola {{ recipient.account.address }} — {{ message }}</p>",
+    message="…",
+)
+
+# filename — unchanged behaviour
+await Notify("smtp").send(recipient=[actor], template="welcome.html")
+
+# forced, for a body with no Jinja markup
+await Notify("telegram").send(
+    recipient=[chat], template="Hello world", template_is_source=True,
+)
+```
+
+**Security note**: `autoescape` is disabled, so a template compiled from a
+string executes arbitrary Jinja2 and emits unescaped output. Template
+*source* must come from trusted operators (configuration, database rows
+written by staff) — never from end-user input. End-user data belongs in the
+message **parameters**, not in the template body itself.
+
 #### Future work: ####
 
 * Slack

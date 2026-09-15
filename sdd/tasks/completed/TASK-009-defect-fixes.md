@@ -224,10 +224,19 @@ Use `.venv/bin/python` directly — `.venv/bin/activate` is stale.
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Fixed `add_filter()` to check `callable(func)` first (raising
+`TypeError` even when an explicit `name` is supplied to a non-callable),
+then delegates to `add_filters({name or func.__name__: func})` from
+TASK-008 — single registration path, defect at the old `name.__name__`
+line eliminated. Normalised the sole `"NAV: "` prefix (in `render_async`'s
+generic exception handler) to `"Notify: "`; confirmed via
+`grep -rn 'NAV:' notify/` that no other occurrence exists. Exception types
+in `render_async` unchanged (`ValueError` for `TemplateError`, `RuntimeError`
+otherwise). Verified manually per the task's Test Specification.
+`ruff check notify/templates.py` clean. Full `pytest tests/ -v`: 59 passed,
+2 failed + 3 errors, all pre-existing on the `dev` baseline, unrelated to
+this change.
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**:
-
-**Deviations from spec**: none | describe if any
+**Deviations from spec**: none

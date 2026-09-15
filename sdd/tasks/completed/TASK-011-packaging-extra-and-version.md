@@ -215,14 +215,34 @@ Use `.venv/bin/python` directly — `.venv/bin/activate` is stale.
 
 ## Completion Note
 
-*(Agent fills this in when done)*
-
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**:
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Verified all three distributions on PyPI via
+`pip index versions` and `pip download --no-deps` (network available),
+then inspected each wheel's contents to confirm the import module name
+and extension class match `JinjaConfig.optional_extensions` exactly:
+`jinja2_time.TimeExtension`, `jinja2_iso8601.ISO8601Extension`,
+`jinja2_humanize_extension.HumanizeExtension`. `[project.optional-
+dependencies]` already existed in `pyproject.toml`; added the `templates`
+key to it rather than creating a second table. Bumped
+`notify/version.py::__version__` to `1.6.0`; `pyproject.toml` derives its
+version dynamically from `notify.version.__version__`
+(`[tool.setuptools.dynamic]`), so no static `version` field was touched.
+The only remaining `1.5.7` string in the tree is a historical reference
+inside a `notify/templates.py` docstring ("reproduces async-notify's
+behaviour as of 1.5.7") — intentionally left as-is; it documents a past
+version's behaviour, not the current release. `jinja2>=3.1.4` left
+unchanged. Verified: TOML parses, `templates` extra readable via
+`tomllib`, `python -m build --wheel` succeeds and produces
+`async_notify-1.6.0-*.whl`. Full `pytest tests/ -v`: 59 passed, 2 failed +
+3 errors, identical to the pre-existing `dev` baseline.
 
 **Resolved package names / floors**:
+- `jinja2-time>=0.2.0` (latest on PyPI: 0.2.0)
+- `jinja2-iso8601>=1.0.0` (latest on PyPI: 1.0.0)
+- `jinja2-humanize-extension>=0.4.0` (latest on PyPI: 0.4.0)
 
-**Extensions dropped (and why)**:
+**Extensions dropped (and why)**: none — all three resolved cleanly on
+PyPI with import names matching `JinjaConfig.optional_extensions`.
 
-**Deviations from spec**: none | describe if any
+**Deviations from spec**: none

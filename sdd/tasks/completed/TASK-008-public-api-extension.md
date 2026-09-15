@@ -194,10 +194,30 @@ Use `.venv/bin/python` directly — `.venv/bin/activate` is stale.
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Added all seven public methods (`add_template_dir`, `add_templates`,
+`add_filters`, `add_globals`, `render_string`, `render_string_async`,
+`compile_directory`) to `TemplateParser`. `render_string` is synchronous,
+`render_string_async` is a coroutine, mirroring the existing `render`/
+`render_async` split (ai-parrot's async-only `render_string` was NOT
+adopted). `add_template_dir` rebuilds the `ChoiceLoader` while carrying the
+`DictLoader` mapping across, so previously registered in-memory templates
+are never dropped. `compile_directory` is a no-op when there are no
+filesystem directories. Verified manually per the task's Test
+Specification (in-memory shadowing, dir-add preserving memory templates,
+globals, filters, both render_string variants, compile_directory with and
+without directories). `ruff check notify/templates.py` clean. Full
+`pytest tests/ -v`: 59 passed, 2 failed + 3 errors, all pre-existing on the
+`dev` baseline (AWS SES mock region, Outlook event-loop fixture), unrelated
+to this change.
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**:
-
-**Deviations from spec**: none | describe if any
+**Deviations from spec**: The task's own "Pattern to Follow" for
+`add_template_dir` assumed a `self._fs_dirs` instance attribute already
+existed from TASK-007. It did not — TASK-007 tracked resolved directories
+only as a local variable inside `__init__`. Added
+`self._fs_dirs: list[Path] = dirs` at the end of `__init__` (in TASK-007's
+constructor code) as a minimal, necessary addition so `add_template_dir`
+has something to extend and rebuild the loader from. No public API,
+signature, or behavioural change beyond what TASK-007's acceptance
+criteria already covered.

@@ -5,7 +5,7 @@
   "type": "feature",
   "base_branch": "dev",
   "created_at": "2026-08-06T15:41:11+00:00",
-  "completed_at": null,
+  "completed_at": "2026-08-06T16:58:07+00:00",
   "tasks": [
     {
       "id": "TASK-014",
@@ -14,7 +14,7 @@
       "feature_id": "FEAT-003",
       "feature": "jinja-string-notify",
       "spec": "sdd/specs/jinja-string-notify.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [],
@@ -22,8 +22,9 @@
       "parallelism_notes": "Foundation task. Adds the compile entry point and detection helper to notify/templates.py. TASK-015 cannot import is_template_source or call from_string until this lands, and TASK-017 tests both. Shares no file with TASK-016, but is the head of the dependency chain so it runs first regardless.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:46:27+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-014-from-string-and-heuristic.md"
+      "completed_at": "2026-08-06T15:52:59+00:00",
+      "file": "sdd/tasks/completed/TASK-014-from-string-and-heuristic.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-015",
@@ -32,7 +33,7 @@
       "feature_id": "FEAT-003",
       "feature": "jinja-string-notify",
       "spec": "sdd/specs/jinja-string-notify.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "S",
       "depends_on": [
@@ -42,8 +43,9 @@
       "parallelism_notes": "Imports is_template_source and calls from_string, both introduced by TASK-014 — cannot compile before it. Edits notify/providers/base.py, which no other task in this feature touches, but the import dependency forces sequencing.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:46:27+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-015-prepare-dispatch.md"
+      "completed_at": "2026-08-06T15:55:30+00:00",
+      "file": "sdd/tasks/completed/TASK-015-prepare-dispatch.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-016",
@@ -52,7 +54,7 @@
       "feature_id": "FEAT-003",
       "feature": "jinja-string-notify",
       "spec": "sdd/specs/jinja-string-notify.spec.md",
-      "status": "in-progress",
+      "status": "done-with-issues",
       "priority": "medium",
       "effort": "S",
       "depends_on": [],
@@ -60,8 +62,9 @@
       "parallelism_notes": "Genuinely independent: a one-line annotation change in notify/models.py, which no other task in this feature reads or writes, with no import dependency on TASK-014. Could run in its own worktree. Also independently droppable — it implements spec §9 Q5, and deleting it plus its three tests affects nothing else.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:46:27+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-016-widen-message-template.md"
+      "completed_at": "2026-08-06T16:06:55+00:00",
+      "file": "sdd/tasks/completed/TASK-016-widen-message-template.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-017",
@@ -70,7 +73,7 @@
       "feature_id": "FEAT-003",
       "feature": "jinja-string-notify",
       "spec": "sdd/specs/jinja-string-notify.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -82,8 +85,9 @@
       "parallelism_notes": "Exercises the full surface produced by TASK-014, TASK-015 and TASK-016 — every one must be complete first. Creates tests/test_jinja_string_templates.py and touches nothing under notify/.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:46:27+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-017-offline-test-suite.md"
+      "completed_at": "2026-08-06T16:27:30+00:00",
+      "file": "sdd/tasks/completed/TASK-017-offline-test-suite.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-018",
@@ -92,7 +96,7 @@
       "feature_id": "FEAT-003",
       "feature": "jinja-string-notify",
       "spec": "sdd/specs/jinja-string-notify.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "S",
       "depends_on": [
@@ -104,8 +108,9 @@
       "parallelism_notes": "Touches only docs/, README.md and the single __version__ line in notify/version.py — no file overlap with TASK-017, so the two could run concurrently in separate worktrees once TASK-014/015/016 land. Depends on those three because it documents what was actually built, not what was specified. Note: FEAT-002 TASK-011 bumps notify/version.py to the same 1.6.0, so expect a trivial both-changed conflict on whichever branch merges second.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:46:27+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-018-docs-and-version-bump.md"
+      "completed_at": "2026-08-06T16:34:36+00:00",
+      "file": "sdd/tasks/completed/TASK-018-docs-and-version-bump.md",
+      "verification": "verified"
     }
   ]
 }

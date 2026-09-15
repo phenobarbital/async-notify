@@ -5,7 +5,7 @@
   "type": "feature",
   "base_branch": "dev",
   "created_at": "2026-08-06T15:26:57+00:00",
-  "completed_at": null,
+  "completed_at": "2026-08-06T18:01:27+00:00",
   "tasks": [
     {
       "id": "TASK-007",
@@ -14,7 +14,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [],
@@ -22,8 +22,9 @@
       "parallelism_notes": "Foundation task. Rewrites the TemplateParser constructor and environment in notify/templates.py; TASK-008 and TASK-009 edit the same file, and TASK-010 depends on the tolerant-directory behaviour introduced here. Must run first.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-007-jinjaconfig-and-environment.md"
+      "completed_at": "2026-08-06T15:47:07+00:00",
+      "file": "sdd/tasks/completed/TASK-007-jinjaconfig-and-environment.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-008",
@@ -32,7 +33,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -42,8 +43,9 @@
       "parallelism_notes": "Edits notify/templates.py, the same file as TASK-007 and TASK-009. Needs the ChoiceLoader/DictLoader chain built by TASK-007.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-008-public-api-extension.md"
+      "completed_at": "2026-08-06T15:52:15+00:00",
+      "file": "sdd/tasks/completed/TASK-008-public-api-extension.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-009",
@@ -52,7 +54,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "S",
       "depends_on": [
@@ -62,8 +64,9 @@
       "parallelism_notes": "Edits notify/templates.py, the same file as TASK-007 and TASK-008. Ordered after TASK-008 because add_filter is re-implemented as a delegation to add_filters().",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-009-defect-fixes.md"
+      "completed_at": "2026-08-06T15:54:35+00:00",
+      "file": "sdd/tasks/completed/TASK-009-defect-fixes.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-010",
@@ -72,7 +75,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -82,8 +85,9 @@
       "parallelism_notes": "Touches only notify/notify.py — file-disjoint from TASK-008 and TASK-009. Once TASK-007 lands it could run concurrently in a separate worktree. Per CLAUDE.md the feature still runs sequentially in one worktree by default; the flag records that the option exists.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-010-lazy-template-env.md"
+      "completed_at": "2026-08-06T16:01:51+00:00",
+      "file": "sdd/tasks/completed/TASK-010-lazy-template-env.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-011",
@@ -92,7 +96,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "S",
       "depends_on": [],
@@ -100,8 +104,9 @@
       "parallelism_notes": "Touches only pyproject.toml and notify/version.py — file-disjoint from every other task and dependency-free. Resolves the spec's open question about PyPI distribution names; requires network access.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-011-packaging-extra-and-version.md"
+      "completed_at": "2026-08-06T16:09:32+00:00",
+      "file": "sdd/tasks/completed/TASK-011-packaging-extra-and-version.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-012",
@@ -110,7 +115,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -120,8 +125,9 @@
       "parallelism_notes": "Covers the full post-refactor TemplateParser surface, so it needs TASK-007, TASK-008 and TASK-009 complete (TASK-009 depends transitively on both). Creates tests/test_templates.py, which does not exist today.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-012-unit-tests-templateparser.md"
+      "completed_at": "2026-08-06T16:25:56+00:00",
+      "file": "sdd/tasks/completed/TASK-012-unit-tests-templateparser.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-013",
@@ -130,7 +136,7 @@
       "feature_id": "FEAT-002",
       "feature": "templateparser-refactor",
       "spec": "sdd/specs/templateparser-refactor.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [
@@ -141,8 +147,9 @@
       "parallelism_notes": "Exercises the lazy singleton from TASK-010 and the ProviderBase seam. Ordered after TASK-012 because both create test modules that manipulate notify imports; running them from one worktree avoids sys.modules interference between suites.",
       "assigned_to": null,
       "started_at": "2026-08-06T15:33:29+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-013-integration-tests-lazy-env.md"
+      "completed_at": "2026-08-06T16:42:41+00:00",
+      "file": "sdd/tasks/completed/TASK-013-integration-tests-lazy-env.md",
+      "verification": "verified"
     }
   ]
 }

@@ -365,10 +365,29 @@ When you pick up this task:
 
 ## Completion Note
 
-*(Agent fills this in when done)*
+**Completed by**: sdd-worker (Claude)
+**Date**: 2026-08-06
+**Notes**: Implemented exactly as scoped in `notify/templates.py`: added
+`JINJA_MARKERS`, `DEFAULT_STRING_CACHE_SIZE`, `is_template_source()`, a
+module logger init in `TemplateParser.__init__` (`self.logger`), the
+`_string_cache` / `_string_cache_size` / `_string_cache_lock` instance
+state (via a new `string_cache_size` kwarg), `TemplateParser.from_string()`
+(with the private `_compile_source()` error-mapping helper), and
+`TemplateParser.clear_string_cache()`. Compilation happens outside the
+lock; only cache read/insert/evict is guarded. Verified all acceptance
+criteria by hand (isinstance checks, sync/async render, cache hit/miss/
+disable/LRU-eviction/reuse-refresh, `clear_string_cache()`, syntax-error →
+`ValueError` with `"Notify:"` + line number, empty/blank/non-str → `ValueError`,
+never `FileNotFoundError`, `is_template_source()` true/false table). Ran
+`ruff check notify/templates.py`: only the pre-existing 5 `UP045`
+(`Optional[X]` vs `X | None`) warnings remain, confirmed present on
+baseline `dev` before this change (verified via `git show dev:notify/templates.py`
++ ruff) — left untouched per task scope ("purely additive", do not touch
+`get_template`/`render`/`render_async`/`add_filter`/`environment`). Fixed
+only the `I001` import-sort triggered by this task's own new imports.
+Full suite `pytest tests/ -v`: 59 passed, 2 failed, 3 errors — identical to
+baseline `dev` (pre-existing `mock_region` AWS validation and asyncio
+event-loop-fixture issues in `test_ses.py` / `test_outlook1.py`,
+unrelated to this change).
 
-**Completed by**: <session or agent ID>
-**Date**: YYYY-MM-DD
-**Notes**: What was implemented, any deviations from scope, issues encountered.
-
-**Deviations from spec**: none | describe if any
+**Deviations from spec**: none.
