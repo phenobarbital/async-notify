@@ -9,7 +9,7 @@ from azure.identity.aio import (
 )
 from azure.identity import UsernamePasswordCredential
 from msgraph import GraphServiceClient
-from ._msgraph_patch import patch_graph_host_os_header
+from notify.providers._msgraph import patch_graph_host_os_header  # was: from ._msgraph_patch import …
 from msgraph.generated.models.chat import Chat
 from msgraph.generated.models.chat_type import ChatType
 from msgraph.generated.models.chat_message import ChatMessage

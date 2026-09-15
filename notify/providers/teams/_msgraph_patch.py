@@ -1,60 +1,11 @@
-"""Runtime patch for msgraph-core's ``HostOs`` telemetry header.
+"""Backward-compatible re-export of the shared Microsoft Graph HostOs patch.
 
-The Microsoft Graph SDK telemetry middleware
-(``msgraph_core.middleware.telemetry.GraphTelemetryHandler``) builds the
-``HostOs`` request header from ``platform.system()`` + ``platform.version()``
-without sanitising it::
-
-    system = platform.system()      # 'Linux'
-    version = platform.version()    # '#107~22.04.1-Ubuntu SMP ... UTC '  (trailing space)
-    host_os = f'{system} {version}'
-    request.headers.update({'HostOs': host_os})
-
-On some Linux kernels (e.g. Ubuntu HWE) ``platform.version()`` ends with a
-trailing space, producing an HTTP header value that ``h11`` (httpx's protocol
-backend, used by the Graph SDK) rejects with ``Illegal header value``. The
-Teams provider, which dispatches messages through the Graph API, then fails.
-
-This module monkeypatches the handler so the value is stripped of illegal
-surrounding whitespace. It is idempotent and safe to call repeatedly.
-
-The bug is still present in msgraph-core 1.4.0, so a version bump does not fix
-it. Remove this patch once msgraph-core sanitises the header upstream.
+The implementation moved to ``notify.providers._msgraph`` (FEAT-004, M1) so
+every Graph-based provider (``teams``, ``office365``) shares one copy. This
+module is kept as a compatibility shim so the old import path,
+``from notify.providers.teams._msgraph_patch import patch_graph_host_os_header``,
+keeps working unchanged.
 """
-import logging
-import platform
-from typing import Any
+from notify.providers._msgraph import patch_graph_host_os_header  # re-export, keeps old import path
 
-_PATCHED: bool = False
-
-
-def patch_graph_host_os_header() -> bool:
-    """Sanitise the ``HostOs`` telemetry header set by msgraph-core.
-
-    Replaces ``GraphTelemetryHandler._add_host_os_header`` with a variant that
-    strips illegal surrounding whitespace from the OS version string before it
-    becomes an HTTP header value.
-
-    Returns:
-        bool: ``True`` if the patch is in place (applied now or previously),
-            ``False`` if the target could not be located (msgraph-core absent
-            or its internals changed).
-    """
-    global _PATCHED
-    if _PATCHED:
-        return True
-    try:
-        from msgraph_core.middleware.telemetry import GraphTelemetryHandler
-    except Exception:  # pragma: no cover - msgraph-core optional/absent
-        return False
-
-    def _add_host_os_header(self, request: Any) -> None:
-        host_os = f"{platform.system()} {platform.version()}".strip()
-        request.headers.update({"HostOs": host_os})
-
-    GraphTelemetryHandler._add_host_os_header = _add_host_os_header
-    _PATCHED = True
-    logging.getLogger(__name__).debug(
-        "Patched msgraph-core GraphTelemetryHandler: sanitised HostOs header."
-    )
-    return True
+__all__ = ("patch_graph_host_os_header",)
