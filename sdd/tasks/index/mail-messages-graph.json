@@ -253,7 +253,7 @@
       "feature_id": "FEAT-004",
       "feature": "mail-messages-graph",
       "spec": "sdd/specs/mail-messages-graph.spec.md",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -274,8 +274,8 @@
       "parallelism_notes": "Final verification imports and exercises every feature component after implementation lands.",
       "assigned_to": null,
       "started_at": null,
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-31-graph-mail-test-suite.md"
+      "completed_at": "2026-09-15T22:55:07+00:00",
+      "file": "sdd/tasks/completed/TASK-31-graph-mail-test-suite.md"
     },
     {
       "id": "TASK-32",
