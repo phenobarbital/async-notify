@@ -232,6 +232,7 @@ def _fake_large_file_upload_task(monkeypatch):
             self.session = session
             self.request_adapter = request_adapter
             self.stream = stream
+            self.max_chunk_size = kwargs.get("max_chunk_size")
             type(self).instances.append(self)
 
         async def upload(self, after_chunk_upload=None):
@@ -296,7 +297,31 @@ async def test_draft_upload_strategy_large(graph_client_mock, _fake_large_file_u
     draft_builder = route._draft_builders["draft-1"]
     draft_builder.attachments.create_upload_session.post.assert_called_once()
     assert len(_fake_large_file_upload_task.instances) == 1
+    # the chunk size must be Graph's mail-attachment-safe value, never the
+    # SDK's own 5 MiB default (which Graph rejects on the first PUT)
+    assert _fake_large_file_upload_task.instances[0].max_chunk_size == graph_mail_module.UPLOAD_CHUNK_SIZE
+    assert _fake_large_file_upload_task.instances[0].max_chunk_size < 4 * 1024 * 1024
     draft_builder.send.post.assert_called_once()
+
+
+async def test_draft_upload_preserves_inline_cid_metadata(graph_client_mock, _fake_large_file_upload_task):
+    """A large inline image routed through the upload session must keep its
+    content_id/is_inline so cid: references still resolve (not silently
+    become a regular attachment)."""
+    client, route = graph_client_mock
+    sender = GraphMailSender(client, provider="office365", logger=MagicMock())
+
+    large_inline = OutboundAttachment(
+        name="logo.png", content=b"y" * 10, size=INLINE_REQUEST_LIMIT + 1, content_id="logo", is_inline=True
+    )
+    message = build_message(subject="s", html='<img src="cid:logo">', to=[], attachments=[large_inline])
+
+    await sender.send(mailbox=None, message=message, attachments=[large_inline], save_to_sent_items=True, recipients=[])
+
+    draft_builder = route._draft_builders["draft-1"]
+    upload_body = draft_builder.attachments.create_upload_session.post.call_args.args[0]
+    assert upload_body.attachment_item.content_id == "logo"
+    assert upload_body.attachment_item.is_inline is True
 
 
 async def test_draft_upload_save_to_sent_items_false_warns(graph_client_mock, _fake_large_file_upload_task):

@@ -42,10 +42,16 @@ class AuthFlow(str, Enum):
 
 
 #: Delegated scopes (Mail.Send + Mail.Send.Shared); every other flow uses
-#: the Graph ``.default`` scope.
+#: the Graph ``.default`` scope. Mail.ReadWrite is also required: the
+#: draft_upload strategy (graph_mail.GraphMailSender) calls
+#: `POST /me/messages` to create the draft before uploading large
+#: attachments, and Graph requires Mail.ReadWrite for that operation —
+#: Mail.Send alone is not sufficient (verified against Microsoft Graph's
+#: own permission requirements for the "Create Message" operation).
 DELEGATED_SCOPES: tuple[str, ...] = (
     "https://graph.microsoft.com/Mail.Send",
     "https://graph.microsoft.com/Mail.Send.Shared",
+    "https://graph.microsoft.com/Mail.ReadWrite",
 )
 
 #: Module-level context var carrying the OBO user assertion for the

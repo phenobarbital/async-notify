@@ -46,6 +46,13 @@ INLINE_REQUEST_LIMIT: int = 3 * 1024 * 1024
 #: Per-file hard limit (bytes). Larger files are rejected before any Graph call.
 MAX_ATTACHMENT_SIZE: int = 150 * 1024 * 1024
 
+#: Upload-session chunk size for large mail attachments. Graph's mail
+#: attachment upload sessions require each PUT fragment to be a multiple of
+#: 320 KiB and strictly under 4 MiB; `msgraph_core.LargeFileUploadTask`'s own
+#: default (5,242,880 bytes = 5 MiB) exceeds that and is rejected by Graph on
+#: the very first chunk, so it must never be used here.
+UPLOAD_CHUNK_SIZE: int = 320 * 1024 * 12  # 3,932,160 bytes (~3.75 MiB)
+
 #: Graph `error.code` values that mean "auth/permission failure" and must
 #: raise `NotifyAuthError` instead of returning a failed `MailSendResult`.
 AUTH_ERROR_CODES: frozenset[str] = frozenset(
@@ -341,17 +348,29 @@ class GraphMailSender:
         return sorted(selected)
 
     async def _upload_large_attachment(self, draft_route: Any, attachment: OutboundAttachment) -> None:
-        """Upload one large attachment onto an existing draft via an upload session."""
+        """Upload one large attachment onto an existing draft via an upload session.
+
+        Preserves `content_id`/`is_inline` so an inline CID image that
+        overflows the embed budget still renders instead of silently
+        becoming a regular attachment.
+        """
         upload_body = CreateUploadSessionPostRequestBody(
             attachment_item=AttachmentItem(
                 attachment_type=AttachmentType.File,
                 name=attachment.name,
                 size=attachment.size,
                 content_type=attachment.content_type,
+                content_id=attachment.content_id,
+                is_inline=attachment.is_inline,
             )
         )
         session = await draft_route.attachments.create_upload_session.post(upload_body)
-        task = LargeFileUploadTask(session, self._graph.request_adapter, BytesIO(attachment.content))
+        task = LargeFileUploadTask(
+            session,
+            self._graph.request_adapter,
+            BytesIO(attachment.content),
+            max_chunk_size=UPLOAD_CHUNK_SIZE,
+        )
         await task.upload()
 
     async def _send_mail_strategy(
