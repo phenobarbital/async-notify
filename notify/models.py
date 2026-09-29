@@ -8,13 +8,7 @@ from email.parser import Parser
 from email.policy import default as policy_default
 from datamodel import BaseModel, Column, Field
 
-
-CONTENT_TYPES = [
-    "text/plain",
-    "text/html",
-    "multipart/alternative",
-    "application/json"
-]
+CONTENT_TYPES = ["text/plain", "text/html", "multipart/alternative", "application/json"]
 
 
 def auto_uuid(*args, **kwargs):  # pylint: disable=W0613
@@ -116,12 +110,9 @@ class BlockMessage(Message):
 
     sender: Union[Actor, list[Actor]] = Field(required=False)
     recipient: Union[Actor, list[Actor]] = Field(required=False)
-    content_type: Literal[
-        "text/plain",
-        "text/html",
-        "multipart/alternative",
-        "application/json"
-    ] = Field(default_factory=CONTENT_TYPES)
+    content_type: Literal["text/plain", "text/html", "multipart/alternative", "application/json"] = Field(
+        default_factory=CONTENT_TYPES
+    )
     attachments: list[Attachment] = Field(default_factory=list)
     flags: list[str]
 
@@ -132,6 +123,31 @@ class MailAttachment(Attachment):
     content_disposition: str
     attachment: Any
     size: int
+
+
+class OutboundAttachment(BaseModel):
+    """A file prepared for a Microsoft Graph mail message (regular or inline CID)."""
+
+    name: str = Field(required=True)
+    content: bytes = Field(required=True, repr=False)
+    content_type: str = Field(required=True, default="application/octet-stream")
+    size: int = Field(required=True)
+    content_id: Optional[str] = Field(required=False, default=None)
+    is_inline: bool = Field(required=False, default=False)
+
+
+class MailSendResult(BaseModel):
+    """Outcome of one Microsoft Graph `send()` call (one message to all recipients)."""
+
+    success: bool = Field(required=True)
+    provider: str = Field(required=True)
+    mailbox: Optional[str] = Field(required=False, default=None)
+    recipients: list[str] = Field(required=False, default_factory=list)
+    strategy: Literal["send_mail", "draft_upload"] = Field(required=True, default="send_mail")
+    message_id: Optional[str] = Field(required=False, default=None)
+    status_code: Optional[int] = Field(required=False, default=None)
+    error_code: Optional[str] = Field(required=False, default=None)
+    error: Optional[str] = Field(required=False, default=None)
 
 
 class MailMessage(BlockMessage):
@@ -147,22 +163,15 @@ class MailMessage(BlockMessage):
     raw: InitVar = ""
 
     def __post_init__(self, raw: str) -> None:  # pylint: disable=W0221
-        if (msg := Parser(policy=policy_default).parsestr(raw)):
+        if msg := Parser(policy=policy_default).parsestr(raw):
             self.subject = msg["subject"]
             self.sender = msg["from"]
             self.recipient = msg["to"]
             self.body = msg.get_body()
             self.attachments = []
             for part in msg.walk():
-                if (
-                    part.get_content_maintype() == "text"
-                    and "attachment" not in part.get("Content-Disposition", "")
-                ):
-                    self.content = (
-                        part.get_payload(decode=True)
-                        .decode(part.get_param("charset", "ascii"))
-                        .strip()
-                    )
+                if part.get_content_maintype() == "text" and "attachment" not in part.get("Content-Disposition", ""):
+                    self.content = part.get_payload(decode=True).decode(part.get_param("charset", "ascii")).strip()
                 if part.get_filename() is not None:
                     attach = MailAttachment(
                         **{
@@ -193,22 +202,26 @@ class TeamsChannel(BaseModel):
     channel_id: str
     team_id: str
 
+
 class TeamsChat(BaseModel):
     name: str
     chat_id: str
     team_id: str
+
 
 class TeamsWebhook(BaseModel):
     uri: str = Field(required=True)
 
 
 class TeamsTarget(BaseModel):
-    os: str = Field(default='default')
+    os: str = Field(default="default")
     uri: str = Field(required=True)
+
 
 class TeamsAction(BaseModel):
     name: str = Field(required=False, default=None)
     targets: list[TeamsTarget] = Field(default_factory=list)
+
 
 class TeamsSection(BaseModel):
     activityTitle: str = Field(required=False, default=None)
@@ -225,35 +238,16 @@ class TeamsSection(BaseModel):
         items = []
 
         if self.activityTitle:
-            items.append({
-                "type": "TextBlock",
-                "size": "medium",
-                "weight": "bolder",
-                "text": self.activityTitle
-            })
+            items.append({"type": "TextBlock", "size": "medium", "weight": "bolder", "text": self.activityTitle})
         if self.activitySubtitle:
-            items.append({
-                "type": "TextBlock",
-                "spacing": "none",
-                "weight": "bold",
-                "text": self.activitySubtitle
-            })
+            items.append({"type": "TextBlock", "spacing": "none", "weight": "bold", "text": self.activitySubtitle})
         if self.activityImage:
-            items.append({
-                "type": "Image",
-                "size": "small",
-                "url": self.activityImage
-            })
+            items.append({"type": "Image", "size": "small", "url": self.activityImage})
         if self.facts:
-            items.append({
-                "type": "FactSet",
-                "facts": self.facts
-            })
+            items.append({"type": "FactSet", "facts": self.facts})
 
-        return {
-            "type": "Container",
-            "items": items
-        }
+        return {"type": "Container", "items": items}
+
 
 class CardAction(BaseModel):
     type: str = Field(required=False, default=None)
@@ -279,12 +273,7 @@ class TeamsCard(BaseModel):
         return super().__post_init__()
 
     def addAction(self, type: str, title: str, **kwargs):
-        action_data = {
-            "type": type,
-            "title": title,
-            "data": kwargs.get("data", {}),
-            "url": kwargs.get("url", "")
-        }
+        action_data = {"type": type, "title": title, "data": kwargs.get("data", {}), "url": kwargs.get("url", "")}
 
         self.actions.append(CardAction(**action_data))
 
@@ -294,62 +283,45 @@ class TeamsCard(BaseModel):
         return section
 
     def addInput(self, id: str, label: str, is_required: bool = False, errorMessage: str = None, style: str = None):
-        element = {
-            "type": "Input.Text",
-            "id": id,
-            "label": label,
-            "isRequired": is_required
-        }
+        element = {"type": "Input.Text", "id": id, "label": label, "isRequired": is_required}
         if errorMessage is not None:
             element["errorMessage"] = errorMessage
         if style is not None:
             element["style"] = style
         if element:
-            self.body_objects.append(
-                element
-            )
+            self.body_objects.append(element)
 
     def to_dict(self):
         data = super(TeamsCard, self).to_dict()
-        del data['card_id']
-        del data['body_objects']
-        del data['actions']
-        data['@type'] = "MessageCard"
-        data['@context'] = "http://schema.org/extensions"
+        del data["card_id"]
+        del data["body_objects"]
+        del data["actions"]
+        data["@type"] = "MessageCard"
+        data["@context"] = "http://schema.org/extensions"
         return data
 
     def to_adaptative(self) -> dict:
         body = []
         actions = []
         if self.title:
-            body.append({
-                "type": "TextBlock",
-                "size": "Medium",
-                "weight": "Bolder",
-                "text": self.title,
-                "horizontalAlignment": "Center",
-                "wrap": True,
-                "style": "heading"
-            })
+            body.append(
+                {
+                    "type": "TextBlock",
+                    "size": "Medium",
+                    "weight": "Bolder",
+                    "text": self.title,
+                    "horizontalAlignment": "Center",
+                    "wrap": True,
+                    "style": "heading",
+                }
+            )
         if self.summary:
-            body.append({
-                "type": "TextBlock",
-                "size": "large",
-                "weight": "bolder",
-                "text": self.summary
-            })
+            body.append({"type": "TextBlock", "size": "large", "weight": "bolder", "text": self.summary})
         if self.text:
-            body.append({
-                "type": "TextBlock",
-                "text": self.text,
-                "wrap": True
-            })
+            body.append({"type": "TextBlock", "text": self.text, "wrap": True})
         if self.sections:
             sections = []
-            body.append({
-                "type": "Container",
-                "items": sections
-            })
+            body.append({"type": "Container", "items": sections})
             sections.extend(section.to_adaptative() for section in self.sections)
         if self.body_objects:
             body.extend(iter(self.body_objects))
@@ -362,9 +334,7 @@ class TeamsCard(BaseModel):
             "type": "AdaptiveCard",
             "version": self.version,
             "contentType": "application/vnd.microsoft.card.adaptive",
-            "metadata": {
-                "webUrl": "https://contoso.com/tab"
-            },
+            "metadata": {"webUrl": "https://contoso.com/tab"},
             "body": body,
             "actions": actions,
         }

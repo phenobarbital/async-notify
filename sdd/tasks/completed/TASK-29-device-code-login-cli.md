@@ -57,7 +57,30 @@ async def complete_device_flow(self, flow: dict) -> None: ...
 
 ## Acceptance Criteria
 
-- [ ] `--token-store memory` exits 2 and explains why it is unsafe for bootstrap.
-- [ ] Successful mocked device flow persists the cache and exits 0.
-- [ ] `NotifyAuthError`, including timeouts, exits 1 through stderr.
-- [ ] `pytest tests/test_office365_login.py -q` passes.
+- [x] `--token-store memory` exits 2 and explains why it is unsafe for bootstrap.
+- [x] Successful mocked device flow persists the cache and exits 0.
+- [x] `NotifyAuthError`, including timeouts, exits 1 through stderr.
+- [x] `pytest tests/test_office365_login.py -q` passes.
+
+### Completion Note
+
+Added `notify/providers/office365/login.py` with `device_code_login()`
+(builds a `DELEGATED` `MsalAsyncCredential`, runs `initiate_device_flow`
+→ `complete_device_flow`, always closes the credential in a `finally`)
+and `main()` (argparse: `--username` required, `--tenant-id`/`--client-id`
+default to `O365_TENANT_ID`/`O365_CLIENT_ID`, `--token-store` accepts
+`memory`/`file`/`redis` but explicitly rejects `memory` with a
+explanatory stderr message before anything else runs — accepting it as
+an argparse choice, rather than omitting it, is what let me give the
+specific "would lose the token" message instead of argparse's generic
+"invalid choice" text). Exit codes: `2` for `--token-store memory` or a
+missing tenant/client id, `1` for any `NotifyAuthError` from
+`device_code_login` (its message reaches stderr, unmodified — MSAL error
+text never contains secrets per TASK-22), `0` on success. All output is
+`sys.stderr.write`, never `print`. Added
+`tests/test_office365_login.py` (8 tests: memory-store refusal, missing
+tenant/client id, argparse's own missing-`--username` exit 2, a fully
+mocked successful CLI run, a mocked `NotifyAuthError` CLI run, and two
+`device_code_login()`-level tests against a fake credential covering the
+full flow and error propagation) — all pass. `flake8` is not installed
+in this environment; lint could not be run.

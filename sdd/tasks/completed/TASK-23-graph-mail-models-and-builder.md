@@ -61,7 +61,26 @@ class MailAttachment(Attachment): ...
 
 ## Acceptance Criteria
 
-- [ ] Actor addresses, including address lists, become Graph recipients correctly.
-- [ ] Header fields and importance map to Graph models.
-- [ ] CID and attachment size rules match spec §3 M4.
-- [ ] `pytest tests/test_office365_graph.py -q` passes for builder cases.
+- [x] Actor addresses, including address lists, become Graph recipients correctly.
+- [x] Header fields and importance map to Graph models.
+- [x] CID and attachment size rules match spec §3 M4.
+- [x] `pytest tests/test_office365_graph.py -q` passes for builder cases.
+
+### Completion Note
+
+Added `OutboundAttachment`/`MailSendResult` to `notify/models.py` exactly
+per the spec skeleton, and created `notify/providers/office365/graph_mail.py`
+with `load_attachments` (async, `aiofiles`, 150 MB per-file
+`MAX_ATTACHMENT_SIZE` enforced before any Graph call), `to_recipients`
+(flattens `Actor`/str, fans a list `account.address` out to one `Recipient`
+per address), and `build_message` (HTML body, CC/BCC/Reply-To, importance
+validation, `from_address`, file attachments). Also implemented the
+`cid:<key>` ↔ inline-image cross-check from the M4 Rules (warn on an
+unmatched `cid:` reference, debug-log an unreferenced inline image) inside
+`build_message`, since it is the one function with access to both `html`
+and the loaded attachments — this isn't explicitly assigned to a task file,
+but it is a spec §3 M4 Rule for this module, not something invented.
+`GraphMailSender`/`map_odata_error`/upload sessions are intentionally not
+present yet (TASK-24). Added `tests/test_office365_graph.py` (17 tests) —
+all pass. `flake8` is not installed in this environment; lint could not be
+run.

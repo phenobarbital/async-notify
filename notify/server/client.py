@@ -8,11 +8,8 @@ from navconfig.logging import logging
 from qw.discovery import get_client_discovery
 from qw.conf import WORKER_LIST
 from .server import NotifyWrapper
-from ..conf import (
-    NOTIFY_REDIS,
-    NOTIFY_DEFAULT_PORT,
-    NOTIFY_USE_DISCOVERY
-)
+from .wrapper import reject_queued_secrets
+from ..conf import NOTIFY_REDIS, NOTIFY_DEFAULT_PORT, NOTIFY_USE_DISCOVERY
 
 
 class NotifyClient:
@@ -29,8 +26,8 @@ class NotifyClient:
         redis_host: str = "localhost",
         redis_port: int = 6379,
         redis_db: int = 5,
-        tcp_host: str = 'localhost',
-        tcp_port: str = 8991
+        tcp_host: str = "localhost",
+        tcp_port: str = 8991,
     ):
         """
         Initialize NotifyClient.
@@ -43,7 +40,7 @@ class NotifyClient:
             tcp_host: The host for TCP connections.
             tcp_port: The port for TCP connections.
         """
-        self.logger = logging.getLogger('Notify.Client')
+        self.logger = logging.getLogger("Notify.Client")
         if not redis_url:
             self.redis_url = NOTIFY_REDIS
         else:
@@ -56,9 +53,7 @@ class NotifyClient:
             # get worker list from discovery:
             _, worker_list = get_client_discovery()
             if not worker_list:
-                self.logger.warning(
-                    'EMPTY WORKER LIST: Trying to connect to a default Worker'
-                )
+                self.logger.warning("EMPTY WORKER LIST: Trying to connect to a default Worker")
                 # try to connect with the default worker
                 self.tcp_host = WORKER_LIST[0][0]
                 self.tcp_port = WORKER_LIST[0][1]
@@ -81,23 +76,16 @@ class NotifyClient:
     async def connect(self):
         """Connect to Redis using aioredis."""
         if self.redis_url:
-            self.redis = aioredis.from_url(
-                self.redis_url,
-                decode_responses=True
-            )
+            self.redis = aioredis.from_url(self.redis_url, decode_responses=True)
         else:
             self.redis = aioredis.Redis(
-                host=self.redis_host,
-                port=self.redis_port,
-                db=self.redis_db,
-                decode_responses=True
+                host=self.redis_host, port=self.redis_port, db=self.redis_db, decode_responses=True
             )
-        self.logger.debug(
-            f"Connected to Redis at {self.redis_url or f'{self.redis_host}:{self.redis_port}'}"
-        )
+        self.logger.debug(f"Connected to Redis at {self.redis_url or f'{self.redis_host}:{self.redis_port}'}")
 
     async def publish(self, message: dict, channel: str):
         """Publish a message to Redis PUB/SUB channel."""
+        reject_queued_secrets(message)
         if not self.redis:
             await self.connect_redis()
 
@@ -107,6 +95,7 @@ class NotifyClient:
 
     async def stream(self, message: dict, stream: str, use_wrapper: bool = False):
         """Publish a message to a Redis Stream."""
+        reject_queued_secrets(message)
         if not self.redis:
             await self.connect_redis()
 
@@ -114,21 +103,17 @@ class NotifyClient:
         if use_wrapper is True:
             fn = NotifyWrapper(**message)
             serialized_task = cloudpickle.dumps(fn)
-            encoded_task = base64.b64encode(serialized_task).decode('utf-8')
-            msg = {
-                "uid": fn.uid,
-                "task": encoded_task
-            }
+            encoded_task = base64.b64encode(serialized_task).decode("utf-8")
+            msg = {"uid": fn.uid, "task": encoded_task}
         else:
             data = json.dumps(message)
             msg = {"message": data}
         await self.redis.xadd(stream, msg)
-        self.logger.debug(
-            f"Message published to stream {stream}: {message}"
-        )
+        self.logger.debug(f"Message published to stream {stream}: {message}")
 
     async def send(self, message: dict):
         """Send a message via a TCP connection."""
+        reject_queued_secrets(message)
         try:
             _, writer = await asyncio.open_connection(self.tcp_host, self.tcp_port)
 

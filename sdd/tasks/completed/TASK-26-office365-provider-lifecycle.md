@@ -67,8 +67,39 @@ class Office365(ProviderEmail):
 
 ## Acceptance Criteria
 
-- [ ] All six flow-resolution rules work, including legacy password warning.
-- [ ] Constructor rejects `user_assertion` and does not expose consumed certificate-password fields.
-- [ ] Two `connect()` calls create one Graph client and acquire no token.
-- [ ] `close()` persists/closes the credential and clears the client.
-- [ ] `pytest tests/test_office365_provider.py -q` passes for lifecycle cases.
+- [x] All six flow-resolution rules work, including legacy password warning.
+- [x] Constructor rejects `user_assertion` and does not expose consumed certificate-password fields.
+- [x] Two `connect()` calls create one Graph client and acquire no token.
+- [x] `close()` persists/closes the credential and clears the client.
+- [x] `pytest tests/test_office365_provider.py -q` passes for lifecycle cases.
+
+### Completion Note
+
+Rewrote `Office365.__init__`/`connect()`/`close()`/`auth_flow` on Microsoft
+Graph exactly per the M6 lifecycle rules: the 6-step flow-resolution
+precedence (`_resolve_auth_flow`), `user_assertion` rejected at
+construction (`ProviderError`), `client_certificate_password` kept off
+`self` entirely (stored as `self._client_certificate_password`) so it
+can never leak the way `ProviderBase`'s leftover-kwarg `setattr` would —
+every other consumed kwarg is captured by explicit signature parameters,
+so it never reaches that mechanism either. `connect()` is idempotent and
+builds the token store + `MsalAsyncCredential` + `GraphServiceClient`
+with zero network calls (verified: `credential._app is None` right after
+`connect()`, since MSAL app construction is deferred inside
+`MsalAsyncCredential` per TASK-22). `close()` persists the cache via the
+credential and clears both `_graph`/`_credential`. Added
+`tests/test_office365_provider.py` (11 tests, all `async def` — a plain
+`def` test that constructs a `ProviderBase` subclass hit a pre-existing
+`asyncio.get_event_loop()`/uvloop ordering issue when run alongside other
+async test files; using `async def` throughout sidesteps it, matching
+this repo's existing test convention). Two of the flow-resolution tests
+had to `monkeypatch` `O365_CLIENT_SECRET`/`O365_USER`/`O365_PASSWORD`/
+`O365_AUTH_FLOW` to `None`, because this machine's navconfig env already
+defines real O365 credentials that would otherwise short-circuit the
+precedence chain. Full-suite run (`pytest tests/ --ignore=tests/integration`):
+289 passed — the only failures are pre-existing and untouched by this
+task (`tests/test_ses.py` × 2, a `botocore`/`aiobotocore` region-name
+validation issue; `tests/test_outlook1.py` × 3, the same event-loop
+ordering issue in sync test functions I did not write, in a file TASK-28
+will rewrite). `flake8` is not installed in this environment; lint could
+not be run.

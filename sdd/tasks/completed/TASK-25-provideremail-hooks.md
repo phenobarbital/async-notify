@@ -60,8 +60,31 @@ async def __sent__(self, to, message, result, **kwargs): ...
 
 ## Acceptance Criteria
 
-- [ ] Existing providers retain their current behavior by default.
-- [ ] Batched sending produces one result and one callback invocation.
-- [ ] Declared connect and delivery exceptions propagate unchanged.
-- [ ] `user_assertion` can be withheld from callbacks.
-- [ ] `pytest tests/test_mail_hooks.py -q` passes.
+- [x] Existing providers retain their current behavior by default.
+- [x] Batched sending produces one result and one callback invocation.
+- [x] Declared connect and delivery exceptions propagate unchanged.
+- [x] `user_assertion` can be withheld from callbacks.
+- [x] `pytest tests/test_mail_hooks.py -q` passes.
+
+### Completion Note
+
+Added `batch_recipients`, `raise_errors`, `redacted_send_kwargs` class
+attributes to `ProviderEmail` with the specified defaults (`False`, `()`,
+`frozenset()`). `send()` gained an `except self.raise_errors as err: ...;
+raise` branch (evaluated at runtime against the instance attribute — an
+empty tuple never matches, so default behavior is untouched) around both
+`connect()` and the per-recipient/batch send path, and a `batch_recipients`
+branch that calls `_send_` once with the full recipient list and
+`__sent__` once. `redacted_send_kwargs` filters only the kwargs forwarded
+to `__sent__`/the `sent` callback; `_send_` itself still receives the
+unredacted kwargs. Added `tests/test_mail_hooks.py` (6 tests via a
+`_DummyMailProvider` subclass) — all pass. Verified `tests/test_email_utf8.py`
+(the real `ProviderEmail.send()` path, no hooks touched) — 15/15 still
+pass. `tests/test_ses.py` has 2 pre-existing failures
+(`botocore.exceptions.InvalidRegionError` on `region_name='mock_region'`)
+unrelated to this change: `Ses.send()` fully overrides `ProviderEmail.send()`
+and never calls `super().send()` (verified at `ses.py:158`), so these
+hooks cannot affect it; confirmed by diffing `notify/providers/mail.py`
+against `origin/dev` — the diff touches only the new class attributes and
+`send()`. `flake8` is not installed in this environment; lint could not
+be run.

@@ -62,7 +62,19 @@ patch_graph_host_os_header()
 
 ## Acceptance Criteria
 
-- [ ] `GRAPH_DEFAULT_SCOPE` is `https://graph.microsoft.com/.default`.
-- [ ] Existing and shared import paths resolve to the same callable.
-- [ ] The patch is idempotent and retains the existing missing-dependency behavior.
-- [ ] `pytest tests/test_msgraph_helper.py -q` passes.
+- [x] `GRAPH_DEFAULT_SCOPE` is `https://graph.microsoft.com/.default`.
+- [x] Existing and shared import paths resolve to the same callable.
+- [x] The patch is idempotent and retains the existing missing-dependency behavior.
+- [x] `pytest tests/test_msgraph_helper.py -q` passes.
+
+### Completion Note
+
+Moved `patch_graph_host_os_header()` verbatim into new
+`notify/providers/_msgraph.py` (with `GRAPH_DEFAULT_SCOPE`).
+`notify/providers/teams/_msgraph_patch.py` is now a re-export shim, and
+`teams.py:12` imports from the shared module. Added
+`tests/test_msgraph_helper.py` (5 tests: constant value, shim identity,
+idempotence, missing-dependency `False` path, header-sanitisation
+behavior) — all pass. `flake8` is not installed in this environment
+(`python -m flake8` → `No module named flake8`), so lint could not be run;
+noted for the reviewer.

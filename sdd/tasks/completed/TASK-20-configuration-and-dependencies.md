@@ -63,7 +63,20 @@ O365_PASSWORD = config.get("O365_PASSWORD")
 
 ## Acceptance Criteria
 
-- [ ] All setting names and defaults match spec §3 M9.
-- [ ] Legacy Office365 packages are absent from `azure` and `all` extras.
-- [ ] `cryptography>=42.0` is explicit in both extras.
-- [ ] Relevant configuration/manifest tests pass offline.
+- [x] All setting names and defaults match spec §3 M9.
+- [x] Legacy Office365 packages are absent from `azure` and `all` extras.
+- [x] `cryptography>=42.0` is explicit in both extras.
+- [x] Relevant configuration/manifest tests pass offline.
+
+### Completion Note
+
+Added the full `O365_*` settings block to `notify/conf.py` (auth flow,
+sender, certificate path/thumbprint/password, token store kind/dir/redis/
+ttl, cipher key, allow-unencrypted flag) exactly as specified in §3 M9.
+`pyproject.toml`: removed `pyo365`, `o365`, `Office365-REST-Python-Client`
+from `azure` and `all`; added `cryptography>=42.0` explicitly to both.
+Ran `uv lock --no-upgrade` — `uv.lock` had no entries for the removed
+packages already, so the lockfile is unchanged (no diff to commit). Added
+`tests/test_office365_configuration.py` (4 tests: setting defaults, setting
+presence, legacy-package absence, explicit cryptography) — all pass.
+`flake8` is not installed in this environment; lint could not be run.

@@ -58,8 +58,20 @@ async def connect(self): ...
 
 ## Acceptance Criteria
 
-- [ ] Memory save/load/delete round-trips.
-- [ ] File data is encrypted with mode `0o600`, and invalid ciphertext is discarded.
-- [ ] Redis uses the configured prefix/TTL and falls back safely after a connection failure.
-- [ ] `build_token_store` accepts memory, file, redis, an instance, and `None` defaults.
-- [ ] `pytest tests/test_office365_token_store.py -q` passes without external Redis.
+- [x] Memory save/load/delete round-trips.
+- [x] File data is encrypted with mode `0o600`, and invalid ciphertext is discarded.
+- [x] Redis uses the configured prefix/TTL and falls back safely after a connection failure.
+- [x] `build_token_store` accepts memory, file, redis, an instance, and `None` defaults.
+- [x] `pytest tests/test_office365_token_store.py -q` passes without external Redis.
+
+### Completion Note
+
+Implemented `TokenCipher` (Fernet) and the `TokenStore` ABC with
+`MemoryTokenStore`, `FileTokenStore` (0600 writes, corrupt-value deletion),
+and `RedisTokenStore` (configurable prefix/TTL, falls back to an in-memory
+copy for the rest of the process on any connection error — never blocks or
+raises to the caller) plus `build_token_store()`. No test touches a real
+Redis server: the Redis tests monkeypatch `_get_redis()` with an in-memory
+fake/broken client. Added `tests/test_office365_token_store.py` (10 tests)
+— all pass. `flake8` is not installed in this environment; lint could not
+be run.
