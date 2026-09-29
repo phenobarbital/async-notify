@@ -485,3 +485,7 @@ When you pick up this task:
 **Notes**:
 
 **Deviations from spec**: none | describe if any
+
+### Completion Note
+Added ProviderDependencyError (.pyx + .pxd), PROVIDER_EXTRAS, _known_providers, rewritten LoadProvider (ModuleNotFoundError.name discriminator, `__all__` resolution), and both Notify entry points re-raise ProviderError unchanged and log at error. Notify("smtp") now returns SMTP; blocked-aiogram telegram raises ProviderDependencyError naming `async-notify[telegram]` (message cites the missing module, e.g. `aiogram.client`). Full suite: 329 passed; 2 test_ses failures are pre-existing on dev (botocore).
+KNOWN ISSUE (out of scope, pre-existing): `notify/providers/onesignal/onesignal.py` imports `ProviderIMBase`, which does not exist in providers/base.py, so LoadProvider("onesignal") raises a raw ImportError (propagates by design). Task AC "every package resolves via __all__" therefore cannot hold for onesignal until that is fixed.

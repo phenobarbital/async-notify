@@ -32,7 +32,7 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "L",
       "depends_on": [
@@ -42,8 +42,8 @@
       "parallelism_notes": "PROVIDER_EXTRAS values must name extras that TASK-33 creates. Also edits notify/notify.py, which TASK-35 edits next — must land first.",
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-34-provider-dependency-diagnostics.md"
+      "completed_at": "2026-09-29T18:08:46+00:00",
+      "file": "sdd/tasks/completed/TASK-34-provider-dependency-diagnostics.md"
     },
     {
       "id": "TASK-35",
