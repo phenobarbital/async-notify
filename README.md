@@ -11,8 +11,45 @@ The main goal of Async-Notify is using only asyncio-based technologies.
 
 ### Requirements ###
 
-* Python >= 3.8
+* Python >= 3.11
 * asyncio (https://pypi.python.org/pypi/asyncio/)
+
+### Installation ###
+
+The core install is deliberately slim: it carries only what the
+provider-agnostic core path needs. Providers that depend on a third-party SDK
+ship that SDK in an **extra** — install `async-notify[<extra>]` for one
+provider (for example `pip install async-notify[telegram]`),
+`async-notify[all]` for every provider, or `async-notify[server]`
+for the Redis-backed notify server.
+
+| Provider | `Notify(...)` alias | Extra required |
+|---|---|---|
+| Amazon (AWS) e-mail | `aws` | none — core install |
+| Dialpad | `dialpad` | none — core install (`aiohttp`) |
+| Dummy (testing) | `dummy` | none — core install |
+| Generic e-mail | `email` | none — core install |
+| Gmail | `gmail` | `google` |
+| Office 365 (Microsoft Graph) | `office365` | `azure` |
+| OneSignal push | `onesignal` | `push` |
+| Outlook (Microsoft Graph) | `outlook` | `azure` |
+| SendGrid | `sendgrid` | none — core install |
+| Amazon SES | `ses` | `ses` |
+| Slack | `slack` | `slack` |
+| SMTP | `smtp` | none — core install |
+| Microsoft Teams | `teams` | `azure` |
+| Telegram | `telegram` | `telegram` |
+| Twilio SMS | `twilio` | `twilio` |
+| XMPP | `xmpp` | `xmpp` |
+| Zoom | `zoom` | none — core install (`aiohttp`) |
+
+Other extras: `all` (every provider SDK plus the extras below), `server`
+(notify server: `cloudpickle`, `qworker`, `redis`), `uvloop`, `templates`
+(extra Jinja2 extensions) and `default` (`aiogram` + `slack_bolt`).
+
+The `notify` console script (`notify/__main__.py`) starts the Redis-backed
+notification server and therefore **requires the `server` extra**; without it
+the script exits with an import error for `cloudpickle`.
 
 ### Quick Tutorial ###
 

@@ -25,3 +25,7 @@ cdef class UninitializedError(ProviderError):
 cdef class NotifyTimeout(ProviderError):
     """Connection Timeout Error."""
     pass
+
+cdef class ProviderDependencyError(ProviderError):
+    """Raised when a provider's optional third-party SDK is missing."""
+    pass

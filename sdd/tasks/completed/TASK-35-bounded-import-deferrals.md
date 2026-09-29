@@ -447,3 +447,8 @@ When you pick up this task:
 **Deviations from spec**: `notify/providers/message.py` added to M3's file list —
 spec §3 M3 omitted it, but its annotation-only `Actor` import keeps `datamodel`
 resident and blocks AC-G6.
+
+### Completion Note
+Created notify/utils/templates.py; notify/templates.py re-exports silently; base.py and message.py use TYPE_CHECKING for Actor; notify.py defers conf/TemplateParser into `__getattr__` with `from __future__ import annotations`. `import notify` → jinja2/datamodel both False; after `notify.notify.TemplateEnv` jinja2 True. Full suite: 329 passed (2 pre-existing test_ses failures).
+Timing (`python -X importtime -c "import notify"`, after build_ext): before ≈ 214-217 ms, after ≈ 171-176 ms (runs: 176.0, 175.6, 174.6, 174.5, 171.3). Borderline vs the ≤175 ms target — reported, threshold not tuned.
+Deviation to note: the AC "importing notify.utils.templates leaves navconfig out of sys.modules" cannot hold as written — importing any `notify.*` submodule runs `notify/__init__.py`, which imports navconfig (out of scope per spec §1). jinja2 and datamodel are absent as required.

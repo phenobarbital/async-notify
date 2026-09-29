@@ -2,9 +2,11 @@
 
 Base Factory classes for all kind of Providers.
 """
+
+from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, TYPE_CHECKING
 from collections.abc import Awaitable, Callable
 from enum import Enum
 from functools import partial
@@ -12,12 +14,12 @@ from concurrent.futures import ThreadPoolExecutor
 from navconfig import DEBUG
 from navconfig.logging import logging
 from notify.types import SafeDict
-from notify.exceptions import (
-    ProviderError
-)
-from notify.models import Actor
-from notify.templates import is_template_source
+from notify.exceptions import ProviderError
+from notify.utils.templates import is_template_source
 from .message import ThreadMessage
+
+if TYPE_CHECKING:
+    from notify.models import Actor
 
 
 class ProviderType(Enum):
@@ -43,9 +45,7 @@ class ProviderBase(ABC):
         self.__name__ = str(self.__class__.__name__)
         self._args = args
         self._kwargs = kwargs
-        self.logger = logging.getLogger(
-            f"Notify.{self.__name__}"
-        )
+        self.logger = logging.getLogger(f"Notify.{self.__name__}")
         # environment config
         if "loop" in kwargs:
             self._loop = kwargs["loop"]
@@ -65,14 +65,13 @@ class ProviderBase(ABC):
         # add the Jinja Template Parser
         try:
             from notify.notify import TemplateEnv  # pylint: disable=C0415
+
             self._tpl = TemplateEnv
             self._template = None
         except Exception as err:
-            raise RuntimeError(
-                f"Notify: Can't load the Jinja2 Template Parser: {err}"
-            ) from err
+            raise RuntimeError(f"Notify: Can't load the Jinja2 Template Parser: {err}") from err
         # sent attribute:
-        self.sent = kwargs.pop('sent', None)
+        self.sent = kwargs.pop("sent", None)
         # set the values of attributes:
         for arg, val in kwargs.items():
             try:
@@ -140,12 +139,7 @@ class ProviderBase(ABC):
         """
         if self._kwargs:
             try:
-                msg = message.format_map(
-                    SafeDict(
-                        recipient=recipient,
-                        **self._kwargs
-                    )
-                )
+                msg = message.format_map(SafeDict(recipient=recipient, **self._kwargs))
             except (AttributeError, ValueError):
                 msg = message
         else:
@@ -206,9 +200,7 @@ class ProviderBase(ABC):
         return msg
 
     @abstractmethod
-    async def _send_(
-        self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs
-    ) -> Any:
+    async def _send_(self, to: Actor, message: Union[str, Any], subject: str = None, **kwargs) -> Any:
         """_send_.
           Method called for every recipient on Recipient list.
         Args:
@@ -223,41 +215,23 @@ class ProviderBase(ABC):
             Any: Result of sending process.
         """
 
-    async def __sent__(
-        self,
-        recipient: Actor,
-        message: str,
-        result: Optional[Any],
-        **kwargs
-    ):
+    async def __sent__(self, recipient: Actor, message: str, result: Optional[Any], **kwargs):
         """
         processing the callback for every notification that we sent.
         """
         if callable(self.sent):
             # logging:
-            self.logger.debug(
-                f"Notification sent to:> {recipient}"
-            )
+            self.logger.debug(f"Notification sent to:> {recipient}")
             try:
                 if asyncio.iscoroutinefunction(self.sent):
-                    await self.sent(
-                        recipient, message, result, **kwargs
-                    )  # type: ignore
+                    await self.sent(recipient, message, result, **kwargs)  # type: ignore
                 else:
-                    fn = partial(
-                        self.sent,
-                        recipient,
-                        message,
-                        result,
-                        **kwargs
-                    )
+                    fn = partial(self.sent, recipient, message, result, **kwargs)
                     result = await asyncio.to_thread(fn)
             except (asyncio.CancelledError, asyncio.TimeoutError) as ex:
                 self.logger.warning(str(ex))
             except (AttributeError, RuntimeError) as ex:
-                self.logger.error(
-                    f"Notify: Callback *Sent* Function fail with error {ex}"
-                )
+                self.logger.error(f"Notify: Callback *Sent* Function fail with error {ex}")
                 raise
 
     async def send(
@@ -273,18 +247,14 @@ class ProviderBase(ABC):
         public method to send messages and notifications
         """
         # template (or message) for preparation
-        message = await self._prepare_(
-            recipient=recipient,
-            message=message,
-            **kwargs
-        )
+        message = await self._prepare_(recipient=recipient, message=message, **kwargs)
         results = []
         recipients = [recipient] if not isinstance(recipient, list) else recipient
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             loop = asyncio.get_event_loop()
-        if self.blocking == 'asyncio':
+        if self.blocking == "asyncio":
             # asyncio:
             tasks = [self._send_(to, message, subject=subject, **kwargs) for to in recipients]
             # Using asyncio.as_completed to get results as they become available
@@ -294,46 +264,29 @@ class ProviderBase(ABC):
                     result = await future
                     results.append(result)
                 except Exception as e:
-                    self.logger.exception(
-                        f'Send for recipient {to} raised an exception: {e}',
-                        stack_info=True
-                    )
+                    self.logger.exception(f"Send for recipient {to} raised an exception: {e}", stack_info=True)
                 try:
                     await self.__sent__(to, message, result, loop=loop, **kwargs)
                 except Exception as e:
-                    self.logger.exception(
-                        f'Send for recipient {to} raised an exception: {e}',
-                        stack_info=True
-                    )
-        elif self.blocking == 'executor':
+                    self.logger.exception(f"Send for recipient {to} raised an exception: {e}", stack_info=True)
+        elif self.blocking == "executor":
             results = []
             for to in recipients:
                 with ThreadPoolExecutor(max_workers=10) as executor:
                     result = await loop.run_in_executor(
-                        executor,
-                        partial(self._send_, to, message, subject=subject, **kwargs)
+                        executor, partial(self._send_, to, message, subject=subject, **kwargs)
                     )
                     self.__sent__(to, message, _task=result, **kwargs)
                     results.append(result)
             for idx, result in enumerate(results):
                 if isinstance(result, Exception):
-                    self.logger.warning(
-                        f'Task {idx} raised exception: {result}'
-                    )
+                    self.logger.warning(f"Task {idx} raised exception: {result}")
         else:
             # is blocking, using threads and an asyncio queue
             msg_queue = asyncio.Queue()
             tasks = []
             for to in recipients:
-                t = ThreadMessage(
-                    self._send_,
-                    self.__sent__,
-                    msg_queue,
-                    to,
-                    message=message,
-                    subject=subject,
-                    **kwargs
-                )
+                t = ThreadMessage(self._send_, self.__sent__, msg_queue, to, message=message, subject=subject, **kwargs)
                 t.start()
                 tasks.append(t)
             # then run:
@@ -341,15 +294,13 @@ class ProviderBase(ABC):
             for t in tasks:
                 t.join()
                 if t.exc:
-                    self.logger.warning(f'Error: {t.exc!s}')
+                    self.logger.warning(f"Error: {t.exc!s}")
                 results.append(t.result)
             try:
                 while not msg_queue.empty():
                     await msg_queue.get()
             except Exception as e:
-                self.logger.error(
-                    f"An unexpected error occurred: {str(e)}"
-                )
+                self.logger.error(f"An unexpected error occurred: {str(e)}")
         return results
 
 
