@@ -1,9 +1,9 @@
 ChangeLog
 =========
 
-.. _v1.7.0:
+.. _v2.0.0:
 
-1.7.0 (unreleased)
+2.0.0 (2026-09-29)
 ------------------
 
 *Slimmer core install (breaking at install time):*
@@ -48,6 +48,15 @@ ChangeLog
       is now a deferred (``TYPE_CHECKING``) import. If you evaluate those hints at
       runtime, pass it explicitly: ``get_type_hints(fn, localns={"Actor": Actor})``
       with ``Actor`` from ``notify.models``.
+
+*Pure Python — Cython removed:*
+
+    - All Cython extensions (``notify/exceptions.pyx``,
+      ``notify/types/typedefs.pyx``) have been migrated to pure Python.
+      ``Cython`` is no longer a build dependency.
+    - Wheels are now universal (``py3-none-any``) instead of
+      platform-specific compiled wheels.
+    - The release workflow uses ``uv build`` instead of ``cibuildwheel``.
 
 .. _v0.6.0:
 
