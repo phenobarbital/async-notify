@@ -44,3 +44,13 @@ cdef class NotifyTimeout(ProviderError):
 
 cdef class NotifyAuthError(ProviderError):
     """Notify Authentication error."""
+
+
+cdef class ProviderDependencyError(ProviderError):
+    """Raised when a provider's optional third-party SDK is missing.
+
+    Distinguishes "this provider needs a package you have not installed"
+    from "this provider does not exist", which ``ProviderError`` alone
+    cannot express. Subclasses :class:`ProviderError`, so existing
+    ``except ProviderError`` handlers keep working unchanged.
+    """

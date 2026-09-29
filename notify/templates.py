@@ -24,6 +24,9 @@ from jinja2 import (
 )
 from navconfig import config as nav_config
 from navconfig.logging import logging
+from notify.utils.templates import JINJA_MARKERS, is_template_source  # noqa: F401
+
+# Re-exported for backward compatibility (silent, supported public path).
 
 PathLike = str | Path
 
@@ -57,17 +60,22 @@ class JinjaConfig:
             is wired.
         bytecode_cache_pattern: Filename pattern for the bytecode cache.
     """
+
     template_dirs: list[Path] = field(default_factory=list)
-    extensions: list[str] = field(default_factory=lambda: [
-        "jinja2.ext.i18n",
-        "jinja2.ext.loopcontrols",
-        "jinja2.ext.do",
-    ])
-    optional_extensions: list[str] = field(default_factory=lambda: [
-        "jinja2_time.TimeExtension",
-        "jinja2_iso8601.ISO8601Extension",
-        "jinja2_humanize_extension.HumanizeExtension",
-    ])
+    extensions: list[str] = field(
+        default_factory=lambda: [
+            "jinja2.ext.i18n",
+            "jinja2.ext.loopcontrols",
+            "jinja2.ext.do",
+        ]
+    )
+    optional_extensions: list[str] = field(
+        default_factory=lambda: [
+            "jinja2_time.TimeExtension",
+            "jinja2_iso8601.ISO8601Extension",
+            "jinja2_humanize_extension.HumanizeExtension",
+        ]
+    )
     enable_async: bool = True
     autoescape: Any = False
     undefined: Any = Undefined
@@ -85,33 +93,8 @@ jinja_config = {
     "extensions": list(JinjaConfig().extensions),
 }
 
-#: Jinja2 delimiters that can never appear in a template *filename*.
-JINJA_MARKERS: tuple[str, ...] = ("{{", "{%", "{#")
-
 #: Default upper bound on the number of compiled string templates retained.
 DEFAULT_STRING_CACHE_SIZE: int = 128
-
-
-def is_template_source(value: str) -> bool:
-    """Decide whether *value* is Jinja2 source text rather than a filename.
-
-    Conservative by design: returns ``True`` only when *value* carries a
-    signal that a template filename cannot carry — a Jinja2 delimiter
-    (``{{``, ``{%``, ``{#``) or a line break. Anything else is treated as a
-    filename, which preserves 1.5.7 behaviour for every existing caller.
-
-    Args:
-        value: The raw ``template=`` argument.
-
-    Returns:
-        ``True`` if *value* should be compiled as source, ``False`` if it
-        should be resolved through the filesystem loader.
-    """
-    if not isinstance(value, str) or not value:
-        return False
-    if any(marker in value for marker in JINJA_MARKERS):
-        return True
-    return "\n" in value or "\r" in value
 
 
 class TemplateParser:
@@ -133,7 +116,7 @@ class TemplateParser:
         autoescape: bool | Callable | None = None,
         strict_undefined: bool = False,
         strict_directory: bool = False,
-        **kwargs
+        **kwargs,
     ):
         """Construct a TemplateParser wrapping a Jinja2 Environment.
 
@@ -217,12 +200,9 @@ class TemplateParser:
         missing_dirs = [d for d in dirs if not d.exists()]
         if missing_dirs:
             if strict_directory:
-                raise RuntimeError(
-                    f"Notify: template directory {missing_dirs[0]} does not exist"
-                )
+                raise RuntimeError(f"Notify: template directory {missing_dirs[0]} does not exist")
             self.logger.warning(
-                "Notify: template director%s %s not found; "
-                "continuing in memory-only mode for %s.",
+                "Notify: template director%s %s not found; " "continuing in memory-only mode for %s.",
                 "y" if len(missing_dirs) == 1 else "ies",
                 missing_dirs,
                 missing_dirs,
@@ -236,9 +216,7 @@ class TemplateParser:
         self._fs_dirs: list[Path] = dirs
 
         ### legacy TEMPLATE_DEBUG handling — per-instance list, no shared leak.
-        template_debug = nav_config.getboolean(
-            "TEMPLATE_DEBUG", fallback=False
-        )
+        template_debug = nav_config.getboolean("TEMPLATE_DEBUG", fallback=False)
         extensions = list(cfg.extensions)
         if template_debug is True:
             extensions.append("jinja2.ext.debug")
@@ -274,9 +252,7 @@ class TemplateParser:
         if cache_dir is not None:
             cache_dir = Path(cache_dir)
             cache_dir.mkdir(parents=True, exist_ok=True)
-            bytecode_cache = FileSystemBytecodeCache(
-                directory=str(cache_dir), pattern=cfg.bytecode_cache_pattern
-            )
+            bytecode_cache = FileSystemBytecodeCache(directory=str(cache_dir), pattern=cfg.bytecode_cache_pattern)
 
         self.config = {
             "enable_async": cfg.enable_async,
@@ -296,9 +272,7 @@ class TemplateParser:
                 **self.config,
             )
         except Exception as err:
-            raise RuntimeError(
-                f"Notify: Error loading Template Environment: {err}"
-            ) from err
+            raise RuntimeError(f"Notify: Error loading Template Environment: {err}") from err
 
         ### adding custom filters:
         if self.filters is not None:
@@ -314,9 +288,7 @@ class TemplateParser:
 
         ### string-template cache (G5, R4, R5, R6):
         self._string_cache: OrderedDict[str, Template] = OrderedDict()
-        self._string_cache_size: int = kwargs.get(
-            "string_cache_size", DEFAULT_STRING_CACHE_SIZE
-        )
+        self._string_cache_size: int = kwargs.get("string_cache_size", DEFAULT_STRING_CACHE_SIZE)
         self._string_cache_lock = threading.Lock()
 
     def _compile_source(self, source: str) -> Template:
@@ -335,13 +307,9 @@ class TemplateParser:
         try:
             return self.env.from_string(source)
         except TemplateSyntaxError as ex:
-            raise ValueError(
-                f"Notify: Error parsing template source at line {ex.lineno}: {ex.message}"
-            ) from ex
+            raise ValueError(f"Notify: Error parsing template source at line {ex.lineno}: {ex.message}") from ex
         except Exception as err:
-            raise RuntimeError(
-                f"Notify: Error compiling template source: {err}"
-            ) from err
+            raise RuntimeError(f"Notify: Error compiling template source: {err}") from err
 
     def from_string(self, source: str, *, cache: bool = True) -> Template:
         """Compile Jinja2 *source* text into a Template on this Environment.
@@ -365,9 +333,7 @@ class TemplateParser:
             RuntimeError: On any other compilation failure.
         """
         if not isinstance(source, str) or not source.strip():
-            raise ValueError(
-                f"Notify: template source must be a non-empty string, got {source!r}"
-            )
+            raise ValueError(f"Notify: template source must be a non-empty string, got {source!r}")
         if not cache:
             return self._compile_source(source)
         key = sha256(source.encode("utf-8")).hexdigest()
@@ -397,13 +363,9 @@ class TemplateParser:
             self.template = self.env.get_template(str(filename))
             return self.template
         except TemplateNotFound as ex:
-            raise FileNotFoundError(
-                f"Template cannot be found: {filename}"
-            ) from ex
+            raise FileNotFoundError(f"Template cannot be found: {filename}") from ex
         except Exception as ex:
-            raise RuntimeError(
-                f"Error parsing Template {filename}: {ex}"
-            ) from ex
+            raise RuntimeError(f"Error parsing Template {filename}: {ex}") from ex
 
     @property
     def environment(self):
@@ -420,9 +382,7 @@ class TemplateParser:
             TypeError: If ``func`` is not callable.
         """
         if not callable(func):
-            raise TypeError(
-                f"Notify: Template Filter must be a callable function: {func!r}"
-            )
+            raise TypeError(f"Notify: Template Filter must be a callable function: {func!r}")
         self.add_filters({name or func.__name__: func})
 
     def render(self, filename: str, params: dict | None = None) -> str:
@@ -434,9 +394,7 @@ class TemplateParser:
             result = self.template.render(**params)
             return result
         except Exception as err:
-            raise RuntimeError(
-                f"Notify: Error rendering template: {filename}, error: {err}"
-            ) from err
+            raise RuntimeError(f"Notify: Error rendering template: {filename}, error: {err}") from err
 
     async def render_async(self, filename: str, params: dict | None = None) -> str:
         """Render.
@@ -450,13 +408,9 @@ class TemplateParser:
             result = await template.render_async(**params)
             return result
         except TemplateError as ex:
-            raise ValueError(
-                f"Template parsing error, template: {filename}: {ex}"
-            ) from ex
+            raise ValueError(f"Template parsing error, template: {filename}: {ex}") from ex
         except Exception as err:
-            raise RuntimeError(
-                f"Notify: Error rendering: {filename}, error: {err}"
-            ) from err
+            raise RuntimeError(f"Notify: Error rendering: {filename}, error: {err}") from err
 
     def add_template_dir(self, path: PathLike) -> None:
         """Add a filesystem directory to the search path at runtime.
@@ -480,10 +434,12 @@ class TemplateParser:
         # Rebuild the chain — carry the EXISTING in-memory mapping across.
         mapping = self._dict_loader.mapping
         self._dict_loader = DictLoader(mapping)
-        self._choice_loader = ChoiceLoader([
-            self._dict_loader,
-            FileSystemLoader([str(d) for d in self._fs_dirs]),
-        ])
+        self._choice_loader = ChoiceLoader(
+            [
+                self._dict_loader,
+                FileSystemLoader([str(d) for d in self._fs_dirs]),
+            ]
+        )
         self.env.loader = self._choice_loader
         # A name already resolved (and cached) from an earlier directory
         # must not keep winning over a template newly reachable through
@@ -545,13 +501,9 @@ class TemplateParser:
             template = self.env.from_string(source)
             return template.render(**params)
         except TemplateError as ex:
-            raise ValueError(
-                f"Template parsing error rendering inline source: {ex}"
-            ) from ex
+            raise ValueError(f"Template parsing error rendering inline source: {ex}") from ex
         except Exception as err:
-            raise RuntimeError(
-                f"Notify: Error rendering inline source: {err}"
-            ) from err
+            raise RuntimeError(f"Notify: Error rendering inline source: {err}") from err
 
     async def render_string_async(self, source: str, params: dict | None = None) -> str:
         """Render ad-hoc template source asynchronously.
@@ -569,13 +521,9 @@ class TemplateParser:
             template = self.env.from_string(source)
             return await template.render_async(**params)
         except TemplateError as ex:
-            raise ValueError(
-                f"Template parsing error rendering inline source: {ex}"
-            ) from ex
+            raise ValueError(f"Template parsing error rendering inline source: {ex}") from ex
         except Exception as err:
-            raise RuntimeError(
-                f"Notify: Error rendering inline source: {err}"
-            ) from err
+            raise RuntimeError(f"Notify: Error rendering inline source: {err}") from err
 
     def compile_directory(self, target: PathLike, *, zip: str | None = "deflated") -> None:
         """Explicitly compile templates to bytecode.

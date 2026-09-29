@@ -1,0 +1,8 @@
+notify/__init__.py
+notify/notify.py
+notify/providers/base.py
+notify/templates.py
+notify/conf.py
+pyproject.toml
+notify/providers/telegram/Telegram.py
+notify/server/wrapper.py

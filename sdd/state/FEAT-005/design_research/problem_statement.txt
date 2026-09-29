@@ -1,0 +1,19 @@
+> lazy-import-providers -- async-notify carga al arranque todos los providers de
+> comunicación, estén instaladas sus dependencias o no, hay que hacer un
+> lazy-import para reducir el startup cost de notify
+
+La premisa no se sostiene: **los providers ya se importan de forma perezosa**.
+`LoadProvider` (`notify/notify.py:70-86`) los resuelve con
+`importlib.import_module` en el momento de la llamada y los memoiza en
+`PROVIDERS`; `notify/providers/__init__.py` es solo un docstring y ningún módulo
+de `notify/` importa un provider concreto. Lo que sí es real es el coste medido
+de `import notify` — **192 ms**, de los cuales **~122 ms son navconfig** y
+**~69 ms datamodel+jinja2**, arrastrados por `notify/providers/base.py`, no por
+los providers. Tras el Q&A el feature se re-apunta: los dos objetivos primarios
+pasan a ser (a) un **diagnóstico accionable** cuando falta un SDK opcional —hoy
+un SDK ausente se reporta como `"No Provider telegram was Found"`, indistinguible
+de un nombre mal escrito y sin nombrar el extra— y (b) **adelgazar las
+dependencias core** de `pyproject.toml`, donde `pillow` figura sin que ningún
+módulo lo importe. Los deferrals de import (`Actor` vía `TYPE_CHECKING`,
+`is_template_source` fuera del módulo que importa jinja2) quedan como beneficio
+secundario acotado: ~192 → ~123 ms.

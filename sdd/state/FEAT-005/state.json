@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "feat_id": "FEAT-005",
+  "feature_slug": "lazy-import-providers",
+  "started_at": "2026-09-29T15:54:00Z",
+  "updated_at": "2026-09-29T16:20:00Z",
+  "source": {
+    "kind": "inline",
+    "jira_key": null,
+    "jira_url": null,
+    "file_path": null,
+    "raw_path": "sdd/state/FEAT-005/source.md",
+    "fetched_at": "2026-09-29T15:54:00Z",
+    "summary_oneline": "async-notify importa todos los providers al arranque; hacer lazy-import para reducir el startup cost"
+  },
+  "mode": "auto",
+  "detected_mode": "enrichment",
+  "phase": "committed",
+  "phases": {
+    "source": {
+      "status": "completed",
+      "started_at": "2026-09-29T15:54:00Z",
+      "completed_at": "2026-09-29T15:55:00Z"
+    },
+    "plan": {
+      "status": "completed",
+      "started_at": "2026-09-29T15:55:00Z",
+      "completed_at": "2026-09-29T15:58:00Z",
+      "queries_total": 18,
+      "approved_by_user": true,
+      "edited_by_user": false,
+      "plan_path": "sdd/state/FEAT-005/research_plan.json"
+    },
+    "research": {
+      "status": "completed",
+      "started_at": "2026-09-29T15:58:00Z",
+      "completed_at": "2026-09-29T16:06:00Z",
+      "duration_seconds": 480,
+      "queries_executed": 18,
+      "queries_skipped": 0,
+      "depth_reached": 1,
+      "files_read": 12,
+      "grep_calls": 11,
+      "git_calls": 1,
+      "truncated": false,
+      "truncation_reason": null
+    },
+    "synthesis": {
+      "status": "completed",
+      "started_at": "2026-09-29T16:06:00Z",
+      "completed_at": "2026-09-29T16:10:00Z",
+      "synthesis_path": "sdd/state/FEAT-005/synthesis.json",
+      "thinking_path": null,
+      "overall_confidence": "high",
+      "claims_total": 16,
+      "claims_high_conf": 14,
+      "claims_medium_conf": 1,
+      "claims_low_conf": 1,
+      "unknowns_count": 3,
+      "lint_passed": true,
+      "lint_iterations": 0
+    },
+    "qa": {
+      "status": "completed",
+      "started_at": "2026-09-29T16:12:00Z",
+      "completed_at": "2026-09-29T16:18:00Z",
+      "questions_total": 3,
+      "questions_answered": 3,
+      "skipped_reason": null
+    },
+    "output": {
+      "status": "completed",
+      "started_at": "2026-09-29T16:18:00Z",
+      "proposal_path": "sdd/proposals/lazy-import-providers.proposal.md",
+      "commit_sha": "e50473429b90941d61dfd58224c7d8af90234f36",
+      "next_command_recommended": "sdd-spec",
+      "next_command_rationale": "Unknowns resolved; localization high-confidence and measured. Spec must re-aim the feature to diagnostics + install weight, with import deferrals as a bounded secondary win.",
+      "completed_at": "2026-09-29T16:22:00Z"
+    }
+  },
+  "budget": {
+    "profile": "default",
+    "max_files_read": 40,
+    "max_grep_calls": 25,
+    "max_git_calls": 10,
+    "max_depth": 2,
+    "max_wall_seconds": 300
+  },
+  "consumed": {
+    "files_read": 12,
+    "grep_calls": 11,
+    "git_calls": 1,
+    "wall_seconds": 480
+  },
+  "resume_hint": {
+    "next_phase": "spec",
+    "next_action": "/sdd-spec FEAT-005"
+  }
+}

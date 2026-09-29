@@ -38,10 +38,7 @@ dependencies = [
   "python-datamodel>=0.3.12",
   "navconfig[default]>=2.2.0",
   "jinja2>=3.1.4",
-  "cloudpickle>=3.1.0",
-  "emoji>=1.7.0",
-  "aiobotocore>=2.15.2",
-  "pillow>=8.3.2",
+  "aiohttp>=3.10",
 ]
 
 [project.optional-dependencies]
@@ -55,6 +52,24 @@ default = [
 telegram = [
   "aiogram>=3.14.0",
   "moviepy>=2.2.1",
+  "emoji>=1.7.0",
+]
+ses = [
+  "aiobotocore>=2.15.2",
+]
+slack = [
+  "slack_bolt>=1.18.0",
+]
+twilio = [
+  "twilio>=8.2.2",
+]
+xmpp = [
+  "slixmpp>=1.10.0",
+]
+server = [
+  "cloudpickle>=3.1.0",
+  "qworker>=1.12.7",
+  "redis>=5.0",
 ]
 push = [
   "onesignal-sdk>=2.0.0",
@@ -70,6 +85,7 @@ azure = [
   "azure-identity>=1.23.0",
   "msgraph-sdk>=1.22.0",
   "cryptography>=42.0",
+  "redis>=5.0",
 ]
 templates = [
   "jinja2-time>=0.2.0",
@@ -95,6 +111,13 @@ all = [
   "msgraph-sdk>=1.22.0",
   "cryptography>=42.0",
   "moviepy>=2.2.1",
+  "emoji>=1.7.0",
+  "cloudpickle>=3.1.0",
+  "redis>=5.0",
+  "jinja2-time>=0.2.0",
+  "jinja2-iso8601>=1.0.0",
+  "jinja2-humanize-extension>=0.4.0",
+  "uvloop>=0.20.0; sys_platform != 'win32'",
 ]
 dev = [
   "aiounittest>=1.4.2",

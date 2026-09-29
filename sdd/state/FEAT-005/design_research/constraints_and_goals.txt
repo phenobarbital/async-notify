@@ -1,0 +1,34 @@
+- **La factory ya es perezosa.** `LoadProvider` usa `importlib.import_module` y
+  memoiza en `PROVIDERS`; `Notify.__new__` y `Notify.provider()` pasan ambos por
+  ella. *Implicación*: un feature de "lazy provider import" no tiene trabajo
+  pendiente en esa capa; debe re-apuntarse o no entrega nada medible.
+  *Evidence*: F002, F004
+
+- **No existe fan-out eager que eliminar.** `notify/providers/__init__.py` es un
+  docstring; los 21 imports relacionados con providers apuntan *hacia arriba*
+  (base/mail/_mime_utils). *Implicación*: la premisa del solicitante no se
+  cumple tal como está formulada. *Evidence*: F001, F003, F004
+
+- **Superficie pública mínima.** `__all__ = ("Notify", "ProviderType")`; los
+  tests importan providers por ruta completa, nunca por re-export del paquete.
+  *Implicación*: añadir pereza PEP 562 en la raíz es retrocompatible y no puede
+  romper la suite actual. *Evidence*: F010
+
+- **`filterwarnings = ["error", …]`** en `pyproject.toml`. *Implicación*:
+  cualquier `DeprecationWarning` emitido por un shim de compatibilidad tumba la
+  suite entera; los shims deben ser silenciosos. *Evidence*: F010
+
+- **Los SDKs de provider ya son extras, pero el README no documenta ninguno.**
+  *Implicación*: la historia de instalación está a medias — los extras existen
+  pero son indescubribles, y por eso el error de SDK ausente es inaccionable.
+  *Evidence*: F007, F012
+
+- **Ya existe el idioma correcto in-tree.** `Telegram.py:343-347` y
+  `notify/utils/uv.py:14` modelan "import diferido + nombra el extra" y
+  "dependencia opcional con guard silencioso". *Implicación*: seguir el idioma
+  existente, no inventar uno nuevo. *Evidence*: F008
+
+- **`notify.exceptions` y `notify/types/typedefs` son módulos Cython.**
+  *Implicación*: el worktree necesita `python setup.py build_ext --inplace`
+  antes de los tests, y las mediciones de import deben tomarse contra las
+  extensiones compiladas. *Evidence*: F005
