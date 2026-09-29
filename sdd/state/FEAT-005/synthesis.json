@@ -1,0 +1,500 @@
+{
+  "schema_version": "1.0",
+  "mode": "enrichment",
+  "summary_oneline": "Providers are already lazy-imported; the real ~192ms startup cost is navconfig+datamodel+jinja2 pulled in by notify/providers/base.py",
+  "overall_confidence": "high",
+  "localization": [
+    {
+      "path": "notify/__init__.py",
+      "symbol": "module body",
+      "lines": "6-16",
+      "role": "package entrypoint; imports providers.base, Notify, install_uvloop — no concrete provider",
+      "evidence": [
+        "F001"
+      ]
+    },
+    {
+      "path": "notify/notify.py",
+      "symbol": "LoadProvider",
+      "lines": "70-86",
+      "role": "already-lazy provider resolution via importlib; also the bad missing-dependency diagnostic",
+      "evidence": [
+        "F002",
+        "F008"
+      ]
+    },
+    {
+      "path": "notify/notify.py",
+      "symbol": "module imports",
+      "lines": "1-10",
+      "role": "eagerly imports .conf (navconfig) and .templates (jinja2) for symbols used only inside __getattr__",
+      "evidence": [
+        "F002",
+        "F005"
+      ]
+    },
+    {
+      "path": "notify/notify.py",
+      "symbol": "__getattr__",
+      "lines": "89-116",
+      "role": "existing PEP 562 precedent for deferral in this module",
+      "evidence": [
+        "F002"
+      ]
+    },
+    {
+      "path": "notify/providers/base.py",
+      "symbol": "module imports",
+      "lines": "12-19",
+      "role": "the single hot path: pulls navconfig, notify.models (datamodel) and notify.templates (jinja2)",
+      "evidence": [
+        "F005",
+        "F006"
+      ]
+    },
+    {
+      "path": "notify/providers/base.py",
+      "symbol": "Actor annotations",
+      "lines": "119,169,189,210,228,265",
+      "role": "annotation-only uses of Actor — removable via TYPE_CHECKING",
+      "evidence": [
+        "F006"
+      ]
+    },
+    {
+      "path": "notify/providers/base.py",
+      "symbol": "_prepare_",
+      "lines": "155",
+      "role": "sole call site of is_template_source, the reason jinja2 is on the import path",
+      "evidence": [
+        "F006",
+        "F011"
+      ]
+    },
+    {
+      "path": "notify/templates.py",
+      "symbol": "is_template_source",
+      "lines": "95-107",
+      "role": "pure string predicate with no jinja2 dependency, trapped in a jinja2-importing module",
+      "evidence": [
+        "F006"
+      ]
+    },
+    {
+      "path": "notify/conf.py",
+      "symbol": "module body",
+      "lines": "1-10",
+      "role": "evaluates navconfig at import time to build TEMPLATE_DIR and ~20 other constants",
+      "evidence": [
+        "F005"
+      ]
+    },
+    {
+      "path": "pyproject.toml",
+      "symbol": "[project] dependencies",
+      "lines": "36-45",
+      "role": "core deps carrying four provider-only/server-only packages (emoji, aiobotocore, pillow, cloudpickle)",
+      "evidence": [
+        "F007"
+      ]
+    },
+    {
+      "path": "notify/providers/telegram/Telegram.py",
+      "symbol": "video conversion guard",
+      "lines": "343-347",
+      "role": "in-tree precedent: deferred import with an actionable 'install the extra' message",
+      "evidence": [
+        "F008"
+      ]
+    },
+    {
+      "path": "notify/server/wrapper.py",
+      "symbol": "provider instantiation",
+      "lines": "71,83",
+      "role": "server path also routes through the lazy factory — no second eager surface",
+      "evidence": [
+        "F009"
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "statement": "The Notify factory already lazy-imports providers via importlib and memoises in PROVIDERS; a 'lazy provider import' feature has no work left to do at that layer.",
+      "implication": "The feature must be re-aimed at the base/conf/templates import chain, or it delivers nothing measurable.",
+      "evidence": [
+        "F002",
+        "F004"
+      ]
+    },
+    {
+      "statement": "notify/providers/__init__.py is a bare docstring and there is no downward import of any concrete provider anywhere in the package.",
+      "implication": "No eager fan-out exists to remove; the requester's premise does not hold as stated.",
+      "evidence": [
+        "F001",
+        "F003",
+        "F004"
+      ]
+    },
+    {
+      "statement": "Public surface is tiny: __all__ = ('Notify','ProviderType'); tests import providers by full module path, never via a package re-export.",
+      "implication": "PEP 562 laziness at the package root is backward-compatible and cannot break the existing suite.",
+      "evidence": [
+        "F010"
+      ]
+    },
+    {
+      "statement": "pyproject sets filterwarnings = ['error', ...].",
+      "implication": "Any DeprecationWarning emitted by a lazy shim fails the whole suite; shims must be silent.",
+      "evidence": [
+        "F010"
+      ]
+    },
+    {
+      "statement": "Provider SDKs are already declared as optional extras; README documents none of them.",
+      "implication": "The install story is half-built — the extras exist but are undiscoverable, which is why a missing SDK produces an unactionable error.",
+      "evidence": [
+        "F007",
+        "F012"
+      ]
+    },
+    {
+      "statement": "Telegram.py:343-347 and notify/utils/uv.py:14 already model the 'deferred import + name the extra' pattern.",
+      "implication": "Follow the existing idiom rather than inventing a new one.",
+      "evidence": [
+        "F008"
+      ]
+    },
+    {
+      "statement": "notify.exceptions and notify/types/typedefs are Cython modules requiring build_ext --inplace.",
+      "implication": "Any worktree used for this feature needs a Cython rebuild before tests; import-time measurements must be taken against built extensions.",
+      "evidence": [
+        "F005"
+      ]
+    }
+  ],
+  "recent_history": [
+    {
+      "commit": "b842186",
+      "message": "feat(templateparser-refactor): TASK-010 — lazy TemplateEnv singleton via PEP 562",
+      "relevance": "establishes the deferral idiom this feature extends",
+      "evidence": [
+        "F011"
+      ]
+    },
+    {
+      "commit": "64d3916",
+      "message": "fix: make uvloop optional and build Windows wheels",
+      "relevance": "establishes the optional-dependency-with-guard idiom",
+      "evidence": [
+        "F011"
+      ]
+    },
+    {
+      "commit": "1ea979a",
+      "message": "feat(jinja-string-notify): TASK-015 — three-way template= dispatch in ProviderBase._prepare_",
+      "relevance": "introduced the is_template_source call that put jinja2 on the startup path",
+      "evidence": [
+        "F011"
+      ]
+    }
+  ],
+  "scope": {
+    "whats_new": [
+      "A jinja2-free home for is_template_source (e.g. notify/templates/_predicates.py or notify/utils/), re-exported from notify.templates for compatibility.",
+      "An extras-aware error path in LoadProvider that distinguishes 'unknown provider' from 'provider's optional dependency missing' and names the extra to install.",
+      "A PROVIDER_EXTRAS mapping (provider name -> extra name) to drive that message.",
+      "A startup-cost regression test asserting that `import notify` leaves jinja2/datamodel (and ideally navconfig) out of sys.modules.",
+      "README section documenting which extra installs which provider."
+    ],
+    "whats_changed": [
+      {
+        "target": "notify/providers/base.py::module imports",
+        "change": "move Actor behind TYPE_CHECKING (annotation-only, F006) and is_template_source to a jinja2-free module or a function-local import",
+        "evidence": [
+          "F006"
+        ]
+      },
+      {
+        "target": "notify/notify.py::module imports",
+        "change": "defer `from .conf import TEMPLATE_DIR` and `from .templates import TemplateParser` into __getattr__, their only consumer",
+        "evidence": [
+          "F002",
+          "F005"
+        ]
+      },
+      {
+        "target": "notify/notify.py::LoadProvider",
+        "change": "fix the dead __import__ fallback that returns a module instead of the class, and emit an extras-aware ImportError message",
+        "evidence": [
+          "F008"
+        ]
+      },
+      {
+        "target": "pyproject.toml::[project] dependencies",
+        "change": "demote emoji, aiobotocore, pillow (unused) and cloudpickle (server-only) out of core into the appropriate extras",
+        "evidence": [
+          "F007"
+        ]
+      },
+      {
+        "target": "README.md",
+        "change": "document the extras matrix",
+        "evidence": [
+          "F012"
+        ]
+      }
+    ],
+    "non_goals": [
+      "Making notify/providers/* lazy — already lazy (F002, F004).",
+      "Building a provider registry, plugin discovery, or entry-points system.",
+      "Changing the ProviderBase / _send_ contract or any provider's runtime behaviour.",
+      "Vendoring or replacing navconfig.",
+      "Reducing install size of the `all` extra."
+    ],
+    "integration_risks": [
+      {
+        "risk": "Deferring navconfig is the only way to reach the big win (~122ms of 192ms), but notify/conf.py exports ~20 module-level constants consumed across the server and providers; making it lazy is a far larger change than the base.py deferrals.",
+        "mitigation": "Stage it: land the datamodel+jinja2 deferrals first (bounded, ~69ms), then evaluate a PEP 562 conf module separately with its own measurement.",
+        "evidence": [
+          "F005"
+        ]
+      },
+      {
+        "risk": "TYPE_CHECKING on Actor changes runtime annotation resolution; anything calling typing.get_type_hints() on ProviderBase methods would break.",
+        "mitigation": "Add `from __future__ import annotations` and grep for get_type_hints before landing.",
+        "evidence": [
+          "F006",
+          "F010"
+        ]
+      },
+      {
+        "risk": "filterwarnings=error means a compatibility shim that warns fails CI.",
+        "mitigation": "Re-export without deprecation warnings.",
+        "evidence": [
+          "F010"
+        ]
+      }
+    ],
+    "patterns_to_follow": [
+      {
+        "pattern": "PEP 562 module __getattr__ with a private memoisation slot, as in notify/notify.py:89-116",
+        "evidence": [
+          "F002"
+        ]
+      },
+      {
+        "pattern": "Deferred import + actionable 'install async-notify[<extra>]' message, as in Telegram.py:343-347",
+        "evidence": [
+          "F008"
+        ]
+      },
+      {
+        "pattern": "Optional dependency with a silent ImportError guard, as in notify/utils/uv.py:14",
+        "evidence": [
+          "F008"
+        ]
+      }
+    ]
+  },
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "notify/__init__.py imports no concrete provider; the providers package __init__ is an empty docstring.",
+      "evidence": [
+        "F001",
+        "F003"
+      ],
+      "confidence": "high",
+      "reasoning": "direct read of both files"
+    },
+    {
+      "id": "C2",
+      "claim": "The Notify factory already lazy-imports providers via importlib.import_module and memoises them in PROVIDERS.",
+      "evidence": [
+        "F002"
+      ],
+      "confidence": "high",
+      "reasoning": "direct read of LoadProvider and both factory entry points"
+    },
+    {
+      "id": "C3",
+      "claim": "No module anywhere in notify/ imports a concrete provider; all 21 provider-related imports point upward at base/mail/_mime_utils.",
+      "evidence": [
+        "F004",
+        "F009"
+      ],
+      "confidence": "high",
+      "reasoning": "exhaustive grep over notify/ including the server package"
+    },
+    {
+      "id": "C4",
+      "claim": "`import notify` costs ~192ms on this machine, stable across 5 runs.",
+      "evidence": [
+        "F005"
+      ],
+      "confidence": "high",
+      "reasoning": "direct measurement, 190.0-193.8ms"
+    },
+    {
+      "id": "C5",
+      "claim": "~122ms (63%) of that is navconfig and ~69ms (36%) is datamodel+jinja2; notify.providers.base has only 21ms of self time.",
+      "evidence": [
+        "F005"
+      ],
+      "confidence": "high",
+      "reasoning": "preload-and-remeasure attribution plus -X importtime self/cumulative split"
+    },
+    {
+      "id": "C6",
+      "claim": "base.py's datamodel edge is annotation-only (Actor) and its jinja2 edge is one pure-string predicate call (is_template_source).",
+      "evidence": [
+        "F006"
+      ],
+      "confidence": "high",
+      "reasoning": "every Actor reference read and confirmed to be an annotation; is_template_source body read and confirmed jinja2-free"
+    },
+    {
+      "id": "C7",
+      "claim": "A missing optional SDK surfaces as 'No Provider <x> was Found', conflating it with an unknown provider and never naming the extra.",
+      "evidence": [
+        "F008"
+      ],
+      "confidence": "high",
+      "reasoning": "executed probe blocking aiogram via sys.meta_path; full exception chain captured"
+    },
+    {
+      "id": "C8",
+      "claim": "LoadProvider's except-ImportError fallback re-imports the same failed classpath and, on success, returns the module rather than the provider class.",
+      "evidence": [
+        "F008"
+      ],
+      "confidence": "high",
+      "reasoning": "direct read; the fallback's return value differs in type from the happy path"
+    },
+    {
+      "id": "C9",
+      "claim": "pillow is declared as a core dependency but no module in notify/ imports PIL.",
+      "evidence": [
+        "F007"
+      ],
+      "confidence": "high",
+      "reasoning": "grep for PIL returned only unrelated activityImage field hits in models.py"
+    },
+    {
+      "id": "C10",
+      "claim": "emoji, aiobotocore and cloudpickle are core dependencies used by exactly one provider or by the server only.",
+      "evidence": [
+        "F007"
+      ],
+      "confidence": "high",
+      "reasoning": "grep located each to a single consumer"
+    },
+    {
+      "id": "C11",
+      "claim": "Demoting those four packages changes install weight, not `import notify` time, since none is reachable from the entrypoint.",
+      "evidence": [
+        "F001",
+        "F005",
+        "F007"
+      ],
+      "confidence": "high",
+      "reasoning": "follows from C1 and the measured import tree, which contains none of them"
+    },
+    {
+      "id": "C12",
+      "claim": "The public surface is __all__ = ('Notify','ProviderType') and tests import providers by full path, so package-level laziness is backward compatible.",
+      "evidence": [
+        "F010"
+      ],
+      "confidence": "high",
+      "reasoning": "direct read of __all__ plus grep over all 7 test files"
+    },
+    {
+      "id": "C13",
+      "claim": "Deferring datamodel+jinja2 out of base.py should bring `import notify` from ~192ms to ~123ms.",
+      "evidence": [
+        "F005",
+        "F006"
+      ],
+      "confidence": "medium",
+      "reasoning": "arithmetic from the preload attribution; not yet verified by an actual patched build, and tree overlap could shift it"
+    },
+    {
+      "id": "C14",
+      "claim": "Deferring navconfig as well could approach the ~35ms marginal floor.",
+      "evidence": [
+        "F005"
+      ],
+      "confidence": "low",
+      "reasoning": "the 35ms figure is the marginal cost with all three preloaded, which is a lower bound, not an achievable target; conf.py's ~20 eagerly-evaluated constants may make full deferral impractical"
+    },
+    {
+      "id": "C15",
+      "claim": "This work continues an established in-tree direction (PEP 562 TemplateEnv, optional uvloop) rather than introducing a new pattern.",
+      "evidence": [
+        "F011",
+        "F008"
+      ],
+      "confidence": "high",
+      "reasoning": "two on-theme commits in the last 120 days plus two existing guard sites"
+    },
+    {
+      "id": "C16",
+      "claim": "README documents no extras at all, making the missing-SDK error unactionable even once the message is improved.",
+      "evidence": [
+        "F012"
+      ],
+      "confidence": "high",
+      "reasoning": "grep for install/extras keywords returned zero matches"
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "U1",
+      "question": "The stated premise (providers loaded eagerly regardless of installed deps) does not hold — providers are already lazy. Was the real symptom a slow `import notify`, or an error/crash when an optional SDK is missing?",
+      "blocks_claims": [
+        "C2",
+        "C7"
+      ],
+      "plausible_answers": [
+        "Slow import — startup latency is the pain",
+        "A crash/confusing error on a missing SDK",
+        "Both",
+        "Install weight of the dependency tree"
+      ],
+      "user_answer": "Error confuso sin SDK + Peso de instalación. (NO el import lento — ese es un beneficio secundario.)"
+    },
+    {
+      "id": "U2",
+      "question": "Is there a target for `import notify` (e.g. under 50ms), or is 'measurably faster' enough?",
+      "blocks_claims": [
+        "C13",
+        "C14"
+      ],
+      "plausible_answers": [
+        "Under 50ms — justifies attacking navconfig",
+        "Under 125ms — the bounded datamodel+jinja2 work suffices",
+        "No hard target, just measurable improvement"
+      ],
+      "user_answer": "~123 ms mediante los deferrals acotados (datamodel+jinja2 fuera de base.py). No se ataca navconfig en este ciclo."
+    },
+    {
+      "id": "U3",
+      "question": "Is demoting emoji/aiobotocore/pillow/cloudpickle from core dependencies acceptable as a breaking install change for existing users?",
+      "blocks_claims": [
+        "C10",
+        "C11"
+      ],
+      "plausible_answers": [
+        "Yes, ship in a minor with release notes",
+        "Yes but keep them in the `default` extra",
+        "No, leave install deps alone this cycle"
+      ],
+      "user_answer": "Sí, con release notes: emoji/aiobotocore/pillow/cloudpickle bajan a extras; pillow se elimina."
+    }
+  ],
+  "recommended_next_command": {
+    "command": "sdd-spec",
+    "rationale": "Los tres desconocidos están resueltos y la localización es alta-confianza y medida. El spec debe re-apuntar el feature: el objetivo primario pasa a ser el diagnóstico accionable de dependencia faltante y el adelgazamiento de las deps core; los deferrals de import quedan como beneficio secundario acotado (~192→~123 ms)."
+  }
+}

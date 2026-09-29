@@ -1,0 +1,236 @@
+{
+  "schema_version": "1.0",
+  "mode_hint": "enrichment",
+  "rationale": "The source describes a desired change (lazy provider imports to cut startup cost), not a malfunction. Research must first verify the premise \u2014 that providers really are imported eagerly \u2014 then map every import path, the optional-dependency story in pyproject.toml, and the public API surface that a lazy scheme must preserve.",
+  "queries": [
+    {
+      "id": "Q001",
+      "intent": "Read the package entrypoint to see what notify/__init__.py imports at import time",
+      "type": "read",
+      "priority": 1,
+      "depth": 0,
+      "params": {
+        "path": "notify/__init__.py",
+        "lines": null
+      }
+    },
+    {
+      "id": "Q002",
+      "intent": "Read the Notify factory to understand current provider dispatch and the PROVIDERS registry",
+      "type": "read",
+      "priority": 1,
+      "depth": 0,
+      "params": {
+        "path": "notify/notify.py",
+        "lines": null
+      }
+    },
+    {
+      "id": "Q003",
+      "intent": "List every provider package to size the eager-import surface",
+      "type": "glob",
+      "priority": 1,
+      "depth": 0,
+      "params": {
+        "pattern": "notify/providers/**/__init__.py",
+        "max_results": 300
+      }
+    },
+    {
+      "id": "Q004",
+      "intent": "Find eager imports of concrete providers anywhere in the package (the premise under test)",
+      "type": "grep",
+      "priority": 1,
+      "depth": 0,
+      "params": {
+        "pattern": "from notify.providers|from .providers|import providers",
+        "path": "notify"
+      }
+    },
+    {
+      "id": "Q005",
+      "intent": "Detect any existing dynamic/lazy import machinery already in the codebase",
+      "type": "grep",
+      "priority": 1,
+      "depth": 0,
+      "params": {
+        "pattern": "importlib|import_module|__getattr__|pkgutil|iter_modules",
+        "path": "notify"
+      }
+    },
+    {
+      "id": "Q006",
+      "intent": "Check whether provider modules guard third-party imports with try/except ImportError",
+      "type": "grep",
+      "priority": 1,
+      "depth": 0,
+      "params": {
+        "pattern": "except ImportError|ModuleNotFoundError|NotSupported",
+        "path": "notify/providers"
+      }
+    },
+    {
+      "id": "Q007",
+      "intent": "Determine which provider dependencies are hard requirements vs optional extras",
+      "type": "read",
+      "priority": 1,
+      "depth": 0,
+      "params": {
+        "path": "pyproject.toml",
+        "lines": null
+      }
+    },
+    {
+      "id": "Q008",
+      "intent": "Inspect the providers package __init__ for an eager registry or re-export block",
+      "type": "read",
+      "priority": 1,
+      "depth": 0,
+      "params": {
+        "path": "notify/providers/__init__.py",
+        "lines": null
+      }
+    },
+    {
+      "id": "Q009",
+      "intent": "Read ProviderBase to learn the contract a lazy loader must still satisfy",
+      "type": "read",
+      "priority": 2,
+      "depth": 0,
+      "params": {
+        "path": "notify/providers/base.py",
+        "lines": null
+      }
+    },
+    {
+      "id": "Q010",
+      "intent": "Identify third-party top-level imports inside provider modules that dominate import cost",
+      "type": "grep",
+      "priority": 2,
+      "depth": 0,
+      "params": {
+        "pattern": "^import |^from ",
+        "path": "notify/providers"
+      }
+    },
+    {
+      "id": "Q011",
+      "intent": "Find public API re-exports users may rely on (Notify, providers, models) that lazy loading must preserve",
+      "type": "grep",
+      "priority": 2,
+      "depth": 0,
+      "params": {
+        "pattern": "__all__",
+        "path": "notify"
+      }
+    },
+    {
+      "id": "Q012",
+      "intent": "Check how the notify server / wrapper resolves providers, since it may bypass the factory",
+      "type": "grep",
+      "priority": 2,
+      "depth": 0,
+      "params": {
+        "pattern": "Notify\\(|PROVIDERS|get_provider",
+        "path": "notify/server"
+      }
+    },
+    {
+      "id": "Q013",
+      "intent": "Find tests that import providers directly and would constrain or detect a lazy refactor",
+      "type": "grep",
+      "priority": 2,
+      "depth": 0,
+      "params": {
+        "pattern": "from notify.providers|import notify",
+        "path": "tests"
+      }
+    },
+    {
+      "id": "Q014",
+      "intent": "Measure the real cost: which imports dominate `import notify` wall time today",
+      "type": "read",
+      "priority": 2,
+      "depth": 0,
+      "params": {
+        "path": "notify/conf.py",
+        "lines": null
+      }
+    },
+    {
+      "id": "Q015",
+      "intent": "Check recent activity on the factory and providers package for in-flight refactors",
+      "type": "git_log",
+      "priority": 3,
+      "depth": 0,
+      "params": {
+        "path": "notify/notify.py",
+        "since": "90 days ago",
+        "max_results": 20
+      }
+    },
+    {
+      "id": "Q016",
+      "intent": "Check recent activity on the providers tree for in-flight refactors",
+      "type": "git_log",
+      "priority": 3,
+      "depth": 0,
+      "params": {
+        "path": "notify/providers",
+        "since": "90 days ago",
+        "max_results": 20
+      }
+    },
+    {
+      "id": "Q017",
+      "intent": "Look for documented provider-installation / extras guidance that a lazy scheme must match",
+      "type": "grep",
+      "priority": 3,
+      "depth": 0,
+      "params": {
+        "pattern": "pip install|extras|optional",
+        "path": "README.md"
+      }
+    },
+    {
+      "id": "Q018",
+      "intent": "See whether setup.py participates in packaging providers or extras",
+      "type": "read",
+      "priority": 3,
+      "depth": 0,
+      "params": {
+        "path": "setup.py",
+        "lines": null
+      }
+    }
+  ],
+  "expected_findings": [
+    "Whether notify/__init__.py (or notify/providers/__init__.py) imports concrete providers eagerly",
+    "Whether the Notify factory already lazily imports via importlib and what PROVIDERS caches",
+    "The count of provider packages and their third-party top-level imports",
+    "Whether provider deps are hard requirements or optional extras in pyproject.toml",
+    "Whether missing dependencies currently raise at import time or at Notify() call time",
+    "Public API surface (__all__, re-exports) a lazy scheme must preserve",
+    "Test coverage that would break or detect the refactor"
+  ],
+  "meta": {
+    "source_signals": {
+      "named_entities": [
+        "notify",
+        "providers",
+        "lazy-import",
+        "startup cost"
+      ],
+      "verbs": [
+        "carga al arranque",
+        "hay que hacer"
+      ],
+      "polarity": "negative"
+    },
+    "estimated_budget_use": {
+      "files_read": 8,
+      "grep_calls": 9,
+      "git_calls": 2
+    }
+  }
+}
