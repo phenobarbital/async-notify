@@ -8,7 +8,7 @@ base_branch: dev
 **Feature ID**: FEAT-005
 **Date**: 2026-09-29
 **Author**: Jesus Lara (jlara@trocglobal.com)
-**Status**: draft
+**Status**: approved
 **Target version**: 1.7.0
 
 > **Slug note.** The slug `lazy-import-providers` is retained because it owns
