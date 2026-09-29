@@ -14,14 +14,14 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "high",
       "effort": "M",
       "depends_on": [],
       "parallel": true,
       "parallelism_notes": "Touches only pyproject.toml and uv.lock; shares no file with any other task. Spec's suggested order puts it first because TASK-34's messages and TASK-36's matrix both cite the extra names it defines.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": null,
       "file": "sdd/tasks/active/TASK-33-dependency-manifest.md"
     },
@@ -32,14 +32,16 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "high",
       "effort": "L",
-      "depends_on": ["TASK-33"],
+      "depends_on": [
+        "TASK-33"
+      ],
       "parallel": false,
       "parallelism_notes": "PROVIDER_EXTRAS values must name extras that TASK-33 creates. Also edits notify/notify.py, which TASK-35 edits next — must land first.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": null,
       "file": "sdd/tasks/active/TASK-34-provider-dependency-diagnostics.md"
     },
@@ -50,14 +52,16 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "medium",
       "effort": "M",
-      "depends_on": ["TASK-34"],
+      "depends_on": [
+        "TASK-34"
+      ],
       "parallel": false,
       "parallelism_notes": "Shares notify/notify.py with TASK-34; sequencing avoids a conflicting rewrite. Scope extended beyond spec M3 to include notify/providers/message.py, whose annotation-only Actor import otherwise keeps datamodel resident and blocks AC-G6.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": null,
       "file": "sdd/tasks/active/TASK-35-bounded-import-deferrals.md"
     },
@@ -68,14 +72,16 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "high",
       "effort": "S",
-      "depends_on": ["TASK-33"],
+      "depends_on": [
+        "TASK-33"
+      ],
       "parallel": true,
       "parallelism_notes": "Touches only README.md and CHANGES.rst — no file overlap with TASK-34/35/37/39. Can run concurrently with TASK-34 once TASK-33 has landed.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": null,
       "file": "sdd/tasks/active/TASK-36-installation-docs.md"
     },
@@ -86,14 +92,16 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "high",
       "effort": "M",
-      "depends_on": ["TASK-34"],
+      "depends_on": [
+        "TASK-34"
+      ],
       "parallel": true,
       "parallelism_notes": "Creates tests/test_provider_dependencies.py only. Once TASK-34 has landed it shares no file with TASK-36, TASK-38 or TASK-39.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": null,
       "file": "sdd/tasks/active/TASK-37-diagnostics-tests.md"
     },
@@ -104,14 +112,17 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "medium",
       "effort": "S",
-      "depends_on": ["TASK-33", "TASK-36"],
+      "depends_on": [
+        "TASK-33",
+        "TASK-36"
+      ],
       "parallel": true,
       "parallelism_notes": "Creates tests/test_dependency_manifest.py only. Needs TASK-36 as well as TASK-33 because test_readme_matrix_matches_manifest reads README.md, and TASK-34 for the PROVIDER_EXTRAS import.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": null,
       "file": "sdd/tasks/active/TASK-38-manifest-tests.md"
     },
@@ -122,14 +133,16 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "pending",
+      "status": "in-progress",
       "priority": "medium",
       "effort": "M",
-      "depends_on": ["TASK-35"],
+      "depends_on": [
+        "TASK-35"
+      ],
       "parallel": true,
       "parallelism_notes": "Creates tests/test_startup_imports.py only. Shares no file with any other task once TASK-35 has landed.",
       "assigned_to": null,
-      "started_at": null,
+      "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": null,
       "file": "sdd/tasks/active/TASK-39-startup-import-tests.md"
     }
