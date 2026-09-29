@@ -5,7 +5,7 @@
   "type": "feature",
   "base_branch": "dev",
   "created_at": "2026-09-29T00:00:00+00:00",
-  "completed_at": null,
+  "completed_at": "2026-09-29T20:05:24+00:00",
   "tasks": [
     {
       "id": "TASK-33",
@@ -23,7 +23,8 @@
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": "2026-09-29T18:07:14+00:00",
-      "file": "sdd/tasks/completed/TASK-33-dependency-manifest.md"
+      "file": "sdd/tasks/completed/TASK-33-dependency-manifest.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-34",
@@ -43,7 +44,8 @@
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": "2026-09-29T18:08:46+00:00",
-      "file": "sdd/tasks/completed/TASK-34-provider-dependency-diagnostics.md"
+      "file": "sdd/tasks/completed/TASK-34-provider-dependency-diagnostics.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-35",
@@ -63,7 +65,8 @@
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": "2026-09-29T18:09:32+00:00",
-      "file": "sdd/tasks/completed/TASK-35-bounded-import-deferrals.md"
+      "file": "sdd/tasks/completed/TASK-35-bounded-import-deferrals.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-36",
@@ -83,7 +86,8 @@
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": "2026-09-29T18:10:10+00:00",
-      "file": "sdd/tasks/completed/TASK-36-installation-docs.md"
+      "file": "sdd/tasks/completed/TASK-36-installation-docs.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-37",
@@ -103,7 +107,8 @@
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": "2026-09-29T18:12:37+00:00",
-      "file": "sdd/tasks/completed/TASK-37-diagnostics-tests.md"
+      "file": "sdd/tasks/completed/TASK-37-diagnostics-tests.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-38",
@@ -124,7 +129,8 @@
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": "2026-09-29T18:13:04+00:00",
-      "file": "sdd/tasks/completed/TASK-38-manifest-tests.md"
+      "file": "sdd/tasks/completed/TASK-38-manifest-tests.md",
+      "verification": "verified"
     },
     {
       "id": "TASK-39",
@@ -144,7 +150,8 @@
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
       "completed_at": "2026-09-29T18:13:56+00:00",
-      "file": "sdd/tasks/completed/TASK-39-startup-import-tests.md"
+      "file": "sdd/tasks/completed/TASK-39-startup-import-tests.md",
+      "verification": "verified"
     }
   ]
 }
