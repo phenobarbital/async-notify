@@ -15,7 +15,7 @@
   },
   "mode": "auto",
   "detected_mode": "enrichment",
-  "phase": "proposal_drafted",
+  "phase": "committed",
   "phases": {
     "source": {
       "status": "completed",
@@ -69,12 +69,13 @@
       "skipped_reason": null
     },
     "output": {
-      "status": "running",
+      "status": "completed",
       "started_at": "2026-09-29T16:18:00Z",
       "proposal_path": "sdd/proposals/lazy-import-providers.proposal.md",
-      "commit_sha": null,
+      "commit_sha": "e50473429b90941d61dfd58224c7d8af90234f36",
       "next_command_recommended": "sdd-spec",
-      "next_command_rationale": "Unknowns resolved; localization high-confidence and measured. Spec must re-aim the feature to diagnostics + install weight, with import deferrals as a bounded secondary win."
+      "next_command_rationale": "Unknowns resolved; localization high-confidence and measured. Spec must re-aim the feature to diagnostics + install weight, with import deferrals as a bounded secondary win.",
+      "completed_at": "2026-09-29T16:22:00Z"
     }
   },
   "budget": {
@@ -92,7 +93,7 @@
     "wall_seconds": 480
   },
   "resume_hint": {
-    "next_phase": "committed",
-    "next_action": "Commit proposal + state to dev"
+    "next_phase": "spec",
+    "next_action": "/sdd-spec FEAT-005"
   }
 }
