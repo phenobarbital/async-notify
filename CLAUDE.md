@@ -63,14 +63,10 @@ async-notify is built on async/await patterns. If a third-party SDK is
 sync-only, route it through `blocking = 'executor'` rather than blocking the
 event loop.
 
-## Cython Extensions
+## No Cython Extensions
 
-`notify/exceptions.pyx` and `notify/types/typedefs.pyx` are Cython modules.
-Follow `.claude/rules/cython-development.md`, and rebuild after editing:
-```bash
-python setup.py build_ext --inplace
-```
-Generated `.c` sources are NOT tracked in git.
+All modules are pure Python. The former Cython modules (`exceptions.pyx`,
+`types/typedefs.pyx`) were migrated — no `setup.py build_ext` step is needed.
 
 ## Non-Negotiable Rules
 

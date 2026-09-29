@@ -73,9 +73,9 @@ Optional Redis-backed notification service:
 - `wrapper.py` — provider wrapper used by workers.
 
 ### Exceptions
-Location: `notify/exceptions.pyx` (Cython)
-`NotifyException`, `ProviderError`, `NotSupported`, … Compiled — after editing
-the `.pyx` you must rebuild the extension.
+Location: `notify/exceptions.py`
+`NotifyException`, `ProviderError`, `NotSupported`, `MessageError`,
+`UninitializedError`, `NotifyTimeout`, `NotifyAuthError`.
 
 ---
 
@@ -87,12 +87,10 @@ to `conf.py` and import it.
 
 ---
 
-## Cython Extensions
-`notify/exceptions.pyx` and `notify/types/typedefs.pyx` are Cython modules.
-- Follow `.claude/rules/cython-development.md` (prefer `cimport`, `cdef`,
-  static typing).
-- Rebuild after edits: `python setup.py build_ext --inplace`.
-- Generated `.c` sources are NOT tracked in git.
+## No Cython Extensions
+
+All modules are pure Python. The former Cython modules (`exceptions.pyx`,
+`types/typedefs.pyx`) were migrated — no `setup.py build_ext` step is needed.
 
 ---
 

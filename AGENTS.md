@@ -130,9 +130,7 @@ If a task file and this document disagree, STOP and report — never pick one si
 - Complete, working files: no `TODO`, no stubs, no "existing code here" placeholders.
 - Minimal, focused diffs: touch only the files your task lists; never refactor outside scope.
 
-## Cython (`notify/exceptions.pyx`, `notify/types/typedefs.pyx`)
-- Prefer `cimport` over `import` for anything exposed via a `.pxd`; use Cython syntax (`cdef`, `cpdef`) and static typing rather than pure-Python-mode decorators.
-- Keep the `.pxd` in sync with the `.pyx` so other modules can `cimport` it.
-- Rebuild after every edit: `python setup.py build_ext --inplace`. Generated `.c` sources and `.so` files are not tracked.
+## No Cython Extensions
+All modules are pure Python — no `setup.py build_ext` step is needed.
 
 <!-- parrot:conventions:codex:end -->
