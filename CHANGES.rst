@@ -45,8 +45,9 @@ ChangeLog
       on first template use.
     - **Behaviour change**: ``typing.get_type_hints()`` on ``ProviderBase`` and
       ``ThreadMessage`` methods no longer resolves the ``Actor`` annotation, which
-      is now a deferred (``TYPE_CHECKING``) import. Import ``notify.models.Actor``
-      explicitly if you evaluate those hints at runtime.
+      is now a deferred (``TYPE_CHECKING``) import. If you evaluate those hints at
+      runtime, pass it explicitly: ``get_type_hints(fn, localns={"Actor": Actor})``
+      with ``Actor`` from ``notify.models``.
 
 .. _v0.6.0:
 
