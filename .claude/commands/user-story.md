@@ -67,7 +67,7 @@ Before proposing any default, search the repository to align with real patterns.
 - **Templates**: `TemplateParser` / `JinjaConfig` in `notify/templates.py` (Jinja2, `enable_async=True`); template-name vs template-source dispatch in `ProviderBase._prepare_`.
 - **Configuration**: `notify/conf.py` (navconfig) — every credential and setting (`TEMPLATE_DIR`, `NOTIFY_REDIS`, provider keys).
 - **Notify server** (optional): `notify/server/` — `server.py` (Redis Streams + pub/sub worker), `queue.py` (`QueueManager`), `client.py` (enqueue API), `wrapper.py` (provider wrapper used by workers).
-- **Errors**: `NotifyException`, `ProviderError`, `NotSupported` in the Cython module `notify/exceptions.pyx`.
+- **Errors**: `NotifyException`, `ProviderError`, `NotSupported` in `notify/exceptions.py`.
 - Recurring patterns to align with: new transport = new provider package subclassing the right family (not a branch inside an existing provider); sync-only SDKs routed through `blocking = 'executor'`; data structures as `datamodel` models, never bare dicts; configuration through navconfig, never `os.environ` inside a provider; async context manager usage (`async with Notify(...) as p:`).
 - Invariants to honor when scoping behavior: `send()` is the single public entry point; providers do not know about the notify server (the server wraps providers, not the reverse); rendering happens before transport, so template failures must surface before anything is sent; credentials never appear in messages, logs or exceptions.
 

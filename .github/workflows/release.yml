@@ -1,4 +1,4 @@
-name: Python package build and publish with uv
+name: Python package build and publish
 
 on:
   release:
@@ -6,59 +6,42 @@ on:
 
 jobs:
   build:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    name: Build pure-Python wheel and sdist
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build wheels (cp311-cp314)
-        uses: pypa/cibuildwheel@v3.2.0
-        env:
-          CIBW_BUILD: "cp311-* cp312-* cp313-* cp314-*"
-          CIBW_ARCHS_LINUX: x86_64
-          CIBW_ARCHS_WINDOWS: AMD64
-          CIBW_SKIP: "*-musllinux* *-win32 *-win_arm64"
-          CIBW_BUILD_FRONTEND: build
-          CIBW_BEFORE_ALL_LINUX: "yum install -y libmemcached-devel openssl-devel zlib-devel"
-          CIBW_TEST_SKIP: "*"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          output-dir: dist
+          version: "latest"
 
-      - name: List built wheels
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build wheel and sdist
+        run: uv build
+
+      - name: Verify pure-Python wheel
         shell: python
         run: |
-          from pathlib import Path
-          for wheel in sorted(Path("dist").glob("*.whl")):
-              print(wheel)
-
-      - name: Verify compiled Cython extensions
-        shell: python
-        run: |
-          import zipfile
           from pathlib import Path
 
           wheels = sorted(Path("dist").glob("*.whl"))
           assert wheels, "no wheels were produced in dist/"
           for wheel in wheels:
-              names = zipfile.ZipFile(wheel).namelist()
-              extensions = [
-                  name for name in names
-                  if name.startswith(("notify/exceptions.", "notify/types/typedefs."))
-                  and name.endswith((".so", ".pyd"))
-              ]
-              assert len(extensions) == 2, (
-                  f"compiled Cython extensions missing from {wheel}: {extensions}"
+              assert "none-any" in wheel.name, (
+                  f"expected pure-Python wheel (none-any), got: {wheel.name}"
               )
-              print(f"OK {wheel}: {extensions}")
+              print(f"OK {wheel}")
 
-      - name: Upload wheel artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}
-          path: dist/*.whl
+          name: dist
+          path: dist/
 
   deploy:
     needs: build
@@ -66,24 +49,20 @@ jobs:
     if: github.event_name == 'release'
     environment:
       name: pypi
-      url: https://pypi.org/p/ai-parrot
+      url: https://pypi.org/p/async-notify
     permissions:
-      id-token: write  # For trusted publishing
+      id-token: write
     steps:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           version: "latest"
 
-      - name: Download all artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: dist-artifacts
-
-      - name: Move wheel files to dist directory
-        run: |
-          mkdir -p dist
-          find dist-artifacts -name '*.whl' -exec mv {} dist/ \;
+          name: dist
+          path: dist
 
       - name: List files in dist
         run: ls -l dist
@@ -91,4 +70,4 @@ jobs:
       - name: Publish to PyPI
         run: |
           uv tool install twine
-          uv tool run twine upload dist/*-manylinux*.whl dist/*-win_*.whl --username __token__ --password ${{ secrets.ASYNC_NOTIFY_PYPI_API_TOKEN }}
+          uv tool run twine upload dist/* --username __token__ --password ${{ secrets.ASYNC_NOTIFY_PYPI_API_TOKEN }}

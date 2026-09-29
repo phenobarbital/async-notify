@@ -1,13 +1,14 @@
-# cython: language_level=3, embedsignature=True, boundscheck=False, wraparound=True, initializedcheck=False
 # Copyright (C) 2018-present Jesus Lara
 #
 """NotifyException Exceptions."""
-cdef class NotifyException(Exception):
-    """Base class for other exceptions"""
+
+
+class NotifyException(Exception):
+    """Base class for other exceptions."""
 
     code: int = 400
 
-    def __init__(self, str message, int code = 0, str payload = None, **kwargs):
+    def __init__(self, message: str, code: int = 0, payload: str = None, **kwargs):
         super().__init__(message)
         self.message = message
         self.args = kwargs
@@ -23,30 +24,32 @@ cdef class NotifyException(Exception):
     def get(self):
         return self.message
 
-cdef class NotSupported(NotifyException):
+
+class NotSupported(NotifyException):
     """Not Supported functionality."""
 
 
-cdef class ProviderError(NotifyException):
-    """Database Provider Error."""
+class ProviderError(NotifyException):
+    """Provider Error."""
 
 
-cdef class MessageError(NotifyException):
+class MessageError(NotifyException):
     """Raises when an error on Message."""
 
 
-cdef class UninitializedError(ProviderError):
+class UninitializedError(ProviderError):
     """Exception when provider cant be initialized."""
 
 
-cdef class NotifyTimeout(ProviderError):
+class NotifyTimeout(ProviderError):
     """Connection Timeout Error."""
 
-cdef class NotifyAuthError(ProviderError):
+
+class NotifyAuthError(ProviderError):
     """Notify Authentication error."""
 
 
-cdef class ProviderDependencyError(ProviderError):
+class ProviderDependencyError(ProviderError):
     """Raised when a provider's optional third-party SDK is missing.
 
     Distinguishes "this provider needs a package you have not installed"
