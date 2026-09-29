@@ -1,0 +1,79 @@
+### Medición de partida (F005)
+
+| preloaded | `import notify` marginal | atribuible |
+|---|---:|---:|
+| nada | **192 ms** | — |
+| `navconfig` | 70.4 ms | **~122 ms (63%)** |
+| `datamodel` + `jinja2` | 122.8 ms | **~69 ms (36%)** |
+| los tres | 35.1 ms | ~157 ms (82%) |
+
+`notify.providers.base`: 214 ms acumulados, **21 ms de self time**.
+
+### What's New
+
+- **Módulo sin jinja2 para `is_template_source`** (p.ej. `notify/templates/_predicates.py`
+  o dentro de `notify/utils/`), re-exportado desde `notify.templates` por
+  compatibilidad. *Evidence*: F006
+- **Ruta de error consciente de extras en `LoadProvider`**, que distinga
+  "provider desconocido" de "falta la dependencia opcional del provider" y
+  nombre el extra a instalar. *Evidence*: F008
+- **Mapeo `PROVIDER_EXTRAS`** (nombre de provider → nombre de extra) que
+  alimente ese mensaje. *Evidence*: F007, F008
+- **Test de regresión de arranque** que afirme que `import notify` deja jinja2 y
+  datamodel fuera de `sys.modules`. *Evidence*: F010
+- **Sección del README** con la matriz de extras. *Evidence*: F012
+
+### What Changes
+
+- **`notify/providers/base.py`::module imports** — `Actor` detrás de
+  `TYPE_CHECKING` (uso solo en anotaciones) e `is_template_source` movido a un
+  módulo sin jinja2 o a un import local de función. *Evidence*: F006
+- **`notify/notify.py`::module imports** — diferir `from .conf import TEMPLATE_DIR`
+  y `from .templates import TemplateParser` dentro de `__getattr__`, su único
+  consumidor. *Evidence*: F002, F005
+- **`notify/notify.py`::`LoadProvider`** — corregir el fallback `__import__`
+  muerto que devuelve el módulo en vez de la clase, y emitir el mensaje
+  consciente de extras. *Evidence*: F008
+- **`pyproject.toml`::`[project] dependencies`** — bajar `emoji` (solo telegram),
+  `aiobotocore` (solo ses) y `cloudpickle` (solo server) a sus extras, y
+  **eliminar `pillow`**, que ningún módulo de `notify/` importa. Se acepta como
+  cambio de instalación con release notes. *Evidence*: F007
+- **`README.md`** — documentar la matriz de extras. *Evidence*: F012
+
+### What's Untouched (Non-Goals)
+
+- Hacer perezosos los `notify/providers/*` — **ya lo son** (F002, F004).
+- Construir un registry de providers, plugin discovery o entry-points.
+- Cambiar el contrato `ProviderBase` / `_send_` ni el comportamiento en runtime
+  de ningún provider.
+- **Atacar navconfig / hacer perezoso `notify/conf.py`** — decisión explícita del
+  Q&A (U2): fuera de este ciclo.
+- Reducir el peso de instalación del extra `all`.
+
+### Patterns to Follow
+
+- `__getattr__` a nivel de módulo (PEP 562) con slot privado de memoización,
+  como en `notify/notify.py:89-116`. *Evidence*: F002
+- Import diferido + mensaje accionable `pip install async-notify[<extra>]`, como
+  en `Telegram.py:343-347`. *Evidence*: F008
+- Dependencia opcional con guard `ImportError` silencioso, como en
+  `notify/utils/uv.py:14`. *Evidence*: F008
+
+### Integration Risks
+
+- **Diferir navconfig es la única vía al premio grande (~122 de 192 ms), pero
+  `notify/conf.py` exporta ~20 constantes de módulo consumidas por el server y
+  los providers.** *Mitigación*: queda explícitamente fuera de alcance (U2); si
+  se reabre, con su propia medición. *Evidence*: F005
+- **`TYPE_CHECKING` sobre `Actor` cambia la resolución de anotaciones en
+  runtime**; algo que llame a `typing.get_type_hints()` sobre métodos de
+  `ProviderBase` se rompería. *Mitigación*: añadir
+  `from __future__ import annotations` y hacer grep de `get_type_hints` antes de
+  aterrizar. *Evidence*: F006, F010
+- **`filterwarnings=error`**: un shim de compatibilidad que avise tumba CI.
+  *Mitigación*: re-exportar sin warnings de deprecación. *Evidence*: F010
+- **Bajar deps core es un cambio de instalación potencialmente breaking** para
+  quien instale `async-notify` pelado y use ses o telegram. *Mitigación*:
+  aceptado con release notes (U3); el nuevo mensaje de `LoadProvider` convierte
+  el fallo en accionable, lo que hace este riesgo mucho más tolerable.
+  *Evidence*: F007, F008

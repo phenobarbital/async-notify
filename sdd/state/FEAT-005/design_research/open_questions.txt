@@ -1,0 +1,8 @@
+- [ ] **¿`PROVIDER_EXTRAS` se mantiene a mano o se deriva de
+  `[project.optional-dependencies]`?** — *Owner*: tbd
+  *Respuestas plausibles*: a) dict literal en `notify/notify.py` (simple, puede
+  desincronizarse) · b) leído de la metadata del paquete instalado vía
+  `importlib.metadata` (sin desincronización, coste en runtime)
+  *Nota*: varios providers (twilio, xmpp, slack) hoy no tienen extra propio —
+  solo aparecen dentro de `all`/`default` (F007), así que el mapeo obliga a
+  decidir si se crean extras por provider.
