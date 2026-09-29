@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import asyncio
-from typing import Any, Union
+from typing import Any, Union, TYPE_CHECKING
 from collections.abc import Callable, Awaitable
 from functools import partial
 import threading
-from notify.models import Actor
+
+if TYPE_CHECKING:
+    from notify.models import Actor
 
 
 class ThreadMessage(threading.Thread):

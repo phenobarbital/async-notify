@@ -24,6 +24,11 @@ from jinja2 import (
 )
 from navconfig import config as nav_config
 from navconfig.logging import logging
+from notify.utils.templates import JINJA_MARKERS, is_template_source  # noqa: F401
+
+# Re-exported for backward compatibility: notify/providers/base.py and
+# tests/test_jinja_string_templates.py import both from here.
+# The re-export is a supported public path and MUST stay silent (no warning).
 
 PathLike = str | Path
 
@@ -85,33 +90,8 @@ jinja_config = {
     "extensions": list(JinjaConfig().extensions),
 }
 
-#: Jinja2 delimiters that can never appear in a template *filename*.
-JINJA_MARKERS: tuple[str, ...] = ("{{", "{%", "{#")
-
 #: Default upper bound on the number of compiled string templates retained.
 DEFAULT_STRING_CACHE_SIZE: int = 128
-
-
-def is_template_source(value: str) -> bool:
-    """Decide whether *value* is Jinja2 source text rather than a filename.
-
-    Conservative by design: returns ``True`` only when *value* carries a
-    signal that a template filename cannot carry — a Jinja2 delimiter
-    (``{{``, ``{%``, ``{#``) or a line break. Anything else is treated as a
-    filename, which preserves 1.5.7 behaviour for every existing caller.
-
-    Args:
-        value: The raw ``template=`` argument.
-
-    Returns:
-        ``True`` if *value* should be compiled as source, ``False`` if it
-        should be resolved through the filesystem loader.
-    """
-    if not isinstance(value, str) or not value:
-        return False
-    if any(marker in value for marker in JINJA_MARKERS):
-        return True
-    return "\n" in value or "\r" in value
 
 
 class TemplateParser:

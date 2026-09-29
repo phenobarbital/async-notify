@@ -2,9 +2,10 @@
 
 Base Factory classes for all kind of Providers.
 """
+from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, TYPE_CHECKING
 from collections.abc import Awaitable, Callable
 from enum import Enum
 from functools import partial
@@ -15,9 +16,11 @@ from notify.types import SafeDict
 from notify.exceptions import (
     ProviderError
 )
-from notify.models import Actor
-from notify.templates import is_template_source
+from notify.utils.templates import is_template_source
 from .message import ThreadMessage
+
+if TYPE_CHECKING:
+    from notify.models import Actor
 
 
 class ProviderType(Enum):

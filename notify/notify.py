@@ -1,12 +1,12 @@
+from __future__ import annotations
+
 import importlib
 from pathlib import Path
 
 from navconfig.logging import logger
 
-from .conf import TEMPLATE_DIR
 from .exceptions import ProviderDependencyError, ProviderError
 from .providers.base import ProviderBase
-from .templates import TemplateParser
 
 PROVIDERS = {}
 
@@ -167,6 +167,9 @@ def __getattr__(name: str):
         AttributeError: For any other undefined module attribute.
     """
     if name == "TemplateEnv":
+        from .conf import TEMPLATE_DIR  # noqa: PLC0415
+        from .templates import TemplateParser  # noqa: PLC0415
+
         global _TEMPLATE_ENV
         if _TEMPLATE_ENV is None:
             if not TEMPLATE_DIR.exists():
