@@ -7,7 +7,7 @@ import msal
 from azure.identity.aio import ClientSecretCredential
 from azure.identity import UsernamePasswordCredential
 from msgraph import GraphServiceClient
-from notify.providers._msgraph import patch_graph_host_os_header  # was: from ._msgraph_patch import …
+from notify.providers._msgraph import apply_msgraph_patches
 from msgraph.generated.models.chat import Chat
 from msgraph.generated.models.chat_type import ChatType
 from msgraph.generated.models.chat_message import ChatMessage
@@ -43,9 +43,11 @@ logging.getLogger("hpack").setLevel(logging.INFO)
 # disable aiohttp debug:
 logging.getLogger("aiohttp").setLevel(logging.INFO)
 
-# Sanitise the msgraph-core HostOs telemetry header so trailing-space kernel
-# versions don't trigger h11 "Illegal header value" on Graph API requests.
-patch_graph_host_os_header()
+# Sanitise the msgraph-core HostOs telemetry header (trailing-space kernel
+# versions trigger h11 "Illegal header value") and restore the middleware
+# pipeline under kiota-http >= 1.14 (otherwise ``graph.me.get()`` 404s on
+# ``me-token-to-replace``).
+apply_msgraph_patches()
 
 
 class Teams(ProviderIM):

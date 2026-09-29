@@ -32,15 +32,15 @@ from notify.conf import (
 )
 from notify.exceptions import NotifyAuthError, ProviderError
 from notify.models import Actor, MailSendResult
-from notify.providers._msgraph import patch_graph_host_os_header
+from notify.providers._msgraph import apply_msgraph_patches
 from notify.providers.mail import ProviderEmail
 from notify.providers.office365.credential import AuthFlow, MsalAsyncCredential, scopes_for
 from notify.providers.office365.graph_mail import GraphMailSender, build_message, load_attachments, to_recipients
 from notify.providers.office365.token_store import TokenStore, build_token_store
 
-# Sanitise msgraph-core's HostOs telemetry header before the first Graph
-# request, same as notify/providers/teams/teams.py:57.
-patch_graph_host_os_header()
+# Patch msgraph-core before the first Graph request (HostOs header and the
+# kiota-http >= 1.14 middleware pipeline), same as notify/providers/teams/teams.py.
+apply_msgraph_patches()
 
 
 class Office365(ProviderEmail):
