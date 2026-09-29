@@ -133,7 +133,7 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "M",
       "depends_on": [
@@ -143,8 +143,8 @@
       "parallelism_notes": "Creates tests/test_startup_imports.py only. Shares no file with any other task once TASK-35 has landed.",
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-39-startup-import-tests.md"
+      "completed_at": "2026-09-29T18:13:56+00:00",
+      "file": "sdd/tasks/completed/TASK-39-startup-import-tests.md"
     }
   ]
 }

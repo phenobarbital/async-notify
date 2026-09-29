@@ -372,3 +372,8 @@ When you pick up this task:
 **Notes**:
 
 **Deviations from spec**: none | describe if any
+
+### Completion Note
+Created tests/test_startup_imports.py: 6 tests, every sys.modules assertion in a clean subprocess (`PYTHONPATH=.`, cwd=repo root). Pass alone and after the full suite (355 passed; 2 pre-existing test_ses failures).
+**Measured cold import** (in-child perf_counter, after build_ext, min of 5): ~152-156 ms (budget ≤ 175 ms).
+Deviations: (1) test_utils_templates_has_no_heavy_imports asserts jinja2/datamodel only — navconfig cannot be absent because importing any `notify.*` submodule runs notify/__init__.py, which imports navconfig (out of scope, spec §1). (2) test_actor_annotation pins NameError for ProviderBase._prepare_ and ThreadMessage.__init__ and shows the workaround (`localns={"Actor": Actor}`); CHANGES.rst wording says "import notify.models.Actor explicitly", which alone does not make get_type_hints resolve — passing it via localns does. Consider rewording CHANGES.rst.
