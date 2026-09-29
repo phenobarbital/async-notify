@@ -398,3 +398,7 @@ When you pick up this task:
 **Notes**:
 
 **Deviations from spec**: none | describe if any
+
+### Completion Note
+Created tests/test_provider_dependencies.py: 9 tests (the 8 specified + test_failed_load_is_not_cached). `blocked_module` fixture raises a real ModuleNotFoundError (asserted with `.name`) via a sys.meta_path finder, and evicts/restores sys.modules + PROVIDERS through monkeypatch. Passes alone and in both suite orderings (only the 2 pre-existing test_ses failures remain).
+Deviations: (1) test_smtp_alias_resolves is `async def` — the SMTP constructor needs a running loop, which sync tests only get by accident of ordering. (2) test_all_aliases_resolve_to_a_class skips `onesignal` via KNOWN_BROKEN_ALIASES: its module imports a non-existent `ProviderIMBase` (pre-existing bug, raw ImportError by design). (3) Log assertion patches notify.notify.logger in addition to caplog, since navconfig's logger may not propagate.
