@@ -14,7 +14,7 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "high",
       "effort": "M",
       "depends_on": [],
@@ -22,8 +22,8 @@
       "parallelism_notes": "Touches only pyproject.toml and uv.lock; shares no file with any other task. Spec's suggested order puts it first because TASK-34's messages and TASK-36's matrix both cite the extra names it defines.",
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-33-dependency-manifest.md"
+      "completed_at": "2026-09-29T18:07:14+00:00",
+      "file": "sdd/tasks/completed/TASK-33-dependency-manifest.md"
     },
     {
       "id": "TASK-34",

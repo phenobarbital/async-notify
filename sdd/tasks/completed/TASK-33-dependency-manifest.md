@@ -362,3 +362,6 @@ When you pick up this task:
 **Notes**:
 
 **Deviations from spec**: none | describe if any
+
+### Completion Note
+Slimmed core deps (removed pillow/emoji/aiobotocore/cloudpickle; added aiohttp>=3.10). Added extras ses/slack/twilio/xmpp/server; emoji→telegram, redis→azure; `all` is now a superset (incl. uvloop with marker, templates jinja2-*). `uv lock` resolves (aiohttp/redis floors OK); NOTE: `uv.lock` is gitignored in this repo so it is not part of the commit. tests/test_office365_configuration.py: 4 passed.
