@@ -4,6 +4,7 @@ Deliberately free of jinja2, datamodel and navconfig imports: this module sits
 on the ``import notify`` startup path via :mod:`notify.providers.base`, and
 pulling any of those three back in undoes FEAT-005's G6 deferral.
 """
+
 from __future__ import annotations
 
 #: Jinja2 delimiters that can never appear in a template *filename*.
