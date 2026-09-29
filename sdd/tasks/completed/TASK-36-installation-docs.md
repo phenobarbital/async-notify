@@ -341,3 +341,6 @@ When you pick up this task:
 
 **Deviations from spec**: corrected `README.md:14` from "Python >= 3.8" to
 ">= 3.11". Spec §9's S10 triage claims the README states no Python version; it does.
+
+### Completion Note
+README: Installation section with 17-row provider→extra table, all/server/other extras, console-script note. Corrected README Python floor from >= 3.8 to >= 3.11 (spec §9 S10 rebuttal claimed the README stated no version; it did — line 14). CHANGES.rst: 1.7.0 (unreleased) entry at top incl. get_type_hints behaviour change. Parity self-check: no extras absent from README. (One pre-existing docutils title-underline warning in an old entry, untouched.)
