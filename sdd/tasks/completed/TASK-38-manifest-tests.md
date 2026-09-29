@@ -348,3 +348,6 @@ When you pick up this task:
 **Notes**:
 
 **Deviations from spec**: none | describe if any
+
+### Completion Note
+Created tests/test_dependency_manifest.py: the 5 specified tests plus a parametrised `_dist_name` normaliser test (6 cases). All pass against the landed pyproject.toml/README (superset test not vacuous — TASK-33 closed the uvloop/templates gap). stdlib only, no `packaging`. test_office365_configuration.py untouched and passing.

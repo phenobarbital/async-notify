@@ -112,7 +112,7 @@
       "feature_id": "FEAT-005",
       "feature": "lazy-import-providers",
       "spec": "sdd/specs/lazy-import-providers.spec.md",
-      "status": "in-progress",
+      "status": "done",
       "priority": "medium",
       "effort": "S",
       "depends_on": [
@@ -123,8 +123,8 @@
       "parallelism_notes": "Creates tests/test_dependency_manifest.py only. Needs TASK-36 as well as TASK-33 because test_readme_matrix_matches_manifest reads README.md, and TASK-34 for the PROVIDER_EXTRAS import.",
       "assigned_to": null,
       "started_at": "2026-09-29T18:06:01+00:00",
-      "completed_at": null,
-      "file": "sdd/tasks/active/TASK-38-manifest-tests.md"
+      "completed_at": "2026-09-29T18:13:04+00:00",
+      "file": "sdd/tasks/completed/TASK-38-manifest-tests.md"
     },
     {
       "id": "TASK-39",
